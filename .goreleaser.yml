@@ -1,0 +1,29 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+
+dockers:
+  - image_templates:
+      - "docker.pkg.github.com/estahn/k8s-image-swapper/k8s-image-swapper:latest"
+      - "docker.pkg.github.com/estahn/k8s-image-swapper/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "docker.pkg.github.com/estahn/k8s-image-swapper/k8s-image-swapper:{{ .Major }}.{{ .Minor }}"
+      - "docker.pkg.github.com/estahn/k8s-image-swapper/k8s-image-swapper:{{ .Major }}"
+    build_flag_templates:
+      - "--build-arg=VERSION={{.Version}}"
+      - "--build-arg=BUILD_DATE={{.Date}}"
+      - "--build-arg=VCS_REF={{.FullCommit}}"
+
+changelog:
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+
+archives:
+  - format: binary
