@@ -1,15 +1,3 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-## Table of Contents
-
-- [k8s-image-swapper](#k8s-image-swapper)
-  - [Why?](#why)
-  - [Architecture](#architecture)
-  - [Other](#other)
-  - [POC](#poc)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 # k8s-image-swapper
 
 Mirror images into your own registry and swap image references automatically.
@@ -19,6 +7,17 @@ It is an alternative to a [docker pull-through proxy](docker-mirror).
 The feature set was primarily designed with Amazon ECR in mind but may work with other registries.
 
 [docker-mirror]: https://docs.docker.com/registry/recipes/mirror/
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+## Table of Contents
+
+- [Why?](#why)
+- [Architecture](#architecture)
+- [Other](#other)
+- [POC](#poc)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Why?
 
