@@ -1,0 +1,21 @@
+logLevel: debug
+logFormat: console
+dryRun: true
+
+source:
+  filters:
+    - jmespath: "obj.metadata.namespace == 'kube-system'"
+
+  registries:
+    dockerio:
+      username:
+      password:
+
+target:
+  type: aws
+  registry:
+    aws:
+      accountId: ***REMOVED***
+      region: ap-southeast-2
+    dockerio:
+    quayio:

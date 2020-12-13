@@ -19,10 +19,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package main
+package pkg
 
-import "github.com/estahn/k8s-image-swapper/cmd"
+import "fmt"
 
-func main() {
-	cmd.Execute()
+type Config struct {
+	LogLevel string `yaml:"logFormat" validate:"oneof=debug info warn error fatal"`
+	LogFormat string `yaml:"logFormat" validate:"oneof=json console"`
+
+	ListenAddress string
+
+	DryRun bool `yaml:"dryRun"`
+	Source Source `yaml:"source"`
+	Target AWS
+
+	TLSCertFile string
+	TLSKeyFile string
+}
+
+type Source struct {
+	Filters []JMESPathFilter `yaml:"filters"`
+}
+
+type JMESPathFilter struct {
+	JMESPath string `yaml:"jmespath"`
+}
+
+type AWS struct {
+	AccountID string `yaml:"accountId"`
+	Region string `yaml:"region"`
+}
+
+func (a *AWS) EcrDomain() string {
+	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
 }
