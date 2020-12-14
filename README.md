@@ -1,8 +1,12 @@
-# k8s-image-swapper
+<p align="center">
+  <img alt="Raiders of the Lost Ark" src="docs/img/indiana.gif" height="140" />
+  <h3 align="center">k8s-image-swapper</h3>
+  <p align="center">Mirror images into your own registry and swap image references automatically.</p>
+</p>
 
-Mirror images into your own registry and swap image references automatically.
+---
 
-A mutating webhook for Kubernetes, pointing the images to a new location.
+`k8s-image-swapper` is a mutating webhook for Kubernetes, downloading images into your own registry and pointing the images to that new location.
 It is an alternative to a [docker pull-through proxy](docker-mirror).
 The feature set was primarily designed with Amazon ECR in mind but may work with other registries.
 
@@ -13,9 +17,10 @@ The feature set was primarily designed with Amazon ECR in mind but may work with
 ## Table of Contents
 
 - [Why?](#why)
-- [Architecture](#architecture)
-- [Other](#other)
-- [POC](#poc)
+- [Getting started](#getting-started)
+  - [Helm](#helm)
+  - [Kustomize](#kustomize)
+- [Stargazers over time](#stargazers-over-time)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -33,47 +38,20 @@ The feature set was primarily designed with Amazon ECR in mind but may work with
 [quay-outage]: https://www.reddit.com/r/devops/comments/f9kiej/quayio_is_experiencing_an_outage/
 [docker-rate-limiting]: https://www.docker.com/blog/scaling-docker-to-serve-millions-more-developers-network-egress/
 
-## Architecture
+## Getting started
 
-![alt text](architecture.jpg "k8s-image-swapper Architecture")
+### Helm
 
-Components:
-* **Image Swapper**, a mutating Webhook adding a prefix to the original image string
-* **Image Downloader**
-* **Image State Keeper**
-* Repository Manager
-  * Create repository
-  * Delete repository
-  * Sync image
+```
+helm install
+```
 
-## Other
+### Kustomize
 
-* Manages ECR repository life-cycles (create&delete repository, sync images)
+```
+kustomize build . | kubectl apply -f -
+```
 
-Options:
+## Stargazers over time
 
-- registry
-- whitelist
-- blacklist
-- ecr_lifecycle
-    - create
-    - delete
-
-
-Components:
-* Mutating Webhook
-  * Adds a prefix to the original image string
-* Repository Manager
-  * Create repository
-  * Delete repository
-  * Sync image
-
-nginx:latest -> docker.io/nginx:latest -> <registry>/docker.io/nginx:latest
-
-
-## POC
-
-1. Receive admission request
-2. Check if image is in ECR
-3. If not download image and push to ECR, return false
-4. return with new image reference
+[![Stargazers over time](https://starchart.cc/estahn/k8s-image-swapper.svg)](https://starchart.cc/goreleaser/goreleaser)
