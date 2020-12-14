@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/estahn/k8s-image-swapper
+  repository: ghcr.io/estahn/k8s-image-swapper/k8s-image-swapper
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -46,7 +46,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
+  port: 443
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -87,3 +87,25 @@ patch:
 
 webhook:
   failurePolicy: Ignore
+
+awsSecretName: ""
+
+config:
+  dryRun: true
+
+  logLevel: debug
+  logFormat: console
+
+  source:
+    # Filters provide control over what pods will be processed.
+    # By default all pods will be processed. If a condition matches, the pod will NOT be processed.
+    # For query language details see https://jmespath.org/
+    filters:
+      - jmespath: "obj.metadata.namespace == 'kube-system'"
+
+  target:
+    type: aws
+    registry:
+      aws:
+        accountId: "***REMOVED***"
+        region: ap-southeast-2

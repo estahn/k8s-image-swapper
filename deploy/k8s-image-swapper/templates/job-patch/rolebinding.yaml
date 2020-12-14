@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "k8s-image-swapper.serviceAccountName" . }}
+  name: {{ include "k8s-image-swapper.fullname" . }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -11,9 +11,9 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-name: {{ include "k8s-image-swapper.serviceAccountName" . }}
+  name: {{ include "k8s-image-swapper.fullname" . }}-patch
 subjects:
   - kind: ServiceAccount
-    name: {{ include "k8s-image-swapper.serviceAccountName" . }}
+    name: {{ include "k8s-image-swapper.fullname" . }}-patch
     namespace: {{ .Release.Namespace }}
 {{- end }}

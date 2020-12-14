@@ -33,20 +33,58 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.awsSecretName }}
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.awsSecretName }}
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.awsSecretName }}
+                  key: aws_secret_access_key
+          {{- end }}
+          args:
+            - --config=/.k8s-image-swapper/config.yaml
+            - --tls-cert-file=/usr/local/certificates/cert
+            - --tls-key-file=/usr/local/certificates/key
           ports:
-            - name: http
-              containerPort: 80
+            - name: https
+              containerPort: 8443
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /
-              port: http
+              port: https
+              scheme: HTTPS
           readinessProbe:
             httpGet:
               path: /
-              port: http
+              port: https
+              scheme: HTTPS
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: {{ include "k8s-image-swapper.fullname" . }}
+              mountPath: /.k8s-image-swapper
+              subPath: config.yaml
+              readOnly: true
+            {{- if .Values.patch.enabled }}
+            - name: webhook-cert
+              mountPath: "/usr/local/certificates/"
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: {{ include "k8s-image-swapper.fullname" . }}
+          configMap:
+            name: {{ include "k8s-image-swapper.fullname" . }}
+        {{- if .Values.patch.enabled }}
+        - name: webhook-cert
+          secret:
+            secretName: {{ template "k8s-image-swapper.fullname". }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

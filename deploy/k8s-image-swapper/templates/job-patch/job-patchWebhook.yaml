@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "k8s-image-swapper.serviceAccountName" . }}-patch
+  name: {{ include "k8s-image-swapper.fullname" . }}-patch
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -15,7 +15,7 @@ spec:
   {{- end }}
   template:
     metadata:
-      name: {{ include "k8s-image-swapper.serviceAccountName" . }}-patch
+      name: {{ include "k8s-image-swapper.fullname" . }}-patch
 {{- with .Values.patch.podAnnotations }}
       annotations:
 {{ toYaml .  | indent 8 }}
@@ -39,11 +39,12 @@ spec:
             - --webhook-name={{ template "k8s-image-swapper.fullname" . }}
             - --namespace={{ .Release.Namespace }}
             - --secret-name={{ template "k8s-image-swapper.fullname" . }}
+            - --patch-validating=false
             - --patch-failure-policy={{ .Values.webhook.failurePolicy }}
           resources:
 {{ toYaml .Values.patch.resources | indent 12 }}
       restartPolicy: OnFailure
-      serviceAccountName: {{ template "k8s-image-swapper.fullname" . }}
+      serviceAccountName: {{ template "k8s-image-swapper.fullname" . }}-patch
       {{- with .Values.patch.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
