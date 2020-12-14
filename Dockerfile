@@ -1,22 +1,26 @@
+FROM quay.io/skopeo/stable:v1.2.0 AS skopeo
+
 FROM gcr.io/distroless/base-debian10
-COPY aws-rds-logs-s3-copier /
-CMD ["/aws-rds-logs-s3-copier"]
+COPY --from=skopeo /usr/bin/skopeo /skopeo
+COPY k8s-image-swapper /
+
+ENTRYPOINT ["/k8s-image-swapper"]
 
 ARG BUILD_DATE
 ARG VCS_REF
 
-LABEL maintainer="aws-rds-logs-s3-copier <https://github.com/hipagesgroup/aws-rds-logs-s3-copier/issues>" \
-      org.opencontainers.image.title="aws-rds-logs-s3-copier" \
-      org.opencontainers.image.description="Store AWS RDS logs in S3 without CloudWatch" \
-      org.opencontainers.image.url="https://github.com/hipagesgroup/aws-rds-logs-s3-copier" \
-      org.opencontainers.image.source="git@github.com:hipagesgroup/aws-rds-logs-s3-copier.git" \
-      org.opencontainers.image.vendor="hipages" \
+LABEL maintainer="k8s-image-swapper <https://github.com/estahn/k8s-image-swapper/issues>" \
+      org.opencontainers.image.title="k8s-image-swapper" \
+      org.opencontainers.image.description="Mirror images into your own registry and swap image references automatically." \
+      org.opencontainers.image.url="https://github.com/estahn/k8s-image-swapper" \
+      org.opencontainers.image.source="git@github.com:estahn/k8s-image-swapper.git" \
+      org.opencontainers.image.vendor="estahn" \
       org.label-schema.schema-version="1.0" \
-      org.label-schema.name="aws-rds-logs-s3-copier" \
-      org.label-schema.description="Store AWS RDS logs in S3 without CloudWatch" \
-      org.label-schema.url="https://github.com/hipagesgroup/aws-rds-logs-s3-copier" \
-      org.label-schema.vcs-url="git@github.com:hipagesgroup/aws-rds-logs-s3-copier.git" \
-      org.label-schema.vendor="hipages" \
+      org.label-schema.name="k8s-image-swapper" \
+      org.label-schema.description="Mirror images into your own registry and swap image references automatically." \
+      org.label-schema.url="https://github.com/estahn/k8s-image-swapper" \
+      org.label-schema.vcs-url="git@github.com:estahn/k8s-image-swapper.git" \
+      org.label-schema.vendor="estahn" \
       org.opencontainers.image.revision="$VCS_REF" \
       org.opencontainers.image.created="$BUILD_DATE" \
       org.label-schema.vcs-ref="$VCS_REF" \
