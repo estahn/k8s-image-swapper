@@ -1,15 +1,19 @@
-logLevel: debug
-logFormat: console
 dryRun: true
 
+logLevel: debug
+logFormat: console
+
 source:
+  # Filters provide control over what pods will be processed.
+  # By default all pods will be processed. If a condition matches, the pod will NOT be processed.
+  # For query language details see https://jmespath.org/
   filters:
     - jmespath: "obj.metadata.namespace == 'kube-system'"
 
-  registries:
-    dockerio:
-      username:
-      password:
+#  registries:
+#    dockerio:
+#      username:
+#      password:
 
 target:
   type: aws
@@ -17,5 +21,13 @@ target:
     aws:
       accountId: ***REMOVED***
       region: ap-southeast-2
-    dockerio:
-    quayio:
+      ecrOptions:
+        tags: []
+        imageTagMutability: MUTABLE
+        imageScanningConfiguration:
+          imageScanOnPush: true
+        encryptionConfiguration:
+          encryptionType: AES256
+#          kmsKey: string
+#    dockerio:
+#    quayio:
