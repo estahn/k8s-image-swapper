@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/aws/aws-sdk-go v1.32.3
-	github.com/containers/image/v5 v5.8.1
+	github.com/containers/image/v5 v5.9.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/gorilla/mux v1.8.0 // indirect
