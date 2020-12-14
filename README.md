@@ -54,4 +54,4 @@ kustomize build . | kubectl apply -f -
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/estahn/k8s-image-swapper.svg)](https://starchart.cc/goreleaser/goreleaser)
+[![Stargazers over time](https://starchart.cc/estahn/k8s-image-swapper.svg)](https://starchart.cc/estahn/k8s-image-swapper)
