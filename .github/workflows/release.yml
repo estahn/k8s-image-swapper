@@ -4,7 +4,7 @@ jobs:
   tag:
     name: Tag
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+#     if: github.ref == 'refs/heads/master'
     steps:
 
     - name: Setup Node.js for use with actions
