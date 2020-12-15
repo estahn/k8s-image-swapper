@@ -4,4 +4,9 @@ prepare: []
 publish: ['@semantic-release/github']
 success: ['@semantic-release/github']
 fail: ['@semantic-release/github']
-branches: ['main', 'alpha']
+branches:
+  - main
+  - name: alpha
+    prerelease: true
+  - name: beta
+    prerelease: true
