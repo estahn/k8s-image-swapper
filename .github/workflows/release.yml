@@ -29,6 +29,9 @@ jobs:
     # if: startsWith(github.ref, 'refs/tags/')
     needs: [tag]
     steps:
+      - name: Install devmapper
+        run: sudo apt-get install -y libdevmapper-dev
+
       - name: Checkout
         uses: actions/checkout@v2
 
