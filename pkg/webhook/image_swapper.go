@@ -79,7 +79,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		SharedConfigState: session.SharedConfigEnable,
 		//Config:            aws.Config{Region: aws.String(config.ReplicationConfigs[0].Region)},
 	}))
-	ecrClient := ecr.New(sess)
+	ecrClient := ecr.New(sess, &aws.Config{Region: aws.String("ap-southeast-2")})
 
 	getAuthTokenOutput, err := ecrClient.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
 	if err != nil {
@@ -115,6 +115,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 		targetImage := p.targetName(srcRef)
 
+		log.Debug().Str("image", targetImage).Msg("set new container image")
 		pod.Spec.Containers[i].Image = targetImage
 
 		// Create repository
@@ -135,7 +136,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 				case ecr.ErrCodeTooManyTagsException:
 					log.Err(aerr).Msg(ecr.ErrCodeTooManyTagsException)
 				case ecr.ErrCodeRepositoryAlreadyExistsException:
-					log.Err(aerr).Msg(ecr.ErrCodeRepositoryAlreadyExistsException)
+					log.Info().Msg(ecr.ErrCodeRepositoryAlreadyExistsException)
 				case ecr.ErrCodeLimitExceededException:
 					log.Err(aerr).Msg(ecr.ErrCodeLimitExceededException)
 				default:
@@ -148,26 +149,29 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			}
 		}
 
-		log.Info().Msgf("copy from %s to %s", srcRef.DockerReference().String(), targetImage)
-		app := "/usr/local/bin/skopeo"
-		args := []string{
-			"--override-os", "linux",
-			"copy",
-			"docker://" + srcRef.DockerReference().String(),
-			"docker://" + targetImage,
-			"--src-no-creds",
-			"--dest-creds", string(authToken),
-		}
+		// TODO: refactor, moving this into a subroutine for now to speed up response.
+		go func() {
+			log.Info().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msgf("copy image")
+			app := "skopeo"
+			args := []string{
+				"--override-os", "linux",
+				"copy",
+				"docker://" + srcRef.DockerReference().String(),
+				"docker://" + targetImage,
+				"--src-no-creds",
+				"--dest-creds", string(authToken),
+			}
 
-		log.Debug().Str("app", app).Strs("args", args).Msg("executing command to copy image")
+			log.Debug().Str("app", app).Strs("args", args).Msg("executing command to copy image")
 
-		cmd := exec.Command(app, args...)
-		stdout, err := cmd.Output()
+			cmd := exec.Command(app, args...)
+			stdout, err := cmd.Output()
 
-		if err != nil {
-			log.Err(err).Bytes("output", stdout).Msg("copying image to target registry failed")
-			continue
-		}
+			if err != nil {
+				log.Err(err).Bytes("output", stdout).Msg("copying image to target registry failed")
+				//continue
+			}
+		}()
 	}
 
 	return false, nil
