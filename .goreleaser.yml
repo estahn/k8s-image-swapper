@@ -11,6 +11,7 @@ builds:
 dockers:
   - image_templates:
       - "ghcr.io/estahn/k8s-image-swapper:latest"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Version }}"
       - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}"
       - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}"
