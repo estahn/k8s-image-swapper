@@ -109,3 +109,7 @@ config:
       aws:
         accountId: "***REMOVED***"
         region: ap-southeast-2
+
+dev:
+  enabled: false
+  webhookURL: https://xxx.ngrok.io
