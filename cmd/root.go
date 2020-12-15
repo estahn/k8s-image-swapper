@@ -56,35 +56,28 @@ var rootCmd = &cobra.Command{
 A mutating webhook for Kubernetes, pointing the images to a new location.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-		Run: func(cmd *cobra.Command, args []string) {
-			//promReg := prometheus.NewRegistry()
-			//metricsRec := metrics.NewPrometheus(promReg)
+	Run: func(cmd *cobra.Command, args []string) {
+		//promReg := prometheus.NewRegistry()
+		//metricsRec := metrics.NewPrometheus(promReg)
 
-			wh, err := webhook.NewImageSwapperWebhook(cfg.Target.EcrDomain(), cfg.Source.Filters)
-			if err != nil {
-				log.Err(err).Msg("error creating webhook")
-				os.Exit(1)
-			}
+		wh, err := webhook.NewImageSwapperWebhook(cfg.Target.Registry.AWS.EcrDomain(), cfg.Source.Filters)
+		if err != nil {
+			log.Err(err).Msg("error creating webhook")
+			os.Exit(1)
+		}
 
-			// Get the handler for our webhook.
-			whHandler, err := whhttp.HandlerFor(wh)
-			if err != nil {
-				log.Err(err).Msg("error creating webhook handler")
-				os.Exit(1)
-			}
+		// Get the handler for our webhook.
+		whHandler, err := whhttp.HandlerFor(wh)
+		if err != nil {
+			log.Err(err).Msg("error creating webhook handler")
+			os.Exit(1)
+		}
 
-			srv := &http.Server{
-				Addr: cfg.ListenAddress,
-				// Good practice to set timeouts to avoid Slowloris attacks.
-				WriteTimeout: time.Second * 15,
-				ReadTimeout:  time.Second * 15,
-				IdleTimeout:  time.Second * 60,
-			}
-
-			http.Handle("/webhook", whHandler)
-			http.Handle("/metrics", promhttp.Handler())
-			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				_, err := w.Write([]byte(`<html>
+		handler := http.NewServeMux()
+		handler.Handle("/webhook", whHandler)
+		handler.Handle("/metrics", promhttp.Handler())
+		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			_, err := w.Write([]byte(`<html>
 			 <head><title>k8s-image-webhook</title></head>
 			 <body>
 			 <h1>k8s-image-webhook</h1>
@@ -92,50 +85,59 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			 </body>
 			 </html>`))
 
-				if err != nil {
-					log.Error()
-				}
-			})
-
-			go func() {
-				log.Info().Msgf("Listening on %v", cfg.ListenAddress)
-				//err = http.ListenAndServeTLS(":8080", cfg.certFile, cfg.keyFile, whHandler)
-				if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
-					if err := srv.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
-						log.Err(err).Msg("error serving webhook")
-						os.Exit(1)
-					}
-				} else {
-					if err := srv.ListenAndServe(); err != nil {
-						log.Err(err).Msg("error serving webhook")
-						os.Exit(1)
-					}
-				}
-			}()
-
-			c := make(chan os.Signal, 1)
-			// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C) or SIGTERM
-			// SIGKILL, SIGQUIT will not be caught.
-			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-			// Block until we receive our signal.
-			<-c
-
-			// Create a deadline to wait for.
-			var wait time.Duration
-			ctx, cancel := context.WithTimeout(context.Background(), wait)
-			defer cancel()
-			// Doesn't block if no connections, but will otherwise wait
-			// until the timeout deadline.
-			if err := srv.Shutdown(ctx); err != nil {
-				log.Err(err).Msg("Error during shutdown")
+			if err != nil {
+				log.Error()
 			}
-			// Optionally, you could run srv.Shutdown in a goroutine and block on
-			// <-ctx.Done() if your application should wait for other services
-			// to finalize based on context cancellation.
-			log.Info().Msg("Shutting down")
-			os.Exit(0)
-		},
+		})
+
+		srv := &http.Server{
+			Addr: cfg.ListenAddress,
+			// Good practice to set timeouts to avoid Slowloris attacks.
+			WriteTimeout: time.Second * 15,
+			ReadTimeout:  time.Second * 15,
+			IdleTimeout:  time.Second * 60,
+			Handler:      handler,
+		}
+
+		go func() {
+			log.Info().Msgf("Listening on %v", cfg.ListenAddress)
+			//err = http.ListenAndServeTLS(":8080", cfg.certFile, cfg.keyFile, whHandler)
+			if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
+				if err := srv.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
+					log.Err(err).Msg("error serving webhook")
+					os.Exit(1)
+				}
+			} else {
+				if err := srv.ListenAndServe(); err != nil {
+					log.Err(err).Msg("error serving webhook")
+					os.Exit(1)
+				}
+			}
+		}()
+
+		c := make(chan os.Signal, 1)
+		// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C) or SIGTERM
+		// SIGKILL, SIGQUIT will not be caught.
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+		// Block until we receive our signal.
+		<-c
+
+		// Create a deadline to wait for.
+		var wait time.Duration
+		ctx, cancel := context.WithTimeout(context.Background(), wait)
+		defer cancel()
+		// Doesn't block if no connections, but will otherwise wait
+		// until the timeout deadline.
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Err(err).Msg("Error during shutdown")
+		}
+		// Optionally, you could run srv.Shutdown in a goroutine and block on
+		// <-ctx.Done() if your application should wait for other services
+		// to finalize based on context cancellation.
+		log.Info().Msg("Shutting down")
+		os.Exit(0)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
