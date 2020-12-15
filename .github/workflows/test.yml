@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - name: Install devmapper
+      run: sudo apt-get install -y libdevmapper-dev
+
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
@@ -32,6 +35,8 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
+    - name: Install devmapper
+      run: sudo apt-get install -y libdevmapper-dev
 
     - name: Setup Go
       uses: actions/setup-go@v2.1.3
@@ -49,6 +54,10 @@ jobs:
     name: Image Scan
     runs-on: ubuntu-latest
     steps:
+
+    - name: Install devmapper
+      run: sudo apt-get install -y libdevmapper-dev
+
     - name: Checkout
       uses: actions/checkout@v2
 
