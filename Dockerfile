@@ -1,7 +1,13 @@
-FROM quay.io/skopeo/stable:v1.2.0 AS skopeo
+#FROM quay.io/skopeo/stable:v1.2.0 AS skopeo
+#FROM gcr.io/distroless/base-debian10
+#FROM debian:10
+#COPY --from=skopeo /usr/bin/skopeo /skopeo
 
-FROM gcr.io/distroless/base-debian10
-COPY --from=skopeo /usr/bin/skopeo /skopeo
+# TODO: Using alpine for now due to easier installation of skopeo
+#       Will use distroless after incorporating skopeo into the webhook directly
+FROM alpine:3.12
+RUN apk add --no-cache skopeo
+
 COPY k8s-image-swapper /
 
 ENTRYPOINT ["/k8s-image-swapper"]
