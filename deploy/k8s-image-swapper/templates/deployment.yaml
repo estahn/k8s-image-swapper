@@ -47,7 +47,7 @@ spec:
                   key: aws_secret_access_key
           {{- end }}
           args:
-            - --config=/.k8s-image-swapper/config.yaml
+            - --config=/.k8s-image-swapper.yaml
             - --tls-cert-file=/usr/local/certificates/cert
             - --tls-key-file=/usr/local/certificates/key
           ports:
@@ -68,8 +68,8 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: {{ include "k8s-image-swapper.fullname" . }}
-              mountPath: /.k8s-image-swapper
               subPath: config.yaml
+              mountPath: /.k8s-image-swapper.yaml
               readOnly: true
             {{- if .Values.patch.enabled }}
             - name: webhook-cert
