@@ -31,7 +31,7 @@ type Config struct {
 
 	DryRun bool `yaml:"dryRun"`
 	Source Source `yaml:"source"`
-	Target AWS
+	Target Target `yaml:"target"`
 
 	TLSCertFile string
 	TLSKeyFile string
@@ -43,6 +43,14 @@ type Source struct {
 
 type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
+}
+
+type Target struct {
+	Registry `yaml:"registry,inline"`
+}
+
+type Registry struct {
+	AWS AWS `yaml:"aws"`
 }
 
 type AWS struct {
