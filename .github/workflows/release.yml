@@ -49,7 +49,7 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ github.actor }}
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          DOCKER_REGISTRY_URL: docker.pkg.github.com
+          DOCKER_REGISTRY_URL: ghcr.io
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2.4.1
