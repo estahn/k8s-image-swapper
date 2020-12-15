@@ -23,13 +23,13 @@ webhooks:
           - CREATE
           - UPDATE
     clientConfig:
-      {{- if not .Values.devMode.enabled }}
+      {{- if not .Values.dev.enabled }}
       service:
         namespace: {{ .Release.Namespace }}
         name: {{ template "k8s-image-swapper.fullname" $ }}
         path: /webhook
       {{- else }}
-      url: {{ .Values.devMode.url }}
+      url: {{ .Values.dev.url }}
       caBundle: ""
       {{- end }}
     admissionReviewVersions: ["v1beta1"]
