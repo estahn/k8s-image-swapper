@@ -1,3 +1,5 @@
+# :rotating_light: ALPHA, may contain :bug:, be warned! :rotating_light:
+
 <p align="center">
   <img alt="Raiders of the Lost Ark" src="docs/img/indiana.gif" height="140" />
   <h3 align="center">k8s-image-swapper</h3>
