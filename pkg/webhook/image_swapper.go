@@ -17,6 +17,7 @@ import (
 	"github.com/jmespath/go-jmespath"
 	"github.com/rs/zerolog/log"
 	"github.com/slok/kubewebhook/pkg/webhook"
+	whcontext "github.com/slok/kubewebhook/pkg/webhook/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -55,8 +56,8 @@ func NewImageSwapperWebhook(targetRegistry string, filters []pkg.JMESPathFilter)
 
 // Mutate will set the required labels on the pods. Satisfies mutating.Mutator interface.
 func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, error) {
-	//switch o := obj.(type) {
-	//case *v1.Pod:
+	//switch _ := obj.(type) {
+	//case *corev1.Pod:
 	//	// o is a pod
 	//case *v1beta1.Role:
 	//	// o is the actual role Object with all fields etc
@@ -73,6 +74,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		return false, nil
 	}
 
+	lctx := requestLogContext(ctx)
+
 	// TODO: Refactor to be outside of Mutate to avoid per request token creation
 	// TODO: Implement re-issue auth token if operation fails
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -83,20 +86,20 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 	getAuthTokenOutput, err := ecrClient.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
 	if err != nil {
-		log.Err(err).Msg("could not fetch auth token for ECR")
+		log.Ctx(lctx).Err(err).Msg("could not fetch auth token for ECR")
 		return false, err
 	}
 
 	authToken, err := base64.StdEncoding.DecodeString(*getAuthTokenOutput.AuthorizationData[0].AuthorizationToken)
 	if err != nil {
-		log.Err(err).Msg("could not decode auth token")
+		log.Ctx(lctx).Err(err).Msg("could not decode auth token")
 		return false, err
 	}
 
 	for i := range pod.Spec.Containers {
 		srcRef, err := alltransports.ParseImageName("docker://" + pod.Spec.Containers[i].Image)
 		if err != nil {
-			log.Warn().Msgf("invalid source name %s: %v", pod.Spec.Containers[i].Image, err)
+			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", pod.Spec.Containers[i].Image, err)
 			continue
 		}
 
@@ -115,12 +118,12 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 		targetImage := p.targetName(srcRef)
 
-		log.Debug().Str("image", targetImage).Msg("set new container image")
+		log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 		pod.Spec.Containers[i].Image = targetImage
 
 		// Create repository
 		createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-		log.Debug().Str("repository", createRepoName).Msg("create repository")
+		log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
 		_, err = ecrClient.CreateRepository(&ecr.CreateRepositoryInput{
 			RepositoryName: aws.String(createRepoName),
 		})
@@ -151,7 +154,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 		// TODO: refactor, moving this into a subroutine for now to speed up response.
 		go func() {
-			log.Info().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msgf("copy image")
+			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msgf("copy image")
 			app := "skopeo"
 			args := []string{
 				"--override-os", "linux",
@@ -162,13 +165,13 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 				"--dest-creds", string(authToken),
 			}
 
-			log.Debug().Str("app", app).Strs("args", args).Msg("executing command to copy image")
+			log.Ctx(lctx).Debug().Str("app", app).Strs("args", args).Msg("executing command to copy image")
 
 			cmd := exec.Command(app, args...)
 			stdout, err := cmd.Output()
 
 			if err != nil {
-				log.Err(err).Bytes("output", stdout).Msg("copying image to target registry failed")
+				log.Ctx(lctx).Err(err).Bytes("output", stdout).Msg("copying image to target registry failed")
 				//continue
 			}
 		}()
@@ -215,6 +218,19 @@ func filterMatch(ctx FilterContext, filters []pkg.JMESPathFilter) bool {
 	}
 
 	return false
+}
+
+// requestLogContext returns a context with additional attributes extracted from the AdmissionReview request
+func requestLogContext(ctx context.Context) context.Context {
+	ar := whcontext.GetAdmissionRequest(ctx)
+	logger := log.With().
+		Str("uid", string(ar.UID)).
+		Str("kind", ar.Kind.String()).
+		Str("namespace", ar.Namespace).
+		Str("name", ar.Name).
+		Logger()
+
+	return logger.WithContext(ctx)
 }
 
 // targetName returns the reference in the target repository
