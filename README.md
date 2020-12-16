@@ -64,6 +64,16 @@ helm install k8s-image-swapper . \
   --set awsSecretName=k8s-image-swapper-aws
 ```
 
+## Badges
+
+[![Release](https://img.shields.io/github/release/estahn/k8s-image-swapper.svg?style=for-the-badge)](https://github.com/estahn/k8s-image-swapper/releases/latest)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](/LICENSE.md)
+[![Build status](https://img.shields.io/github/workflow/status/estahn/k8s-image-swapper/Test?style=for-the-badge)](https://github.com/estahn/k8s-image-swapper/actions?workflow=build)
+[![Codecov branch](https://img.shields.io/codecov/c/github/estahn/k8s-image-swapper/main.svg?style=for-the-badge)](https://codecov.io/gh/estahn/k8s-image-swapper)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=for-the-badge)](http://godoc.org/github.com/estahn/k8s-image-swapper)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg?style=for-the-badge)](code_of_conduct.md)
+
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/estahn/k8s-image-swapper.svg)](https://starchart.cc/estahn/k8s-image-swapper)
