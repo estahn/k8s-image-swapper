@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/estahn/k8s-image-swapper/k8s-image-swapper
+  repository: ghcr.io/estahn/k8s-image-swapper
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
