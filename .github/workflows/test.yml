@@ -110,5 +110,5 @@ jobs:
     - name: Scan image
       uses: anchore/scan-action@v2
       with:
-        image: "ghcr.io/estahn/k8s-image-swapper/k8s-image-swapper:latest"
+        image: "ghcr.io/estahn/k8s-image-swapper:latest"
         fail-build: true
