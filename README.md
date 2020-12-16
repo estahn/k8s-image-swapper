@@ -27,7 +27,7 @@ The feature set was primarily designed with Amazon ECR in mind but may work with
 ## Why?
 
 * Consolidate all images in a single registry
-* Protection against:
+* Protect against:
   * external registry failure ([quay.io outage](quay-outage))
   * image pull rate limiting ([docker.io rate limits](docker-rate-limiting))
   * accidental image changes
@@ -40,16 +40,26 @@ The feature set was primarily designed with Amazon ECR in mind but may work with
 
 ## Getting started
 
+### Prerequisite
+
+1. Create an IAM user with permissions to create ECR repositories and upload container images.
+2. Create a Kubernetes secret (e.g. `k8s-image-swapper-aws`) with the IAM credentials
+   
+    ```bash
+    kubectl create secret generic k8s-image-swapper-aws \
+      --from-literal=aws_access_key_id=<...> \
+      --from-literal=aws_secret_access_key=<...>
+    ```
+
 ### Helm
 
 ```
-helm install
-```
-
-### Kustomize
-
-```
-kustomize build . | kubectl apply -f -
+cd deploy/k8s-image-swapper
+helm install k8s-image-swapper . \
+  --set image.tag=1.0.0-alpha.1 \
+  --set config.target.registry.aws.accountId=$AWS_ACCOUNT_ID \
+  --set config.target.registry.aws.region=$AWS_DEFAULT_REGION \
+  --set awsSecretName=k8s-image-swapper-aws
 ```
 
 ## Stargazers over time
