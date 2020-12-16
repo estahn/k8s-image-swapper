@@ -31,10 +31,8 @@ import (
 
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/estahn/k8s-image-swapper/pkg"
 	"github.com/estahn/k8s-image-swapper/pkg/webhook"
-	"github.com/go-playground/validator/v10"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -200,12 +198,11 @@ func initConfig() {
 		log.Err(err).Msg("failed to unmarshal the config file")
 	}
 
-	spew.Dump(cfg)
-	validate := validator.New()
-	if err := validate.Struct(cfg); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		log.Err(validationErrors).Msg("validation errors for config file")
-	}
+	//validate := validator.New()
+	//if err := validate.Struct(cfg); err != nil {
+	//	validationErrors := err.(validator.ValidationErrors)
+	//	log.Err(validationErrors).Msg("validation errors for config file")
+	//}
 }
 
 // initLogger configures the log level
@@ -221,4 +218,9 @@ func initLogger() {
 	}
 
 	zerolog.SetGlobalLevel(lvl)
+
+	// add file and line number to log if level is trace
+	if lvl == zerolog.TraceLevel {
+		log.Logger = log.With().Caller().Logger()
+	}
 }
