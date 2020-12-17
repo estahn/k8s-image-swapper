@@ -56,8 +56,8 @@ The feature set was primarily designed with Amazon ECR in mind but may work with
 ### Helm
 
 ```
-cd deploy/k8s-image-swapper
-helm install k8s-image-swapper . \
+helm repo add estahn https://estahn.github.io/charts/
+helm install k8s-image-swapper estahn/k8s-image-swapper \
   --set image.tag=1.0.0-alpha.1 \
   --set config.target.registry.aws.accountId=$AWS_ACCOUNT_ID \
   --set config.target.registry.aws.region=$AWS_DEFAULT_REGION \
