@@ -17,9 +17,9 @@ jobs:
       run: git fetch --prune --unshallow
 
     - name: Run semantic-release
-      run: npx semantic-release
+      run: npx -p @semantic-release/changelog -p semantic-release@17.3.0 -p @semantic-release/git semantic-release
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     runs-on: ubuntu-latest
