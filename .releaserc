@@ -1,12 +1,20 @@
 ---
-verifyConditions: ['@semantic-release/github']
-prepare: []
-publish: ['@semantic-release/github']
-success: ['@semantic-release/github']
-fail: ['@semantic-release/github']
+#verifyConditions: ['@semantic-release/github']
+#prepare: []
+#publish: ['@semantic-release/github']
+#success: ['@semantic-release/github']
+#fail: ['@semantic-release/github']
+plugins:
+- "@semantic-release/commit-analyzer"
+- "@semantic-release/release-notes-generator"
+- "@semantic-release/changelog"
+- "@semantic-release/github"
+- "@semantic-release/git"
+branch: main
 branches:
-  - main
-  - name: alpha
-    prerelease: true
-  - name: beta
-    prerelease: true
+- '+([0-9])?(.{+([0-9]),x}).x'
+- 'main'
+- 'next'
+- 'next-major'
+- {name: 'beta', prerelease: true}
+- {name: 'alpha', prerelease: true}
