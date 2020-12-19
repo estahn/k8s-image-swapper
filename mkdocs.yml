@@ -1,1 +1,90 @@
-site_name: My Docs
+# Project information
+site_name: k8s-image-wapper
+site_url: https://estahn.github.io/k8s-image-wapper/
+site_author: Enrico Stahn
+site_description: >-
+  Mirror images into your own registry and swap image references automatically.
+
+# Repository
+repo_name: estahn/k8s-image-swapper
+repo_url: https://github.com/estahn/k8s-image-swapper
+edit_uri: "edit/master/docs/docs"
+
+# Copyright
+copyright: Copyright &copy; 2020 Enrico Stahn
+
+use_directory_urls: false
+
+theme:
+  name: material
+
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+
+  features:
+    - tabs
+  palette:
+    # primary: orange
+
+# Plugins
+plugins:
+  - search
+  - minify:
+      minify_html: true
+  - markdownextradata: {}
+  # - macros
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - attr_list
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums_style: pymdownx-inline
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+#  - Operations:
+#    - Production considerations: foo
+#  - FAQ: faq.md
+#  - Releases:
+#    - 1.0.0: 1.0.0.md
+#  - Contributing:
+#    - Testing: testing.md
+#    - Contributors: constributors.md

@@ -8,7 +8,14 @@ source:
   # By default all pods will be processed. If a condition matches, the pod will NOT be processed.
   # For query language details see https://jmespath.org/
   filters:
+    # Do not process if namespace equals "kube-system"
     - jmespath: "obj.metadata.namespace == 'kube-system'"
+
+    # Only process if namespace equals "playground"
+    #- jmespath: "obj.metadata.namespace != 'playground'"
+
+    # Only process if namespace ends with "-dev"
+    #- jmespath: "ends_with(obj.metadata.namespace,'-dev')"
 
 #  registries:
 #    dockerio:
