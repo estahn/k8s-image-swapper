@@ -16,11 +16,11 @@ repos:
   - id: check-executables-have-shebangs
   - id: end-of-file-fixer
   - id: mixed-line-ending
-- repo: https://github.com/thlorenz/doctoc
-  rev: v2.0.0
-  hooks:
-  - id: doctoc
-    args: ['--title', '## Table of Contents']
+#- repo: https://github.com/thlorenz/doctoc
+#  rev: v2.0.0
+#  hooks:
+#  - id: doctoc
+#    args: ['--title', '## Table of Contents']
 - repo:  https://github.com/golangci/golangci-lint
   rev: v1.33.0
   hooks:
