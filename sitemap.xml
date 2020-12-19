@@ -7,5 +7,9 @@
      <loc>https://estahn.github.io/k8s-image-wapper/getting-started.html</loc>
      <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://estahn.github.io/k8s-image-wapper/configuration.html</loc>
+     <lastmod>2020-12-19</lastmod>
+     <changefreq>daily</changefreq>
     </url>
 </urlset>
