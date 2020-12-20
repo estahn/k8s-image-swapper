@@ -33,7 +33,7 @@ while reducing data traffic and therefore cost.
 
 ## Documentation
 
-The documentation is available at [https://estahn.github.io/k8s-image-swapper/](https://estahn.github.io/k8s-image-swapper/).
+The documentation is available at [https://estahn.github.io/k8s-image-swapper/](https://estahn.github.io/k8s-image-swapper/index.html).
 
 ## Badges
 
