@@ -32,6 +32,7 @@ import (
 	"os"
 
 	"github.com/estahn/k8s-image-swapper/pkg"
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/estahn/k8s-image-swapper/pkg/webhook"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -57,8 +58,15 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		//promReg := prometheus.NewRegistry()
 		//metricsRec := metrics.NewPrometheus(promReg)
+		log.Trace().Interface("config", cfg).Msg("config")
 
-		wh, err := webhook.NewImageSwapperWebhook(cfg.Target.Registry.AWS.EcrDomain(), cfg.Source.Filters)
+		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain())
+		if err != nil {
+			log.Err(err).Msg("error connecting to registry client")
+			os.Exit(1)
+		}
+
+		wh, err := webhook.NewImageSwapperWebhook(rClient, cfg.Source.Filters)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")
 			os.Exit(1)

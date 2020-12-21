@@ -1,6 +1,6 @@
 dryRun: true
 
-logLevel: debug
+logLevel: trace
 logFormat: console
 
 source:
@@ -24,17 +24,16 @@ source:
 
 target:
   type: aws
-  registry:
-    aws:
-      accountId: 123456789
-      region: ap-southeast-2
-      ecrOptions:
-        tags: []
-        imageTagMutability: MUTABLE
-        imageScanningConfiguration:
-          imageScanOnPush: true
-        encryptionConfiguration:
-          encryptionType: AES256
-#          kmsKey: string
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    ecrOptions:
+      tags: []
+      imageTagMutability: MUTABLE
+      imageScanningConfiguration:
+        imageScanOnPush: true
+      encryptionConfiguration:
+        encryptionType: AES256
+        kmsKey: string
 #    dockerio:
 #    quayio:

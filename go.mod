@@ -3,9 +3,11 @@ module github.com/estahn/k8s-image-swapper
 go 1.12
 
 require (
+	github.com/alitto/pond v1.4.0
 	github.com/aws/aws-sdk-go v1.32.3
 	github.com/containers/image/v5 v5.9.0
 	github.com/davecgh/go-spew v1.1.1
+	github.com/dgraph-io/ristretto v0.0.3
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
