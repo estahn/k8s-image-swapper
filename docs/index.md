@@ -26,3 +26,7 @@ while reducing data traffic and therefore cost.
     * removal of images
 * Use in air-gaped environments without the need to change manifests
 * Reduce NAT ingress traffic/cost
+
+## How it works
+
+![Explainer](img/k8s-image-swapper_explainer.gif)
