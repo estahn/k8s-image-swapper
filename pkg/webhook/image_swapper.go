@@ -9,7 +9,6 @@ import (
 	"github.com/alitto/pond"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
-	"github.com/dgraph-io/ristretto"
 	"github.com/estahn/k8s-image-swapper/pkg"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/jmespath/go-jmespath"
@@ -34,9 +33,6 @@ type ImageSwapper struct {
 
 	// downloader manages the download pool
 	downloader *pond.WorkerPool
-
-	// cache keeps a list of already downloaded images
-	cache *ristretto.Cache
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.

@@ -58,7 +58,7 @@ If a condition matches, the pod will **NOT** be processed.
                 ports:
                   - name: web
                     containerPort: 80
-                    protocol: TCP  
+                    protocol: TCP
         ```
 
 Below you will find a list of common queries and/or ideas:
@@ -94,7 +94,7 @@ This section configures details about the image target.
 ### AWS
 
 The option `target.registry.aws` holds details about the target registry storing the images.
-The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`. 
+The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
     ```yaml

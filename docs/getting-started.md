@@ -42,7 +42,7 @@ TBD
 2. Update the local chart information:
    ```bash
    helm repo update
-   ``` 
+   ```
 3. Install `k8x-image-swapper`
    ```
    helm install k8s-image-swapper estahn/k8s-image-swapper \
@@ -57,9 +57,9 @@ TBD
     serviceAccount:
     create: true
     annotations:
-      eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}    
+      eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}
     ```
-    
+
 
 [^1]: Use a tool like [kubectx & kubens](https://github.com/ahmetb/kubectx) for convienience.
 [^2]:
@@ -97,7 +97,7 @@ TBD
             ]
         }
         ```
-    
+
         !!! tip "Further restricting access"
             The resource configuration allows access to all AWS ECR repositories within the account 123456789.
             Restrict this further by repository name or tag.
