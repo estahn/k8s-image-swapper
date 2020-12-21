@@ -99,8 +99,7 @@ The AWS Account ID and Region is primarily used to construct the ECR domain `[AC
 !!! example
     ```yaml
     target:
-      registry:
-        aws:
-          accountId: 123456789
-          region: ap-southeast-2
+      aws:
+        accountId: 123456789
+        region: ap-southeast-2
     ```
