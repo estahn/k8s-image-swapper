@@ -24,7 +24,7 @@ package pkg
 import "fmt"
 
 type Config struct {
-	LogLevel string `yaml:"logFormat" validate:"oneof=debug info warn error fatal"`
+	LogLevel string `yaml:"logFormat" validate:"oneof=trace debug info warn error fatal"`
 	LogFormat string `yaml:"logFormat" validate:"oneof=json console"`
 
 	ListenAddress string
@@ -46,10 +46,6 @@ type JMESPathFilter struct {
 }
 
 type Target struct {
-	Registry `yaml:"registry,inline"`
-}
-
-type Registry struct {
 	AWS AWS `yaml:"aws"`
 }
 
