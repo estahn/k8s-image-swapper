@@ -10,7 +10,7 @@
 </code></pre></div></li> </ol> <div class="admonition note"> <p class=admonition-title>Note</p> <p><code>awsSecretName</code> is not required for the Service Account method and instead the service account is annotated: <div class=highlight><pre><span></span><code><span class=nt>serviceAccount</span><span class=p>:</span>
 <span class=nt>create</span><span class=p>:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class=nt>annotations</span><span class=p>:</span>
-  <span class=nt>eks.amazonaws.com/role-arn</span><span class=p>:</span> <span class="l l-Scalar l-Scalar-Plain">${oidc_image_sawpper_role_arn}</span>    
+  <span class=nt>eks.amazonaws.com/role-arn</span><span class=p>:</span> <span class="l l-Scalar l-Scalar-Plain">${oidc_image_sawpper_role_arn}</span>
 </code></pre></div></p> </div> <div class=footnote> <hr> <ol> <li id=fn:1> <p>Use a tool like <a href=https://github.com/ahmetb/kubectx>kubectx &amp; kubens</a> for convienience.&#160;<a class=footnote-backref href=#fnref:1 title="Jump back to footnote 1 in the text">&#8617;</a></p> </li> <li id=fn:2> <details class=tldr><summary>IAM Policy</summary><div class=highlight><pre><span></span><code><span class=p>{</span>
     <span class=nt>&quot;Version&quot;</span><span class=p>:</span> <span class=s2>&quot;2012-10-17&quot;</span><span class=p>,</span>
     <span class=nt>&quot;Statement&quot;</span><span class=p>:</span> <span class=p>[</span>
