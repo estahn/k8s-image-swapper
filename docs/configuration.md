@@ -42,6 +42,8 @@ If a condition matches, the pod will **NOT** be processed.
         ```yaml
         obj:
           <Object Spec>
+        container:
+          <Container Spec>
         ```
 
     === "Example"
@@ -59,11 +61,18 @@ If a condition matches, the pod will **NOT** be processed.
                   - name: web
                     containerPort: 80
                     protocol: TCP
+        container:
+          name: web
+          image: nginx
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
         ```
 
 Below you will find a list of common queries and/or ideas:
 
-??? tip "List of common queries/ideas"
+!!! tip "List of common queries/ideas"
     * Do not process if namespace equals `kube-system` (_Helm chart default_)
       ```yaml
       source:
@@ -82,6 +91,13 @@ Below you will find a list of common queries and/or ideas:
         filters:
           - jmespath: "ends_with(obj.metadata.namespace,'-dev')"
       ```
+    * Do not process AWS ECR images
+    ```yaml
+    source:
+    filters:
+    - jmespath: "contains(container.image, `.dkr.ecr.`) && contains(container.image, `.amazonaws.com`)"
+    ```
+
 
 `k8s-image-swapper` will log the filter data and result in `debug` mode.
 This can be used in conjunction with [JMESPath.org](https://jmespath.org/) which
