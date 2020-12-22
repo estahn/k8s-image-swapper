@@ -60,7 +60,6 @@ TBD
       eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}
     ```
 
-
 [^1]: Use a tool like [kubectx & kubens](https://github.com/ahmetb/kubectx) for convienience.
 [^2]:
     ??? tldr "IAM Policy"
