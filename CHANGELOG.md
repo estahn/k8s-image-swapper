@@ -1,3 +1,11 @@
+# [1.0.0-beta.2](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-12-22)
+
+
+### Features
+
+* allow filters for container context ([c7e4c51](https://github.com/estahn/k8s-image-swapper/commit/c7e4c51a5a04ef9ae8689ffe73ff7d1411f43450)), closes [#32](https://github.com/estahn/k8s-image-swapper/issues/32)
+* automatic token renewal before expiry ([d557c23](https://github.com/estahn/k8s-image-swapper/commit/d557c23e798f4cae61cd412d99f482ec4d310b9f)), closes [#31](https://github.com/estahn/k8s-image-swapper/issues/31)
+
 # 1.0.0-beta.1 (2020-12-21)
 
 
