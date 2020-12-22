@@ -99,7 +99,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			continue
 		}
 
-		filterCtx := NewFilterContext(*ar, pod)
+		filterCtx := NewFilterContext(*ar, pod, pod.Spec.Containers[i])
 		if filterMatch(filterCtx, p.filters) {
 			log.Ctx(lctx).Info().Msg("skip due to filter condition")
 			continue
@@ -175,15 +175,19 @@ func (p *ImageSwapper) targetName(ref types.ImageReference) string {
 
 // FilterContext is being used by JMESPath to search and match
 type FilterContext struct {
+	// Obj contains the object submitted to the webhook (currently only pods)
 	Obj metav1.Object `json:"obj,omitempty"`
+
+	// Container contains the currently processed container
+	Container corev1.Container `json:"container,omitempty"`
 }
 
-func NewFilterContext(request v1beta1.AdmissionRequest, obj metav1.Object) FilterContext {
+func NewFilterContext(request v1beta1.AdmissionRequest, obj metav1.Object, container corev1.Container) FilterContext {
 	if obj.GetNamespace() == "" {
 		obj.SetNamespace(request.Namespace)
 	}
 
-	return FilterContext{Obj: obj}
+	return FilterContext{Obj: obj, Container: container}
 }
 
 func copyImage(src string, srcCeds string, dest string, destCreds string) error {

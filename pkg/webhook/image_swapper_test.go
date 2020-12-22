@@ -154,14 +154,20 @@ func TestFilterMatch(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
+						Name: "nginx",
 						Image: "nginx:latest",
 					},
 				},
 			},
+		},
+		Container: corev1.Container{
+			Name: "nginx",
+			Image: "nginx:latest",
 		},
 	}
 
 	assert.True(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj.metadata.namespace == 'kube-system'"}}))
 	assert.False(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj.metadata.namespace != 'kube-system'"}}))
 	assert.False(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj"}}))
+	assert.True(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "container.name == 'nginx'"}}))
 }
