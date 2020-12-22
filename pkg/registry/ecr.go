@@ -2,12 +2,15 @@ package registry
 
 import (
 	"encoding/base64"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/dgraph-io/ristretto"
+	"github.com/go-co-op/gocron"
+	"github.com/rs/zerolog/log"
 )
 
 type ECRClient struct {
@@ -15,6 +18,7 @@ type ECRClient struct {
 	ecrDomain string
 	authToken []byte
 	cache     *ristretto.Cache
+	scheduler *gocron.Scheduler
 }
 
 func (e *ECRClient) Credentials() string {
@@ -73,21 +77,44 @@ func (e *ECRClient) Endpoint() string {
 	return e.ecrDomain
 }
 
+// requestAuthToken requests and returns an authentication token from ECR with its expiration date
+func (e *ECRClient) requestAuthToken() ([]byte, time.Time, error) {
+	getAuthTokenOutput, err := e.client.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
+	if err != nil {
+		return []byte(""), time.Time{}, err
+	}
+
+	authToken, err := base64.StdEncoding.DecodeString(*getAuthTokenOutput.AuthorizationData[0].AuthorizationToken)
+	if err != nil {
+		return []byte(""), time.Time{}, err
+	}
+
+	return authToken, *getAuthTokenOutput.AuthorizationData[0].ExpiresAt, nil
+}
+
+// scheduleTokenRenewal sets a scheduler to execute token renewal before the token expires
+func (e *ECRClient) scheduleTokenRenewal() error {
+	token, expiryAt, err := e.requestAuthToken()
+	if err != nil {
+		return err
+	}
+
+	renewalAt := expiryAt.Add(-2 * time.Minute)
+	e.authToken = token
+
+	log.Debug().Time("expiryAt", expiryAt).Time("renewalAt", renewalAt).Msg("auth token set, schedule next token renewal")
+
+	j, _ := e.scheduler.Every(1).StartAt(renewalAt).Do(e.scheduleTokenRenewal)
+	j.LimitRunsTo(1)
+
+	return nil
+}
+
 func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 	ecrClient := ecr.New(sess, &aws.Config{Region: aws.String(region)})
-
-	getAuthTokenOutput, err := ecrClient.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
-	if err != nil {
-		return nil, err
-	}
-
-	authToken, err := base64.StdEncoding.DecodeString(*getAuthTokenOutput.AuthorizationData[0].AuthorizationToken)
-	if err != nil {
-		return nil, err
-	}
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
@@ -98,10 +125,19 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 		panic(err)
 	}
 
-	return &ECRClient{
+	scheduler := gocron.NewScheduler(time.UTC)
+	scheduler.StartAsync()
+
+	client := &ECRClient{
 		client:    ecrClient,
 		ecrDomain: ecrDomain,
-		authToken: authToken,
-		cache: cache,
-	}, nil
+		cache:     cache,
+		scheduler: scheduler,
+	}
+
+	if err := client.scheduleTokenRenewal(); err != nil {
+		panic(err)
+	}
+
+	return client, nil
 }
