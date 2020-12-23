@@ -31,8 +31,9 @@ import (
 
 	"os"
 
-	"github.com/estahn/k8s-image-swapper/pkg"
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
+	"github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/estahn/k8s-image-swapper/pkg/webhook"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -44,7 +45,7 @@ import (
 )
 
 var cfgFile string
-var cfg *pkg.Config = &pkg.Config{}
+var cfg *config.Config = &config.Config{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -66,7 +67,17 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			os.Exit(1)
 		}
 
-		wh, err := webhook.NewImageSwapperWebhook(rClient, cfg.Source.Filters)
+		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
+		if err != nil {
+			log.Err(err)
+		}
+
+		imageCopyPolicy, err := types.ParseImageCopyPolicy(cfg.ImageCopyPolicy)
+		if err != nil {
+			log.Err(err)
+		}
+
+		wh, err := webhook.NewImageSwapperWebhook(rClient, cfg.Source.Filters, imageSwapPolicy, imageCopyPolicy)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")
 			os.Exit(1)

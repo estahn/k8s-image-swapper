@@ -8,9 +8,10 @@ import (
 
 	"github.com/alitto/pond"
 	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/image/v5/types"
-	"github.com/estahn/k8s-image-swapper/pkg"
+	ctypes "github.com/containers/image/v5/types"
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
+	types "github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/jmespath/go-jmespath"
 	"github.com/rs/zerolog/log"
 	"github.com/slok/kubewebhook/pkg/webhook"
@@ -29,23 +30,28 @@ type ImageSwapper struct {
 
 	// filters defines a list of expressions to remove objects that should not be processed,
 	// by default all objects will be processed
-	filters []pkg.JMESPathFilter
+	filters []config.JMESPathFilter
 
-	// downloader manages the download pool
-	downloader *pond.WorkerPool
+	// copier manages the jobs copying the images to the target registry
+	copier          *pond.WorkerPool
+
+	imageSwapPolicy types.ImageSwapPolicy
+	imageCopyPolicy types.ImageCopyPolicy
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, filters []pkg.JMESPathFilter) mutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) mutating.Mutator {
 	return &ImageSwapper{
 		registryClient: registryClient,
-		filters: filters,
-		downloader: pond.New(100, 1000),
+		filters:        filters,
+		copier:         pond.New(100, 1000),
+		imageSwapPolicy: imageSwapPolicy,
+		imageCopyPolicy: imageCopyPolicy,
 	}
 }
 
-func NewImageSwapperWebhook(registryClient registry.Client, filters []pkg.JMESPathFilter) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapper(registryClient, filters)
+func NewImageSwapperWebhook(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapper(registryClient, filters, imageSwapPolicy, imageCopyPolicy)
 	mt := mutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := mutating.WebhookConfig{
 		Name: "k8s-image-swapper",
@@ -87,10 +93,10 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 	lctx := logger.
 		WithContext(ctx)
 
-	for i := range pod.Spec.Containers {
-		srcRef, err := alltransports.ParseImageName("docker://" + pod.Spec.Containers[i].Image)
+	for i, container := range pod.Spec.Containers {
+		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 		if err != nil {
-			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", pod.Spec.Containers[i].Image, err)
+			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
 			continue
 		}
 
@@ -99,37 +105,69 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			continue
 		}
 
-		filterCtx := NewFilterContext(*ar, pod, pod.Spec.Containers[i])
+		filterCtx := NewFilterContext(*ar, pod, container)
 		if filterMatch(filterCtx, p.filters) {
-			log.Ctx(lctx).Info().Msg("skip due to filter condition")
+			log.Ctx(lctx).Debug().Msg("skip due to filter condition")
 			continue
 		}
 
 		targetImage := p.targetName(srcRef)
 
-		log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-		pod.Spec.Containers[i].Image = targetImage
+		copyFn := func() {
+			// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
+			// image pull policy.
+			if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
+				return
+			}
 
-		// Create repository
-		createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-		log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
-		if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-			log.Err(err)
-		}
+			// Create repository
+			createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
+			log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
+			if err := p.registryClient.CreateRepository(createRepoName); err != nil {
+				log.Err(err)
+			}
 
-		p.downloader.Submit(func() {
+			// Copy image
 			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
 			if err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials()); err != nil {
 				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
 			}
-		})
+		}
+
+		// imageCopyPolicy
+		switch p.imageCopyPolicy {
+		case types.ImageCopyPolicyDelayed:
+			p.copier.Submit(copyFn)
+		case types.ImageCopyPolicyImmediate:
+			// TODO: Implement deadline
+			p.copier.SubmitAndWait(copyFn)
+		case types.ImageCopyPolicyForce:
+			// TODO: Implement deadline
+			copyFn()
+		default:
+			panic("unknown imageCopyPolicy")
+		}
+
+		// imageSwapPolicy
+		switch p.imageSwapPolicy {
+		case types.ImageSwapPolicyAlways:
+			log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
+			pod.Spec.Containers[i].Image = targetImage
+		case types.ImageSwapPolicyExists:
+			if p.registryClient.ImageExists(targetImage) {
+				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
+				pod.Spec.Containers[i].Image = targetImage
+			}
+		default:
+			panic("unknown imageSwapPolicy")
+		}
 	}
 
 	return false, nil
 }
 
 // filterMatch returns true if one of the filters matches the context
-func filterMatch(ctx FilterContext, filters []pkg.JMESPathFilter) bool {
+func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 	// Simplify FilterContext to be easier searchable by marshaling it to JSON and back to an interface
 	var filterContext interface{}
 	jsonBlob, err := json.Marshal(ctx)
@@ -169,7 +207,7 @@ func filterMatch(ctx FilterContext, filters []pkg.JMESPathFilter) bool {
 }
 
 // targetName returns the reference in the target repository
-func (p *ImageSwapper) targetName(ref types.ImageReference) string {
+func (p *ImageSwapper) targetName(ref ctypes.ImageReference) string {
 	return fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), ref.DockerReference().String())
 }
 
@@ -195,15 +233,21 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 	args := []string{
 		"--override-os", "linux",
 		"copy",
+		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
 		"--src-no-creds",
 		"--dest-creds", destCreds,
 	}
 
-	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to copy image")
 	cmd := exec.Command(app, args...)
-	_, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
+
+	log.Trace().
+		Str("app", app).
+		Strs("args", args).
+		Bytes("output", output).
+		Msg("executed command to copy image")
 
 	return err
 }

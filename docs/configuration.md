@@ -23,6 +23,26 @@ The option `logLevel` & `logFormat` allow to adjust the verbosity and format (e.
     logFormat: console
     ```
 
+## ImageSwapPolicy
+
+The option `imageSwapPolicy` (default: `exists`) defines the mutation strategy used.
+
+* `always`: Will always swap the image regardless of the image existence in the target registry. 
+            This can result in pods ending in state ImagePullBack if images fail to be copied to the target registry.
+* `exists`: Only swaps the image if it exits in the target registry.
+            This can result in pods pulling images from the source registry, e.g. the first pod pulls
+            from source registry, subsequent pods pull from target registry.
+
+## ImageCopyPolicy
+
+The option `imageCopyPolicy` (default: `delayed`) defines the image copy strategy used.
+
+* `delayed`: Submits the copy job to a process queue and moves on.
+* `immediate`: Submits the copy job to a process queue and waits for it to finish (deadline 8s).
+* `force`: Attempts to immediately copy the image (deadline 8s).
+
+
+
 ## Source
 
 This section configures details about the image source.
@@ -95,7 +115,7 @@ Below you will find a list of common queries and/or ideas:
     ```yaml
     source:
     filters:
-    - jmespath: "contains(container.image, `.dkr.ecr.`) && contains(container.image, `.amazonaws.com`)"
+    - jmespath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"
     ```
 
 `k8s-image-swapper` will log the filter data and result in `debug` mode.

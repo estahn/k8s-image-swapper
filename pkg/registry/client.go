@@ -7,7 +7,7 @@ type Client interface {
 	CopyImage() error
 	PullImage() error
 	PutImage() error
-	ImageExists() bool
+	ImageExists(ref string) bool
 
 	// Endpoint returns the domain of the registry
 	Endpoint() string
