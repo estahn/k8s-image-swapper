@@ -43,11 +43,11 @@ TBD
    ```bash
    helm repo update
    ```
-3. Install `k8x-image-swapper`
+3. Install `k8s-image-swapper`
    ```
    helm install k8s-image-swapper estahn/k8s-image-swapper \
-     --set config.target.registry.aws.accountId=$AWS_ACCOUNT_ID \
-     --set config.target.registry.aws.region=$AWS_DEFAULT_REGION \
+     --set config.target.aws.accountId=$AWS_ACCOUNT_ID \
+     --set config.target.aws.region=$AWS_DEFAULT_REGION \
      --set awsSecretName=k8s-image-swapper-aws
    ```
 
