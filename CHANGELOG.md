@@ -1,3 +1,10 @@
+# [1.0.0-beta.4](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-12-23)
+
+
+### Bug Fixes
+
+* bump skopeo from 0.2.0 to 1.2.0 ([09fdb6e](https://github.com/estahn/k8s-image-swapper/commit/09fdb6eb2383c30a45d1a5a7fb3d10a4c6b891e0))
+
 # [1.0.0-beta.3](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2020-12-23)
 
 
