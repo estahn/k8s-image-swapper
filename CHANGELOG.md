@@ -1,3 +1,10 @@
+# [1.0.0-beta.3](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2020-12-23)
+
+
+### Features
+
+* ImageSwapPolicy defines the mutation strategy used by the webhook. ([e64bc6d](https://github.com/estahn/k8s-image-swapper/commit/e64bc6d120bea925a06cf06f3b22c8184a24fb35))
+
 # [1.0.0-beta.2](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2020-12-22)
 
 
