@@ -3,6 +3,20 @@ dryRun: true
 logLevel: trace
 logFormat: console
 
+# imageSwapPolicy defines the mutation strategy used by the webhook.
+# - always: Will always swap the image regardless of the image existence in the target registry.
+#           This can result in pods ending in state ImagePullBack if images fail to be copied to the target registry.
+# - exists: Only swaps the image if it exits in the target registry.
+#           This can result in pods pulling images from the source registry, e.g. the first pod pulls
+#           from source registry, subsequent pods pull from target registry.
+imageSwapPolicy: exists
+
+# imageCopyPolicy defines the image copy strategy used by the webhook.
+# - delayed: Submits the copy job to a process queue and moves on.
+# - immediate: Submits the copy job to a process queue and waits for it to finish (deadline 8s).
+# - force: Attempts to immediately copy the image (deadline 8s).
+imagePullPolicy: delayed
+
 source:
   # Filters provide control over what pods will be processed.
   # By default all pods will be processed. If a condition matches, the pod will NOT be processed.
@@ -28,7 +42,9 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     ecrOptions:
-      tags: []
+      tags:
+        - key: CreatedBy
+          value: k8s-image-swapper
       imageTagMutability: MUTABLE
       imageScanningConfiguration:
         imageScanOnPush: true

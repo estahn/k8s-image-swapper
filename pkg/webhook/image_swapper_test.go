@@ -3,7 +3,7 @@ package webhook
 import (
 	"testing"
 
-	"github.com/estahn/k8s-image-swapper/pkg"
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -166,8 +166,13 @@ func TestFilterMatch(t *testing.T) {
 		},
 	}
 
-	assert.True(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj.metadata.namespace == 'kube-system'"}}))
-	assert.False(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj.metadata.namespace != 'kube-system'"}}))
-	assert.False(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "obj"}}))
-	assert.True(t, filterMatch(filterContext, []pkg.JMESPathFilter{{JMESPath: "container.name == 'nginx'"}}))
+	assert.True(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj.metadata.namespace == 'kube-system'"}}))
+	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj.metadata.namespace != 'kube-system'"}}))
+	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj"}}))
+	assert.True(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "container.name == 'nginx'"}}))
+	// false syntax test
+	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "."}}))
+	// non-boolean value
+	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj"}}))
+	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"}}))
 }

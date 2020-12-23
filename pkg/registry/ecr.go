@@ -2,6 +2,7 @@ package registry
 
 import (
 	"encoding/base64"
+	"os/exec"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -32,6 +33,16 @@ func (e *ECRClient) CreateRepository(name string) error {
 
 	_, err := e.client.CreateRepository(&ecr.CreateRepositoryInput{
 		RepositoryName: aws.String(name),
+		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+			ScanOnPush: aws.Bool(true),
+		},
+		ImageTagMutability: aws.String(ecr.ImageTagMutabilityMutable),
+		Tags: []*ecr.Tag{
+			{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			},
+		},
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -69,8 +80,29 @@ func (e *ECRClient) PutImage() error {
 	panic("implement me")
 }
 
-func (e *ECRClient) ImageExists() bool {
-	panic("implement me")
+func (e *ECRClient) ImageExists(ref string) bool {
+	if _, found := e.cache.Get(ref); found {
+		return true
+	}
+
+	app := "skopeo"
+	args := []string{
+		"inspect",
+		"--retry-times", "3",
+		"docker://" + ref,
+		"--creds", e.Credentials(),
+	}
+
+	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
+	cmd := exec.Command(app, args...)
+
+	if _, err := cmd.Output(); err != nil {
+		return false
+	}
+
+	e.cache.Set(ref, "", 1)
+
+	return true
 }
 
 func (e *ECRClient) Endpoint() string {
