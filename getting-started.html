@@ -3,9 +3,9 @@
   --from-literal<span class=o>=</span><span class=nv>aws_secret_access_key</span><span class=o>=</span>&lt;...&gt;
 </code></pre></div> </li> </ol> <h4 id=service-account>Service Account<a class=headerlink href=#service-account title="Permanent link">&para;</a></h4> <p>TBD</p> <h2 id=helm>Helm<a class=headerlink href=#helm title="Permanent link">&para;</a></h2> <ol> <li>Add the Helm chart repository: <div class=highlight><pre><span></span><code>helm repo add estahn https://estahn.github.io/charts/
 </code></pre></div></li> <li>Update the local chart information: <div class=highlight><pre><span></span><code>helm repo update
-</code></pre></div></li> <li>Install <code>k8x-image-swapper</code> <div class=highlight><pre><span></span><code>helm install k8s-image-swapper estahn/k8s-image-swapper \
-  --set config.target.registry.aws.accountId=$AWS_ACCOUNT_ID \
-  --set config.target.registry.aws.region=$AWS_DEFAULT_REGION \
+</code></pre></div></li> <li>Install <code>k8s-image-swapper</code> <div class=highlight><pre><span></span><code>helm install k8s-image-swapper estahn/k8s-image-swapper \
+  --set config.target.aws.accountId=$AWS_ACCOUNT_ID \
+  --set config.target.aws.region=$AWS_DEFAULT_REGION \
   --set awsSecretName=k8s-image-swapper-aws
 </code></pre></div></li> </ol> <div class="admonition note"> <p class=admonition-title>Note</p> <p><code>awsSecretName</code> is not required for the Service Account method and instead the service account is annotated: <div class=highlight><pre><span></span><code><span class=nt>serviceAccount</span><span class=p>:</span>
 <span class=nt>create</span><span class=p>:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
