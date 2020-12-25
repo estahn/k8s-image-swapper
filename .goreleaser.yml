@@ -25,6 +25,9 @@ dockers:
       - "--build-arg=BUILD_DATE={{.Date}}"
       - "--build-arg=VCS_REF={{.FullCommit}}"
 
+release:
+  prerelease: auto
+
 changelog:
   filters:
     exclude:
