@@ -8,7 +8,7 @@ jobs:
     steps:
 
     - name: Setup Node.js for use with actions
-      uses: actions/setup-node@v2.1.2
+      uses: actions/setup-node@v2.1.4
 
     - name: Checkout
       uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
       id: go
 
     - name: Login to github registry
-      uses: docker/login-action@v1.6.0
+      uses: docker/login-action@v1.8.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
