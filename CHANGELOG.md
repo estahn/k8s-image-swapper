@@ -1,3 +1,22 @@
+# 1.0.0 (2020-12-25)
+
+
+### Bug Fixes
+
+* bump skopeo from 0.2.0 to 1.2.0 ([84025aa](https://github.com/estahn/k8s-image-swapper/commit/84025aaf06d287a306fba98f848e272a19ff8aa0))
+* hardcoded AWS region ([3cc0d49](https://github.com/estahn/k8s-image-swapper/commit/3cc0d492bc17a6ad022cb2794786079759f7bc41)), closes [#20](https://github.com/estahn/k8s-image-swapper/issues/20) [#17](https://github.com/estahn/k8s-image-swapper/issues/17)
+* **chart:** serviceaccount missing annotation tag ([#21](https://github.com/estahn/k8s-image-swapper/issues/21)) ([7164626](https://github.com/estahn/k8s-image-swapper/commit/71646266e54d043f3bba2ee59975e7f9d11f8f13))
+* trace for verbose logs and improve context ([58e05dc](https://github.com/estahn/k8s-image-swapper/commit/58e05dc66644de22183e39dcdc85cf8ce139d8db)), closes [#15](https://github.com/estahn/k8s-image-swapper/issues/15)
+
+
+### Features
+
+* allow filters for container context ([37d0a4d](https://github.com/estahn/k8s-image-swapper/commit/37d0a4d9ac3bd37128c92ede0bff3f4071483b1d)), closes [#32](https://github.com/estahn/k8s-image-swapper/issues/32)
+* automatic token renewal before expiry ([a7c45b8](https://github.com/estahn/k8s-image-swapper/commit/a7c45b8b093efa00e7a04f89a57d5909b4ce068a)), closes [#31](https://github.com/estahn/k8s-image-swapper/issues/31)
+* helm chart ([00f6b74](https://github.com/estahn/k8s-image-swapper/commit/00f6b7409c1f0ab59ea227f5d3b995d532beb623))
+* ImageSwapPolicy defines the mutation strategy used by the webhook. ([9d61659](https://github.com/estahn/k8s-image-swapper/commit/9d616596013d7b1cbb121b0cf137273867bdb19f))
+* POC ([fedcb22](https://github.com/estahn/k8s-image-swapper/commit/fedcb22c2fef26a76bd0fd9dacff70d0d952c077))
+
 # [1.0.0-beta.4](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2020-12-23)
 
 
