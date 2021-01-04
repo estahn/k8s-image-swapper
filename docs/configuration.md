@@ -112,11 +112,11 @@ Below you will find a list of common queries and/or ideas:
           - jmespath: "ends_with(obj.metadata.namespace,'-dev')"
       ```
     * Do not process AWS ECR images
-    ```yaml
-    source:
-    filters:
-    - jmespath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"
-    ```
+      ```yaml
+      source:
+        filters:
+          - jmespath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"
+      ```
 
 `k8s-image-swapper` will log the filter data and result in `debug` mode.
 This can be used in conjunction with [JMESPath.org](https://jmespath.org/) which
