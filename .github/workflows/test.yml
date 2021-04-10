@@ -15,7 +15,9 @@ jobs:
     steps:
 
     - name: Install devmapper
-      run: sudo apt-get install -y libdevmapper-dev
+      run: |
+        sudo apt-get update --fix-missing
+        sudo apt-get install -y libdevmapper-dev
 
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
@@ -37,7 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Install devmapper
-      run: sudo apt-get install -y libdevmapper-dev
+      run: |
+        sudo apt-get update --fix-missing
+        sudo apt-get install -y libdevmapper-dev
 
     - name: Setup Go
       uses: actions/setup-go@v2.1.3
@@ -74,7 +78,9 @@ jobs:
     steps:
 
     - name: Install devmapper
-      run: sudo apt-get install -y libdevmapper-dev
+      run: |
+        sudo apt-get update --fix-missing
+        sudo apt-get install -y libdevmapper-dev
 
     - name: Checkout
       uses: actions/checkout@v2
