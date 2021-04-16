@@ -13,7 +13,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
-	github.com/prometheus/client_golang v1.9.0
+	github.com/prometheus/client_golang v1.10.0
 	github.com/rs/zerolog v1.20.0
 	github.com/slok/kubewebhook v0.11.0
 	github.com/spf13/cobra v1.1.1
