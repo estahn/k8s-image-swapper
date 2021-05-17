@@ -22,6 +22,6 @@ repos:
 #  - id: doctoc
 #    args: ['--title', '## Table of Contents']
 - repo:  https://github.com/golangci/golangci-lint
-  rev: v1.39.0
+  rev: v1.40.1
   hooks:
     - id: golangci-lint
