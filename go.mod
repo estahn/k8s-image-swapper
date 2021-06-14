@@ -6,7 +6,7 @@ require (
 	github.com/alitto/pond v1.4.0
 	github.com/aws/aws-sdk-go v1.38.47
 	github.com/containers/image/v5 v5.11.0
-	github.com/dgraph-io/ristretto v0.0.3
+	github.com/dgraph-io/ristretto v0.1.0
 	github.com/go-co-op/gocron v0.4.0
 	github.com/godbus/dbus v0.0.0-20190422162347-ade71ed3457e // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
