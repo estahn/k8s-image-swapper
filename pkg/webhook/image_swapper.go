@@ -20,6 +20,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	coreV1Types "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/slok/kubewebhook/pkg/webhook/mutating"
 )
@@ -33,7 +38,7 @@ type ImageSwapper struct {
 	filters []config.JMESPathFilter
 
 	// copier manages the jobs copying the images to the target registry
-	copier          *pond.WorkerPool
+	copier *pond.WorkerPool
 
 	imageSwapPolicy types.ImageSwapPolicy
 	imageCopyPolicy types.ImageCopyPolicy
@@ -42,9 +47,9 @@ type ImageSwapper struct {
 // NewImageSwapper returns a new ImageSwapper initialized.
 func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) mutating.Mutator {
 	return &ImageSwapper{
-		registryClient: registryClient,
-		filters:        filters,
-		copier:         pond.New(100, 1000),
+		registryClient:  registryClient,
+		filters:         filters,
+		copier:          pond.New(100, 1000),
 		imageSwapPolicy: imageSwapPolicy,
 		imageCopyPolicy: imageCopyPolicy,
 	}
@@ -93,6 +98,13 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 	lctx := logger.
 		WithContext(ctx)
 
+	// Use imagePullSecrets to authenticate with source image registry if specfied
+	pullSecretsTokens, err := getPullSecretsAuthTokens(pod) //make(map[string]string)
+	if err != nil {
+		log.Warn().Msgf("Could not use pullSecret for pod %s: %v", pod.Name, err)
+	}
+	log.Ctx(lctx).Debug().Msgf("%v", pullSecretsTokens)
+
 	for i, container := range pod.Spec.Containers {
 		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 		if err != nil {
@@ -112,6 +124,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		}
 
 		targetImage := p.targetName(srcRef)
+		log.Ctx(lctx).Debug().Msgf("%v", srcRef)
 
 		copyFn := func() {
 			// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
@@ -250,4 +263,72 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		Msg("executed command to copy image")
 
 	return err
+}
+
+func configK8SClient() (kubernetes.clientset, error) {
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return clientset, nil
+}
+
+func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]string, error) {
+
+	var pullSecretTokens []map[string]string
+
+	K8SClient, err := configK8SClient()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var secretsClient coreV1Types.SecretInterface
+	secretsClient = K8SClient.CoreV1().Secrets(namespace)
+
+	secret, err := secretsClient.Get(pullSecret, metaV1.GetOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for key, value := range secret.Data {
+		// key is string, value is []byte
+
+		token := make(map[string]string)
+		token[key] = string(value)
+
+		pullSecretTokens = append(pullSecretTokens, token)
+	}
+
+	return pullSecretTokens, nil
+}
+
+func getPullSecretsAuthTokens(pod metav1.Object) (map[string]string, error) {
+	pullSecrets := pod.spec.imagePullSecrets
+	namespace := pod.GetNamespace()
+
+	var allTokens map[string]string
+
+	// Go over pullSecrets in reverse to override latter tokens with former ones. Will do this with secrets inside each pullSecret too.
+	for i := len(pullSecrets) - 1; i >= 0; i-- {
+		pullSecretTokens, err := getPullSecretTokens(pullSecrets[i], namespace)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		for j := len(pullSecretTokens) - 1; j >= 0; j-- {
+			// Add single token to final map
+			for registry, token := range pullSecretTokens[j] {
+				allTokens[registry] = token
+			}
+		}
+	}
+
+	return allTokens, nil
 }
