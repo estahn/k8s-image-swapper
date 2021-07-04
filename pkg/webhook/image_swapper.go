@@ -265,7 +265,7 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 	return err
 }
 
-func configK8SClient() (kubernetes.clientset, error) {
+func configK8SClient() (kubernetes.Clientset, error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -310,7 +310,7 @@ func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]stri
 }
 
 func getPullSecretsAuthTokens(pod metav1.Object) (map[string]string, error) {
-	pullSecrets := pod.spec.imagePullSecrets
+	pullSecrets := pod.Spec.ImagePullSecrets
 	namespace := pod.GetNamespace()
 
 	var allTokens map[string]string
