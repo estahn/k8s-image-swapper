@@ -265,7 +265,7 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 	return err
 }
 
-func configK8SClient() (kubernetes.Clientset, error) {
+func configK8SClient() (*kubernetes.Clientset, error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
