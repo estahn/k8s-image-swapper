@@ -289,6 +289,9 @@ func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]stri
 		panic(err.Error())
 	}
 
+	//DEBUG TEMP
+	panic(K8SClient)
+	//END DEBUG TEMP
 	var secretsClient coreV1Types.SecretInterface
 	secretsClient = K8SClient.CoreV1().Secrets(namespace)
 
