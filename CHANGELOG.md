@@ -1,3 +1,15 @@
+## [1.0.1](https://github.com/DolevAlgam/k8s-image-swapper/compare/v1.0.0...v1.0.1) (2021-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/aws/aws-sdk-go to v1.38.47 ([#70](https://github.com/DolevAlgam/k8s-image-swapper/issues/70)) ([4f30053](https://github.com/DolevAlgam/k8s-image-swapper/commit/4f300530ac9a6f8250672b272c24168601f42e62))
+* **deps:** update module github.com/containers/image/v5 to v5.11.0 ([#61](https://github.com/DolevAlgam/k8s-image-swapper/issues/61)) ([11d6d28](https://github.com/DolevAlgam/k8s-image-swapper/commit/11d6d2843dbaa392a418e2a57fdab27fb5249077))
+* **deps:** update module github.com/dgraph-io/ristretto to v0.1.0 ([#82](https://github.com/DolevAlgam/k8s-image-swapper/issues/82)) ([dff1cb1](https://github.com/DolevAlgam/k8s-image-swapper/commit/dff1cb186ab1301836f978da1ead02b9ea75bb09))
+* **deps:** update module github.com/rs/zerolog to v1.22.0 ([#76](https://github.com/DolevAlgam/k8s-image-swapper/issues/76)) ([c098326](https://github.com/DolevAlgam/k8s-image-swapper/commit/c098326273ab31dbd31869c4749164fde7544b67))
+* **deps:** update module github.com/rs/zerolog to v1.23.0 ([#84](https://github.com/DolevAlgam/k8s-image-swapper/issues/84)) ([607d5bb](https://github.com/DolevAlgam/k8s-image-swapper/commit/607d5bb53a1d7396ae5d504ce49508ceac5e26d6))
+* **deps:** update module k8s.io/apimachinery to v0.21.1 ([#79](https://github.com/DolevAlgam/k8s-image-swapper/issues/79)) ([aeeeffb](https://github.com/DolevAlgam/k8s-image-swapper/commit/aeeeffb4e20c50ecb0e3c0cb46654c3c41f62de0))
+
 # 1.0.0 (2020-12-25)
 
 
