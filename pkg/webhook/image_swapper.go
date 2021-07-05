@@ -295,7 +295,7 @@ func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]stri
 	var secretsClient coreV1Types.SecretInterface
 	secretsClient = K8SClient.CoreV1().Secrets(namespace)
 
-	secret, err := secretsClient.Get(pullSecret, metaV1.GetOptions{})
+	secret, err := secretsClient.Get(context.TODO(), pullSecret, metaV1.GetOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -312,7 +312,7 @@ func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]stri
 	return pullSecretTokens, nil
 }
 
-func getPullSecretsAuthTokens(pod metav1.Object) (map[string]string, error) {
+func getPullSecretsAuthTokens(pod *corev1.Pod) (map[string]string, error) {
 	pullSecrets := pod.Spec.ImagePullSecrets
 	namespace := pod.GetNamespace()
 
@@ -320,7 +320,7 @@ func getPullSecretsAuthTokens(pod metav1.Object) (map[string]string, error) {
 
 	// Go over pullSecrets in reverse to override latter tokens with former ones. Will do this with secrets inside each pullSecret too.
 	for i := len(pullSecrets) - 1; i >= 0; i-- {
-		pullSecretTokens, err := getPullSecretTokens(pullSecrets[i], namespace)
+		pullSecretTokens, err := getPullSecretTokens(pullSecrets[i].Name, namespace)
 		if err != nil {
 			panic(err.Error())
 		}
