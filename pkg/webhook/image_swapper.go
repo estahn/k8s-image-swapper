@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -27,6 +28,8 @@ import (
 
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/slok/kubewebhook/pkg/webhook/mutating"
+
+	"github.com/tidwall/gjson"
 )
 
 // ImageSwapper is a mutator that will download images and change the image name.
@@ -99,11 +102,10 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		WithContext(ctx)
 
 	// Use imagePullSecrets to authenticate with source image registry if specfied
-	pullSecretsTokens, err := getPullSecretsAuthTokens(pod) //make(map[string]string)
+	registriesTokens, err := getRegistriesTokens(pod, ar.Namespace)
 	if err != nil {
 		log.Warn().Msgf("Could not use pullSecret for pod %s: %v", pod.Name, err)
 	}
-	log.Ctx(lctx).Debug().Msgf("%v", pullSecretsTokens)
 
 	for i, container := range pod.Spec.Containers {
 		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
@@ -124,7 +126,6 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		}
 
 		targetImage := p.targetName(srcRef)
-		log.Ctx(lctx).Debug().Msgf("%v", srcRef)
 
 		copyFn := func() {
 			// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
@@ -140,9 +141,17 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 				log.Err(err)
 			}
 
-			// Copy image
+			// Copy Image
+			var err error
+			var registryUrl string = reference.Domain(srcRef.DockerReference())
 			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-			if err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials()); err != nil {
+			for _, authToken := range registriesTokens[registryUrl] {
+				err = copyImage(srcRef.DockerReference().String(), authToken, targetImage, p.registryClient.Credentials())
+				if err == nil {
+					break
+				}
+			}
+			if err != nil {
 				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
 			}
 		}
@@ -158,6 +167,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			// TODO: Implement deadline
 			copyFn()
 		default:
+			// Copy image
 			panic("unknown imageCopyPolicy")
 		}
 
@@ -241,7 +251,7 @@ func NewFilterContext(request v1beta1.AdmissionRequest, obj metav1.Object, conta
 	return FilterContext{Obj: obj, Container: container}
 }
 
-func copyImage(src string, srcCeds string, dest string, destCreds string) error {
+func copyImage(src string, srcCreds string, dest string, destCreds string) error {
 	app := "skopeo"
 	args := []string{
 		"--override-os", "linux",
@@ -249,8 +259,13 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
-		"--src-no-creds",
 		"--dest-creds", destCreds,
+	}
+
+	if srcCreds != "" {
+		args = append(args, "--src-creds", srcCreds)
+	} else {
+		args = append(args, "--src-no-creds")
 	}
 
 	cmd := exec.Command(app, args...)
@@ -269,69 +284,73 @@ func configK8SClient() (*kubernetes.Clientset, error) {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	return clientset, nil
 }
 
-func getPullSecretTokens(pullSecret string, namespace string) ([]map[string]string, error) {
+func getRegistryAuthFromSecret(pullSecret string, namespace string) (string, string, error) {
 
-	var pullSecretTokens []map[string]string
+	var registryUrl string
+	var auth string
 
 	K8SClient, err := configK8SClient()
 	if err != nil {
-		panic(err.Error())
+		return registryUrl, auth, err
 	}
 
-	//DEBUG TEMP
-	panic(K8SClient)
-	//END DEBUG TEMP
 	var secretsClient coreV1Types.SecretInterface
 	secretsClient = K8SClient.CoreV1().Secrets(namespace)
-
 	secret, err := secretsClient.Get(context.TODO(), pullSecret, metaV1.GetOptions{})
 	if err != nil {
-		panic(err.Error())
+		return registryUrl, auth, err
 	}
 
-	for key, value := range secret.Data {
-		// key is string, value is []byte
+	for _, config := range secret.Data {
+		// Get Auth
+		result := gjson.GetBytes(config, "*.auth")
+		authEncoded := result.String()
+		authDecoded, _ := b64.URLEncoding.DecodeString(authEncoded)
+		auth = string(authDecoded)
 
-		token := make(map[string]string)
-		token[key] = string(value)
+		// CHECK IF AUTH IS ALWAYS CREATED AUTO
+		// Get Username
+		result = gjson.GetBytes(config, "*.username")
+		//username := result.String()
 
-		pullSecretTokens = append(pullSecretTokens, token)
+		// Get password
+		result = gjson.GetBytes(config, "*.password")
+		//password := result.String()
+
+		// Get Registry URL
+		result = gjson.GetBytes(config, "[@this].0")
+		result.ForEach(func(key, value gjson.Result) bool {
+			registryUrl = key.String()
+			return false // Stop iterating
+		})
 	}
 
-	return pullSecretTokens, nil
+	return registryUrl, auth, nil
 }
 
-func getPullSecretsAuthTokens(pod *corev1.Pod) (map[string]string, error) {
+func getRegistriesTokens(pod *corev1.Pod, namespace string) (map[string][]string, error) {
 	pullSecrets := pod.Spec.ImagePullSecrets
-	namespace := pod.GetNamespace()
+	registriesTokens := make(map[string][]string)
 
-	var allTokens map[string]string
-
-	// Go over pullSecrets in reverse to override latter tokens with former ones. Will do this with secrets inside each pullSecret too.
-	for i := len(pullSecrets) - 1; i >= 0; i-- {
-		pullSecretTokens, err := getPullSecretTokens(pullSecrets[i].Name, namespace)
+	for _, secret := range pullSecrets {
+		registryUrl, auth, err := getRegistryAuthFromSecret(secret.Name, namespace)
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 
-		for j := len(pullSecretTokens) - 1; j >= 0; j-- {
-			// Add single token to final map
-			for registry, token := range pullSecretTokens[j] {
-				allTokens[registry] = token
-			}
-		}
+		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], auth)
 	}
 
-	return allTokens, nil
+	return registriesTokens, nil
 }
