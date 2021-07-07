@@ -142,17 +142,27 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			}
 
 			// Copy Image
-			var err error
-			var registryUrl string = reference.Domain(srcRef.DockerReference())
 			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-			for _, authToken := range registriesTokens[registryUrl] {
-				err = copyImage(srcRef.DockerReference().String(), authToken, targetImage, p.registryClient.Credentials())
-				if err == nil {
-					break
+
+			var registryUrl string = reference.Domain(srcRef.DockerReference())
+			authTokens, ok := registriesTokens[registryUrl]
+			if ok {
+				var err error
+				for _, authToken := range authTokens {
+					err = copyImage(srcRef.DockerReference().String(), authToken, targetImage, p.registryClient.Credentials())
+					if err == nil {
+						break
+					}
 				}
-			}
-			if err != nil {
-				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				if err != nil {
+					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				}
+			} else {
+				log.Ctx(lctx).Debug().Str("source", srcRef.DockerReference().String()).Msg("Didn't find a compatible pull secret with the source registry, pulling unauthenticated.")
+				err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials())
+				if err != nil {
+					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				}
 			}
 		}
 
@@ -319,15 +329,6 @@ func getRegistryAuthFromSecret(pullSecret string, namespace string) (string, str
 		authDecoded, _ := b64.URLEncoding.DecodeString(authEncoded)
 		auth = string(authDecoded)
 
-		// CHECK IF AUTH IS ALWAYS CREATED AUTO
-		// Get Username
-		result = gjson.GetBytes(config, "*.username")
-		//username := result.String()
-
-		// Get password
-		result = gjson.GetBytes(config, "*.password")
-		//password := result.String()
-
 		// Get Registry URL
 		result = gjson.GetBytes(config, "[@this].0")
 		result.ForEach(func(key, value gjson.Result) bool {
@@ -350,6 +351,16 @@ func getRegistriesTokens(pod *corev1.Pod, namespace string) (map[string][]string
 		}
 
 		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], auth)
+	}
+
+	// Align registries aliases by name used at SrcRef
+	var origin string = "docker.io"
+	var alias string = "https://index.docker.io/v1/"
+	registriesTokens[origin] = append(registriesTokens[origin], registriesTokens[alias]...)
+
+	// Add empty authentication last for the case of incorrect tokens
+	for registryUrl := range registriesTokens {
+		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], "")
 	}
 
 	return registriesTokens, nil
