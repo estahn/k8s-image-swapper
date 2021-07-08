@@ -305,47 +305,94 @@ func configK8SClient() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func getRegistryAuthFromSecret(pullSecret string, namespace string) (string, string, error) {
-
-	var registryUrl string
-	var auth string
+func configSecretsClient(namespace string) (coreV1Types.SecretInterface, error) {
+	var secretsClient coreV1Types.SecretInterface
 
 	K8SClient, err := configK8SClient()
 	if err != nil {
-		return registryUrl, auth, err
+		return nil, err
 	}
 
-	var secretsClient coreV1Types.SecretInterface
 	secretsClient = K8SClient.CoreV1().Secrets(namespace)
+
+	return secretsClient, nil
+}
+
+func parseRegistryAuth(config []byte) (string, string) {
+	var registryUrl string
+	var auth string
+
+	// Get Auth
+	result := gjson.GetBytes(config, "*.auth")
+	authEncoded := result.String()
+	authDecoded, _ := b64.URLEncoding.DecodeString(authEncoded)
+	auth = string(authDecoded)
+
+	// Get Registry URL
+	result = gjson.GetBytes(config, "[@this].0")
+	result.ForEach(func(key, value gjson.Result) bool {
+		registryUrl = key.String()
+		return false // Stop iterating
+	})
+
+	return registryUrl, auth
+}
+
+func getRegistryAuthFromSecret(pullSecret string, namespace string, secretsClient coreV1Types.SecretInterface) (string, string, error) {
+	var registryUrl string
+	var auth string
+
 	secret, err := secretsClient.Get(context.TODO(), pullSecret, metaV1.GetOptions{})
 	if err != nil {
-		return registryUrl, auth, err
+		return "", "", err
 	}
 
 	for _, config := range secret.Data {
-		// Get Auth
-		result := gjson.GetBytes(config, "*.auth")
-		authEncoded := result.String()
-		authDecoded, _ := b64.URLEncoding.DecodeString(authEncoded)
-		auth = string(authDecoded)
-
-		// Get Registry URL
-		result = gjson.GetBytes(config, "[@this].0")
-		result.ForEach(func(key, value gjson.Result) bool {
-			registryUrl = key.String()
-			return false // Stop iterating
-		})
+		registryUrl, auth = parseRegistryAuth(config)
 	}
 
 	return registryUrl, auth, nil
+}
+
+func alignUrlBySrcRef(registriesTokens map[string][]string, registryAliases map[string]string) map[string][]string {
+	for origin, alias := range registryAliases {
+		_, found := registriesTokens[alias]
+		if !found {
+			continue
+		}
+		_, found = registriesTokens[origin]
+		if !found {
+			registriesTokens[origin] = registriesTokens[alias]
+			continue
+		}
+
+		registriesTokens[origin] = append(registriesTokens[origin], registriesTokens[alias]...)
+	}
+
+	return registriesTokens
+}
+
+func addTokenToAllRegistries(registriesTokens map[string][]string, token string) map[string][]string {
+	for registryUrl := range registriesTokens {
+		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], token)
+	}
+
+	return registriesTokens
 }
 
 func getRegistriesTokens(pod *corev1.Pod, namespace string) (map[string][]string, error) {
 	pullSecrets := pod.Spec.ImagePullSecrets
 	registriesTokens := make(map[string][]string)
 
+	var registryAliases map[string]string = map[string]string{"docker.io": "https://index.docker.io/v1/"}
+
+	secretsClient, err := configSecretsClient(namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, secret := range pullSecrets {
-		registryUrl, auth, err := getRegistryAuthFromSecret(secret.Name, namespace)
+		registryUrl, auth, err := getRegistryAuthFromSecret(secret.Name, namespace, secretsClient)
 		if err != nil {
 			return nil, err
 		}
@@ -354,14 +401,10 @@ func getRegistriesTokens(pod *corev1.Pod, namespace string) (map[string][]string
 	}
 
 	// Align registries aliases by name used at SrcRef
-	var origin string = "docker.io"
-	var alias string = "https://index.docker.io/v1/"
-	registriesTokens[origin] = append(registriesTokens[origin], registriesTokens[alias]...)
+	registriesTokens = alignUrlBySrcRef(registriesTokens, registryAliases)
 
-	// Add empty authentication last for the case of incorrect tokens
-	for registryUrl := range registriesTokens {
-		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], "")
-	}
+	// Add empty authentication last for the case of incorrect tokens, so we can always pull public images
+	registriesTokens = addTokenToAllRegistries(registriesTokens, "")
 
 	return registriesTokens, nil
 }
