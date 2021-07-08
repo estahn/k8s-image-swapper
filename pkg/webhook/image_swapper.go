@@ -177,7 +177,6 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 			// TODO: Implement deadline
 			copyFn()
 		default:
-			// Copy image
 			panic("unknown imageCopyPolicy")
 		}
 
