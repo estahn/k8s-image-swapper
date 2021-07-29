@@ -33,7 +33,7 @@ type ImageSwapper struct {
 	filters []config.JMESPathFilter
 
 	// copier manages the jobs copying the images to the target registry
-	copier          *pond.WorkerPool
+	copier *pond.WorkerPool
 
 	imageSwapPolicy types.ImageSwapPolicy
 	imageCopyPolicy types.ImageCopyPolicy
@@ -42,9 +42,9 @@ type ImageSwapper struct {
 // NewImageSwapper returns a new ImageSwapper initialized.
 func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) mutating.Mutator {
 	return &ImageSwapper{
-		registryClient: registryClient,
-		filters:        filters,
-		copier:         pond.New(100, 1000),
+		registryClient:  registryClient,
+		filters:         filters,
+		copier:          pond.New(100, 1000),
 		imageSwapPolicy: imageSwapPolicy,
 		imageCopyPolicy: imageCopyPolicy,
 	}
@@ -90,10 +90,10 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		Logger()
 	//spew.Dump()
 
-	lctx := logger.
-		WithContext(ctx)
+	lctx := logger.WithContext(ctx)
 
-	for i, container := range pod.Spec.Containers {
+	listOfContainers := append(pod.Spec.Containers, pod.Spec.InitContainers...)
+	for i, container := range listOfContainers {
 		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 		if err != nil {
 			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
