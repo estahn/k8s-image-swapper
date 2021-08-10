@@ -92,8 +92,13 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 	lctx := logger.WithContext(ctx)
 
-	listOfContainers := append(pod.Spec.Containers, pod.Spec.InitContainers...)
-	for _, container := range listOfContainers {
+	p.replaceContainerImages(lctx, ar, pod, pod.Spec.Containers)
+	p.replaceContainerImages(lctx, ar, pod, pod.Spec.InitContainers)
+	return false, nil
+}
+
+func (p *ImageSwapper) replaceContainerImages(lctx context.Context, ar *v1beta1.AdmissionRequest, pod *corev1.Pod, containers []corev1.Container) {
+	for i, container := range containers {
 		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 		if err != nil {
 			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
@@ -152,18 +157,16 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		switch p.imageSwapPolicy {
 		case types.ImageSwapPolicyAlways:
 			log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-			container.Image = targetImage
+			pod.Spec.Containers[i].Image = targetImage
 		case types.ImageSwapPolicyExists:
 			if p.registryClient.ImageExists(targetImage) {
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-				container.Image = targetImage
+				pod.Spec.Containers[i].Image = targetImage
 			}
 		default:
 			panic("unknown imageSwapPolicy")
 		}
 	}
-
-	return false, nil
 }
 
 // filterMatch returns true if one of the filters matches the context
