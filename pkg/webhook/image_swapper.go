@@ -157,11 +157,11 @@ func (p *ImageSwapper) replaceContainerImages(lctx context.Context, ar *v1beta1.
 		switch p.imageSwapPolicy {
 		case types.ImageSwapPolicyAlways:
 			log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-			pod.Spec.Containers[i].Image = targetImage
+			containers[i].Image = targetImage
 		case types.ImageSwapPolicyExists:
 			if p.registryClient.ImageExists(targetImage) {
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-				pod.Spec.Containers[i].Image = targetImage
+				containers[i].Image = targetImage
 			}
 		default:
 			panic("unknown imageSwapPolicy")
