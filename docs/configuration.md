@@ -27,7 +27,7 @@ The option `logLevel` & `logFormat` allow to adjust the verbosity and format (e.
 
 The option `imageSwapPolicy` (default: `exists`) defines the mutation strategy used.
 
-* `always`: Will always swap the image regardless of the image existence in the target registry. 
+* `always`: Will always swap the image regardless of the image existence in the target registry.
             This can result in pods ending in state ImagePullBack if images fail to be copied to the target registry.
 * `exists`: Only swaps the image if it exits in the target registry.
             This can result in pods pulling images from the source registry, e.g. the first pod pulls
