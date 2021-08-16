@@ -32,7 +32,6 @@ changelog:
   filters:
     exclude:
       - '^docs:'
-      - '^chore:'
 
 archives:
   - format: binary

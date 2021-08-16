@@ -154,14 +154,14 @@ func TestFilterMatch(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name: "nginx",
+						Name:  "nginx",
 						Image: "nginx:latest",
 					},
 				},
 			},
 		},
 		Container: corev1.Container{
-			Name: "nginx",
+			Name:  "nginx",
 			Image: "nginx:latest",
 		},
 	}
