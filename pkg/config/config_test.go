@@ -21,8 +21,8 @@ func TestConfigParses(t *testing.T) {
 			expCfg: Config{},
 		},
 		{
-			name:   "should render multiple filters",
-			cfg:    `
+			name: "should render multiple filters",
+			cfg: `
 source:
   filters:
     - jmespath: "obj.metadata.namespace == 'kube-system'"

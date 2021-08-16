@@ -32,7 +32,7 @@ type ImageSwapper struct {
 	filters []config.JMESPathFilter
 
 	// copier manages the jobs copying the images to the target registry
-	copier          *pond.WorkerPool
+	copier *pond.WorkerPool
 
 	imageSwapPolicy types.ImageSwapPolicy
 	imageCopyPolicy types.ImageCopyPolicy
@@ -41,9 +41,9 @@ type ImageSwapper struct {
 // NewImageSwapper returns a new ImageSwapper initialized.
 func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) kwhmutating.Mutator {
 	return &ImageSwapper{
-		registryClient: registryClient,
-		filters:        filters,
-		copier:         pond.New(100, 1000),
+		registryClient:  registryClient,
+		filters:         filters,
+		copier:          pond.New(100, 1000),
 		imageSwapPolicy: imageSwapPolicy,
 		imageCopyPolicy: imageCopyPolicy,
 	}
@@ -53,8 +53,8 @@ func NewImageSwapperWebhook(registryClient registry.Client, filters []config.JME
 	imageSwapper := NewImageSwapper(registryClient, filters, imageSwapPolicy, imageCopyPolicy)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
-		ID: "k8s-image-swapper",
-		Obj:  &corev1.Pod{},
+		ID:      "k8s-image-swapper",
+		Obj:     &corev1.Pod{},
 		Mutator: mt,
 	}
 

@@ -1,4 +1,4 @@
-package types
+pkg/types/types.gopackage types
 
 import "fmt"
 
