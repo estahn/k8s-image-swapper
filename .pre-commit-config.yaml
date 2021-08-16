@@ -30,3 +30,4 @@ repos:
   hooks:
     - id: go-mod-tidy
     - id: go-fmt
+    - id: go-imports

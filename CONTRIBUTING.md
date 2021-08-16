@@ -10,9 +10,12 @@ By participating to this project, you agree to abide our
 Prerequisites:
 
 - `make`
-- [Go 1.15+](https://golang.org/doc/install)
+- [Go 1.16+](https://golang.org/doc/install)
+- [golangci-lint](https://golangci-lint.run/usage/install/#local-installation)
 - [Docker](https://www.docker.com/) (or [Podman](https://podman.io/))
 - [kind](https://kind.sigs.k8s.io/)
+- [pre-commit](https://pre-commit.com/) (optional)
+- [ngrok](https://ngrok.com/) (optional)
 
 Clone `k8s-image-swapper` anywhere:
 
@@ -37,13 +40,13 @@ make test
 You can create a branch for your changes and try to build from the source as you go:
 
 ```sh
-make build
+make test
 ```
 
 When you are satisfied with the changes, we suggest you run:
 
 ```sh
-make ci
+make fmt lint test
 ```
 
 Which runs all the linters and tests.
