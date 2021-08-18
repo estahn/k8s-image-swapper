@@ -90,7 +90,11 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 	lctx := logger.WithContext(ctx)
 
-	p.processContainers(lctx, ar, pod, pod.Spec.Containers)
+	_, err := p.processContainers(lctx, ar, pod, pod.Spec.Containers)
+	if err != nil {
+		logger.Err(err)
+		return nil, err
+	}
 	return p.processContainers(lctx, ar, pod, pod.Spec.InitContainers)
 }
 
