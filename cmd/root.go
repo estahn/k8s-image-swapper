@@ -39,7 +39,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	whhttp "github.com/slok/kubewebhook/pkg/http"
+	kwhhttp "github.com/slok/kubewebhook/v2/pkg/http"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -84,7 +84,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		}
 
 		// Get the handler for our webhook.
-		whHandler, err := whhttp.HandlerFor(wh)
+		whHandler, err := kwhhttp.HandlerFor(kwhhttp.HandlerConfig{Webhook: wh})
 		if err != nil {
 			log.Err(err).Msg("error creating webhook handler")
 			os.Exit(1)

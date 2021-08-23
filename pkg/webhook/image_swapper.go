@@ -15,11 +15,14 @@ import (
 	types "github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/jmespath/go-jmespath"
 	"github.com/rs/zerolog/log"
-	"github.com/slok/kubewebhook/pkg/webhook"
-	whcontext "github.com/slok/kubewebhook/pkg/webhook/context"
-	"k8s.io/api/admission/v1beta1"
+	kwhmodel "github.com/slok/kubewebhook/v2/pkg/model"
+	"github.com/slok/kubewebhook/v2/pkg/webhook"
+	kwhmutating "github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	coreV1Types "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
 
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -48,7 +51,7 @@ type ImageSwapper struct {
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) mutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) kwhmutating.Mutator {
 	return &ImageSwapper{
 		registryClient:  registryClient,
 		filters:         filters,
@@ -60,17 +63,18 @@ func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFi
 
 func NewImageSwapperWebhook(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
 	imageSwapper := NewImageSwapper(registryClient, filters, imageSwapPolicy, imageCopyPolicy)
-	mt := mutating.MutatorFunc(imageSwapper.Mutate)
-	mcfg := mutating.WebhookConfig{
-		Name: "k8s-image-swapper",
-		Obj:  &corev1.Pod{},
+	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
+	mcfg := kwhmutating.WebhookConfig{
+		ID:      "k8s-image-swapper",
+		Obj:     &corev1.Pod{},
+		Mutator: mt,
 	}
 
-	return mutating.NewWebhook(mcfg, mt, nil, nil, nil)
+	return kwhmutating.NewWebhook(mcfg)
 }
 
 // Mutate will set the required labels on the pods. Satisfies mutating.Mutator interface.
-func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, error) {
+func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview, obj metav1.Object) (*kwhmutating.MutatorResult, error) {
 	//switch _ := obj.(type) {
 	//case *corev1.Pod:
 	//	// o is a pod
@@ -86,17 +90,15 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		return false, nil
+		return &kwhmutating.MutatorResult{}, nil
 	}
 
-	ar := whcontext.GetAdmissionRequest(ctx)
 	logger := log.With().
-		Str("uid", string(ar.UID)).
-		Str("kind", ar.Kind.String()).
+		Str("uid", string(ar.ID)).
+		Str("kind", ar.RequestGVK.String()).
 		Str("namespace", ar.Namespace).
 		Str("name", pod.Name).
 		Logger()
-	//spew.Dump()
 
 	lctx := logger.
 		WithContext(ctx)
@@ -195,7 +197,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, obj metav1.Object) (bool, err
 		}
 	}
 
-	return false, nil
+	return &kwhmutating.MutatorResult{MutatedObject: pod}, nil
 }
 
 // filterMatch returns true if one of the filters matches the context
@@ -252,7 +254,7 @@ type FilterContext struct {
 	Container corev1.Container `json:"container,omitempty"`
 }
 
-func NewFilterContext(request v1beta1.AdmissionRequest, obj metav1.Object, container corev1.Container) FilterContext {
+func NewFilterContext(request kwhmodel.AdmissionReview, obj metav1.Object, container corev1.Container) FilterContext {
 	if obj.GetNamespace() == "" {
 		obj.SetNamespace(request.Namespace)
 	}
