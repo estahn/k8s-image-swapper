@@ -24,7 +24,13 @@ import (
 	coreV1Types "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	coreV1Types "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/slok/kubewebhook/pkg/webhook/mutating"
 
 	"github.com/tidwall/gjson"
 )

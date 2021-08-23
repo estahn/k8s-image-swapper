@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/estahn/k8s-image-swapper/pkg/config"
@@ -175,4 +176,66 @@ func TestFilterMatch(t *testing.T) {
 	// non-boolean value
 	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj"}}))
 	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"}}))
+}
+
+func TestParseRegistryAuth(t *testing.T) {
+	var testCases = []struct {
+		inputConfig         []byte
+		ExpectedRegistryUrl string
+		ExpectedAuth        string
+	}{
+		{[]byte(`{"https://index.docker.io/v1/":{"username":"secretUser","password":"supersecretpass","email":"user@me.com","auth":"c2VjcmV0VXNlcjpzdXBlcnNlY3JldHBhc3M="}}`), "https://index.docker.io/v1/", "secretUser:supersecretpass"},
+		{[]byte(`{"docker.io":{"username":"secretUser","password":"supersecretpass","email":"user@me.com","auth":"c2VjcmV0VXNlcjpzdXBlcnNlY3JldHBhc3M="}}`), "docker.io", "secretUser:supersecretpass"},
+		{[]byte(`{"my.registry.com":{"username":"secretUser","password":"supersecretpass","email":"user@me.com","auth":"c2VjcmV0VXNlcjpzdXBlcnNlY3JldHBhc3M="}}`), "my.registry.com", "secretUser:supersecretpass"},
+	}
+
+	for _, tc := range testCases {
+		t.Run("parseRegistryAuth", func(t *testing.T) {
+			regisrtyUrl, auth := parseRegistryAuth(tc.inputConfig)
+			if regisrtyUrl != tc.ExpectedRegistryUrl {
+				t.Errorf("Got %q, Excepted %q", regisrtyUrl, tc.ExpectedRegistryUrl)
+			}
+			if auth != tc.ExpectedAuth {
+				t.Errorf("Got %q, Excepted %q", auth, tc.ExpectedAuth)
+			}
+		})
+	}
+}
+
+func TestAlignUrlBySrcRef(t *testing.T) {
+	var testCases = []struct {
+		InputRegistriesTokens    map[string][]string
+		InputRegistryAliases     map[string]string
+		ExpectedRegistriesTokens map[string][]string
+	}{
+		{map[string][]string{"a": {"0", "1", "2"}, "b": {"4", "5", "6"}, "c": {"7", "8", "9"}}, map[string]string{"a": "b"}, map[string][]string{"a": {"0", "1", "2", "4", "5", "6"}, "b": {"4", "5", "6"}, "c": {"7", "8", "9"}}},
+	}
+
+	for _, tc := range testCases {
+		t.Run("alignUrlBySrcRef", func(t *testing.T) {
+			registriesTokens := alignUrlBySrcRef(tc.InputRegistriesTokens, tc.InputRegistryAliases)
+			if !reflect.DeepEqual(registriesTokens, tc.ExpectedRegistriesTokens) {
+				t.Errorf("Got %q, expected %q", registriesTokens, tc.ExpectedRegistriesTokens)
+			}
+		})
+	}
+}
+
+func TestAddTokenToAllRegistries(t *testing.T) {
+	var testCases = []struct {
+		InputRegistriesTokens    map[string][]string
+		InputToken               string
+		ExpectedRegistriesTokens map[string][]string
+	}{
+		{map[string][]string{"a": {"0", "1", "2"}, "b": {"4", "5", "6"}, "c": {"7", "8", "9"}}, "testingToken", map[string][]string{"a": {"0", "1", "2", "testingToken"}, "b": {"4", "5", "6", "testingToken"}, "c": {"7", "8", "9", "testingToken"}}},
+	}
+
+	for _, tc := range testCases {
+		t.Run("addTokenToAllRegistries", func(t *testing.T) {
+			registriesTokens := addTokenToAllRegistries(tc.InputRegistriesTokens, tc.InputToken)
+			if !reflect.DeepEqual(registriesTokens, tc.ExpectedRegistriesTokens) {
+				t.Errorf("Got %q, expected %q", registriesTokens, tc.ExpectedRegistriesTokens)
+			}
+		})
+	}
 }
