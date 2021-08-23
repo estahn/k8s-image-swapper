@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -19,8 +20,13 @@ import (
 	kwhmutating "github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	coreV1Types "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
 
 	"github.com/containers/image/v5/docker/reference"
+
+	"github.com/tidwall/gjson"
 )
 
 // ImageSwapper is a mutator that will download images and change the image name.
@@ -91,6 +97,12 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 	lctx := logger.
 		WithContext(ctx)
 
+	// Use imagePullSecrets to authenticate with source image registry if specfied
+	registriesTokens, err := getRegistriesTokens(pod, ar.Namespace)
+	if err != nil {
+		log.Warn().Msgf("Could not use pullSecret for pod %s: %v", pod.Name, err)
+	}
+
 	for i, container := range pod.Spec.Containers {
 		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 		if err != nil {
@@ -125,10 +137,28 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Err(err)
 			}
 
-			// Copy image
+			// Copy Image
 			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-			if err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials()); err != nil {
-				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+
+			var registryUrl string = reference.Domain(srcRef.DockerReference())
+			authTokens, ok := registriesTokens[registryUrl]
+			if ok {
+				var err error
+				for _, authToken := range authTokens {
+					err = copyImage(srcRef.DockerReference().String(), authToken, targetImage, p.registryClient.Credentials())
+					if err == nil {
+						break
+					}
+				}
+				if err != nil {
+					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				}
+			} else {
+				log.Ctx(lctx).Debug().Str("source", srcRef.DockerReference().String()).Msg("Didn't find a compatible pull secret with the source registry, pulling unauthenticated.")
+				err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials())
+				if err != nil {
+					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				}
 			}
 		}
 
@@ -226,7 +256,7 @@ func NewFilterContext(request kwhmodel.AdmissionReview, obj metav1.Object, conta
 	return FilterContext{Obj: obj, Container: container}
 }
 
-func copyImage(src string, srcCeds string, dest string, destCreds string) error {
+func copyImage(src string, srcCreds string, dest string, destCreds string) error {
 	app := "skopeo"
 	args := []string{
 		"--override-os", "linux",
@@ -234,8 +264,13 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
-		"--src-no-creds",
 		"--dest-creds", destCreds,
+	}
+
+	if srcCreds != "" {
+		args = append(args, "--src-creds", srcCreds)
+	} else {
+		args = append(args, "--src-no-creds")
 	}
 
 	cmd := exec.Command(app, args...)
@@ -248,4 +283,123 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		Msg("executed command to copy image")
 
 	return err
+}
+
+func configK8SClient() (*kubernetes.Clientset, error) {
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientset, nil
+}
+
+func configSecretsClient(namespace string) (coreV1Types.SecretInterface, error) {
+	var secretsClient coreV1Types.SecretInterface
+
+	K8SClient, err := configK8SClient()
+	if err != nil {
+		return nil, err
+	}
+
+	secretsClient = K8SClient.CoreV1().Secrets(namespace)
+
+	return secretsClient, nil
+}
+
+func parseRegistryAuth(config []byte) (string, string) {
+	var registryUrl string
+	var auth string
+
+	// Get Auth
+	result := gjson.GetBytes(config, "*.auth")
+	authEncoded := result.String()
+	authDecoded, _ := b64.URLEncoding.DecodeString(authEncoded)
+	auth = string(authDecoded)
+
+	// Get Registry URL
+	result = gjson.GetBytes(config, "[@this].0")
+	result.ForEach(func(key, value gjson.Result) bool {
+		registryUrl = key.String()
+		return false // Stop iterating
+	})
+
+	return registryUrl, auth
+}
+
+func getRegistryAuthFromSecret(pullSecret string, namespace string, secretsClient coreV1Types.SecretInterface) (string, string, error) {
+	var registryUrl string
+	var auth string
+
+	secret, err := secretsClient.Get(context.TODO(), pullSecret, metaV1.GetOptions{})
+	if err != nil {
+		return "", "", err
+	}
+
+	for _, config := range secret.Data {
+		registryUrl, auth = parseRegistryAuth(config)
+	}
+
+	return registryUrl, auth, nil
+}
+
+func alignUrlBySrcRef(registriesTokens map[string][]string, registryAliases map[string]string) map[string][]string {
+	for origin, alias := range registryAliases {
+		_, found := registriesTokens[alias]
+		if !found {
+			continue
+		}
+		_, found = registriesTokens[origin]
+		if !found {
+			registriesTokens[origin] = registriesTokens[alias]
+			continue
+		}
+
+		registriesTokens[origin] = append(registriesTokens[origin], registriesTokens[alias]...)
+	}
+
+	return registriesTokens
+}
+
+func addTokenToAllRegistries(registriesTokens map[string][]string, token string) map[string][]string {
+	for registryUrl := range registriesTokens {
+		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], token)
+	}
+
+	return registriesTokens
+}
+
+func getRegistriesTokens(pod *corev1.Pod, namespace string) (map[string][]string, error) {
+	pullSecrets := pod.Spec.ImagePullSecrets
+	registriesTokens := make(map[string][]string)
+
+	var registryAliases map[string]string = map[string]string{"docker.io": "https://index.docker.io/v1/"}
+
+	secretsClient, err := configSecretsClient(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, secret := range pullSecrets {
+		registryUrl, auth, err := getRegistryAuthFromSecret(secret.Name, namespace, secretsClient)
+		if err != nil {
+			return nil, err
+		}
+
+		registriesTokens[registryUrl] = append(registriesTokens[registryUrl], auth)
+	}
+
+	// Align registries aliases by name used at SrcRef
+	registriesTokens = alignUrlBySrcRef(registriesTokens, registryAliases)
+
+	// Add empty authentication last for the case of incorrect tokens, so we can always pull public images
+	registriesTokens = addTokenToAllRegistries(registriesTokens, "")
+
+	return registriesTokens, nil
 }
