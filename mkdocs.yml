@@ -1,6 +1,6 @@
 # Project information
-site_name: k8s-image-wapper
-site_url: https://estahn.github.io/k8s-image-wapper/
+site_name: k8s-image-swapper
+site_url: https://estahn.github.io/k8s-image-swapper/
 site_author: Enrico Stahn
 site_description: >-
   Mirror images into your own registry and swap image references automatically.
