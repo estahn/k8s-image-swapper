@@ -18,7 +18,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Set up Go
-      uses: actions/setup-go@v2.1.3
+      uses: actions/setup-go@v2.1.4
       with:
         go-version: ^1.16.5
       id: go
@@ -40,7 +40,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Setup Go
-      uses: actions/setup-go@v2.1.3
+      uses: actions/setup-go@v2.1.4
       with:
         go-version: ^1.16.5
       id: go
@@ -83,7 +83,7 @@ jobs:
       run: git fetch --prune --unshallow
 
     - name: Setup Go
-      uses: actions/setup-go@v2.1.3
+      uses: actions/setup-go@v2.1.4
       with:
         go-version: ^1.16.5
       id: go
