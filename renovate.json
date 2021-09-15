@@ -1,6 +1,7 @@
 {
   "extends": [
     "config:base",
-    "group:recommended"
+    "group:recommended",
+    "schedule:monthly"
   ]
 }
