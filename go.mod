@@ -6,11 +6,9 @@ require (
 	github.com/alitto/pond v1.5.1
 	github.com/aws/aws-sdk-go v1.40.43
 	github.com/containerd/containerd v1.5.2 // indirect
-	github.com/containers/image/v5 v5.13.2
+	github.com/containers/image/v5 v5.16.0
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
-	github.com/containers/storage v1.32.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
-	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/go-co-op/gocron v1.6.2
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -30,7 +28,6 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.2
