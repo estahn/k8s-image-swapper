@@ -21,7 +21,7 @@ require (
 	github.com/ostreedev/ostree-go v0.0.0-20210511152353-2ca91aaf921c // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0 // indirect
-	github.com/rs/zerolog v1.23.0
+	github.com/rs/zerolog v1.25.0
 	github.com/slok/kubewebhook/v2 v2.1.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.8.1
