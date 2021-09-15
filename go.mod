@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.5.1
-	github.com/aws/aws-sdk-go v1.38.65
+	github.com/aws/aws-sdk-go v1.40.43
 	github.com/containerd/containerd v1.5.2 // indirect
 	github.com/containers/image/v5 v5.13.2
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
