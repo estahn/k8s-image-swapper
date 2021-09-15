@@ -3,5 +3,11 @@
     "config:base",
     "group:recommended",
     "schedule:monthly"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    }
   ]
 }
