@@ -1,83 +1,106 @@
 {
-  "kind": "AdmissionReview",
   "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
   "request": {
-    "uid": "c78e0c58-7389-4838-b4f5-28d6005c1cc3",
-    "kind": { "group": "", "version": "v1", "kind": "Pod" },
-    "resource": { "group": "", "version": "v1", "resource": "pods" },
-    "requestKind": { "group": "", "version": "v1", "kind": "Pod" },
-    "requestResource": { "group": "", "version": "v1", "resource": "pods" },
+    "dryRun": false,
+    "kind": {
+      "group": "",
+      "kind": "Pod",
+      "version": "v1"
+    },
     "name": "nginx28",
     "namespace": "default",
-    "operation": "CREATE",
-    "userInfo": {
-      "username": "kubernetes-admin",
-      "groups": ["system:masters", "system:authenticated"]
-    },
     "object": {
-      "kind": "Pod",
       "apiVersion": "v1",
+      "kind": "Pod",
       "metadata": {
-        "name": "nginx28",
         "creationTimestamp": null,
-        "labels": { "run": "nginx28" }
+        "labels": {
+          "run": "nginx28"
+        },
+        "name": "nginx28"
       },
       "spec": {
-        "volumes": [
-          {
-            "name": "default-token-fjtvr",
-            "secret": { "secretName": "default-token-fjtvr" }
-          }
-        ],
         "containers": [
           {
-            "name": "nginx28",
             "image": "nginx",
+            "imagePullPolicy": "Always",
+            "name": "nginx28",
             "resources": {},
-            "volumeMounts": [
-              {
-                "name": "default-token-fjtvr",
-                "readOnly": true,
-                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount"
-              }
-            ],
             "terminationMessagePath": "/dev/termination-log",
             "terminationMessagePolicy": "File",
-            "imagePullPolicy": "Always"
+            "volumeMounts": [
+              {
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "name": "default-token-fjtvr",
+                "readOnly": true
+              }
+            ]
           }
         ],
-        "restartPolicy": "Never",
-        "terminationGracePeriodSeconds": 30,
         "dnsPolicy": "ClusterFirst",
-        "serviceAccountName": "default",
-        "serviceAccount": "default",
-        "securityContext": {},
+        "enableServiceLinks": true,
+        "priority": 0,
+        "restartPolicy": "Never",
         "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
         "tolerations": [
           {
+            "effect": "NoExecute",
             "key": "node.kubernetes.io/not-ready",
             "operator": "Exists",
-            "effect": "NoExecute",
             "tolerationSeconds": 300
           },
           {
+            "effect": "NoExecute",
             "key": "node.kubernetes.io/unreachable",
             "operator": "Exists",
-            "effect": "NoExecute",
             "tolerationSeconds": 300
           }
         ],
-        "priority": 0,
-        "enableServiceLinks": true
+        "volumes": [
+          {
+            "name": "default-token-fjtvr",
+            "secret": {
+              "secretName": "default-token-fjtvr"
+            }
+          }
+        ]
       },
       "status": {}
     },
     "oldObject": null,
-    "dryRun": false,
+    "operation": "CREATE",
     "options": {
-      "kind": "CreateOptions",
       "apiVersion": "meta.k8s.io/v1",
-      "fieldManager": "kubectl-run"
+      "fieldManager": "kubectl-run",
+      "kind": "CreateOptions"
+    },
+    "requestKind": {
+      "group": "",
+      "kind": "Pod",
+      "version": "v1"
+    },
+    "requestResource": {
+      "group": "",
+      "resource": "pods",
+      "version": "v1"
+    },
+    "resource": {
+      "group": "",
+      "resource": "pods",
+      "version": "v1"
+    },
+    "uid": "c78e0c58-7389-4838-b4f5-28d6005c1cc3",
+    "userInfo": {
+      "groups": [
+        "system:masters",
+        "system:authenticated"
+      ],
+      "username": "kubernetes-admin"
     }
   }
 }
