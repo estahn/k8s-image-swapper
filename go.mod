@@ -4,34 +4,47 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.5.1
-	github.com/aws/aws-sdk-go v1.40.43
-	github.com/containerd/containerd v1.5.2 // indirect
+	github.com/aws/aws-sdk-go v1.40.48
+	github.com/bits-and-blooms/bitset v1.2.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/containers/image/v5 v5.16.0
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
+	github.com/containers/storage v1.36.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/go-co-op/gocron v1.9.0
-	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
-	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/go-logr/logr v1.1.0 // indirect
+	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/ostreedev/ostree-go v0.0.0-20210511152353-2ca91aaf921c // indirect
+	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/prometheus/client_golang v1.11.0
-	github.com/prometheus/common v0.29.0 // indirect
+	github.com/prometheus/common v0.30.0 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rs/zerolog v1.25.0
 	github.com/slok/kubewebhook/v2 v2.1.0
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.8.1
+	github.com/spf13/viper v1.9.0
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced // indirect
+	golang.org/x/net v0.0.0-20210924054057-cf34111cab4d // indirect
+	golang.org/x/sys v0.0.0-20210923061019-b8560ed6a9b7 // indirect
+	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20210924002016-3dee208752a0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.22.1
+	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.21.2
+	k8s.io/client-go v0.22.2
+	k8s.io/klog/v2 v2.20.0 // indirect
+	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
