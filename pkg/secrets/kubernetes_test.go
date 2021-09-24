@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -43,42 +43,42 @@ import (
 func TestKubernetesCredentialProvider_GetImagePullSecrets(t *testing.T) {
 	clientSet := fake.NewSimpleClientset()
 
-	svcAccount := &v1.ServiceAccount{
+	svcAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-service-account",
 		},
-		ImagePullSecrets: []v1.LocalObjectReference{
+		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: "my-sa-secret"},
 		},
 	}
 	svcAccountSecretDockerConfigJson := []byte(`{"auths":{"my-sa-secret.registry.example.com":{"username":"my-sa-secret","password":"xxxxxxxxxxx","email":"jdoe@example.com","auth":"c3R...zE2"}}}`)
-	svcAccountSecret := &v1.Secret{
+	svcAccountSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-sa-secret",
 		},
-		Type: v1.SecretTypeDockerConfigJson,
+		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
-			v1.DockerConfigJsonKey: svcAccountSecretDockerConfigJson,
+			corev1.DockerConfigJsonKey: svcAccountSecretDockerConfigJson,
 		},
 	}
 	podSecretDockerConfigJson := []byte(`{"auths":{"my-pod-secret.registry.example.com":{"username":"my-sa-secret","password":"xxxxxxxxxxx","email":"jdoe@example.com","auth":"c3R...zE2"}}}`)
-	podSecret := &v1.Secret{
+	podSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-pod-secret",
 		},
-		Type: v1.SecretTypeDockerConfigJson,
+		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
-			v1.DockerConfigJsonKey: podSecretDockerConfigJson,
+			corev1.DockerConfigJsonKey: podSecretDockerConfigJson,
 		},
 	}
-	pod := &v1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test-ns",
 			Name:      "my-pod",
 		},
-		Spec: v1.PodSpec{
+		Spec: corev1.PodSpec{
 			ServiceAccountName: "my-service-account",
-			ImagePullSecrets: []v1.LocalObjectReference{
+			ImagePullSecrets: []corev1.LocalObjectReference{
 				{Name: "my-pod-secret"},
 			},
 		},

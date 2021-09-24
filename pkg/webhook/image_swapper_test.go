@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //func TestImageSwapperMutator(t *testing.T) {
@@ -159,7 +159,7 @@ import (
 func TestFilterMatch(t *testing.T) {
 	filterContext := FilterContext{
 		Obj: &corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "kube-system",
 			},
 			Spec: corev1.PodSpec{
