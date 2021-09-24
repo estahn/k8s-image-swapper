@@ -7,10 +7,12 @@ import (
 	"os/exec"
 
 	"github.com/alitto/pond"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/transports/alltransports"
 	ctypes "github.com/containers/image/v5/types"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
+	"github.com/estahn/k8s-image-swapper/pkg/secrets"
 	types "github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/jmespath/go-jmespath"
 	"github.com/rs/zerolog/log"
@@ -19,13 +21,12 @@ import (
 	kwhmutating "github.com/slok/kubewebhook/v2/pkg/webhook/mutating"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/containers/image/v5/docker/reference"
 )
 
 // ImageSwapper is a mutator that will download images and change the image name.
 type ImageSwapper struct {
-	registryClient registry.Client
+	registryClient          registry.Client
+	imagePullSecretProvider secrets.ImagePullSecretsProvider
 
 	// filters defines a list of expressions to remove objects that should not be processed,
 	// by default all objects will be processed
@@ -39,18 +40,19 @@ type ImageSwapper struct {
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) kwhmutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) kwhmutating.Mutator {
 	return &ImageSwapper{
-		registryClient:  registryClient,
-		filters:         filters,
-		copier:          pond.New(100, 1000),
-		imageSwapPolicy: imageSwapPolicy,
-		imageCopyPolicy: imageCopyPolicy,
+		registryClient:          registryClient,
+		imagePullSecretProvider: imagePullSecretProvider,
+		filters:                 filters,
+		copier:                  pond.New(100, 1000),
+		imageSwapPolicy:         imageSwapPolicy,
+		imageCopyPolicy:         imageCopyPolicy,
 	}
 }
 
-func NewImageSwapperWebhook(registryClient registry.Client, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapper(registryClient, filters, imageSwapPolicy, imageCopyPolicy)
+func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",
@@ -61,21 +63,8 @@ func NewImageSwapperWebhook(registryClient registry.Client, filters []config.JME
 	return kwhmutating.NewWebhook(mcfg)
 }
 
-// Mutate will set the required labels on the pods. Satisfies mutating.Mutator interface.
+// Mutate replaces the image ref. Satisfies mutating.Mutator interface.
 func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview, obj metav1.Object) (*kwhmutating.MutatorResult, error) {
-	//switch _ := obj.(type) {
-	//case *corev1.Pod:
-	//	// o is a pod
-	//case *v1beta1.Role:
-	//	// o is the actual role Object with all fields etc
-	//case *v1beta1.RoleBinding:
-	//case *v1beta1.ClusterRole:
-	//case *v1beta1.ClusterRoleBinding:
-	//case *v1.ServiceAccount:
-	//default:
-	//	//o is unknown for us
-	//}
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return &kwhmutating.MutatorResult{}, nil
@@ -125,9 +114,23 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Err(err)
 			}
 
+			// Retrieve secrets and auth credentials
+			imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
+			if err != nil {
+				log.Err(err)
+			}
+
+			authFile, err := imagePullSecrets.AuthFile()
+			if err != nil {
+				log.Err(err)
+			}
+
 			// Copy image
+			// TODO: refactor to use structure instead of passing file name / string
+			//       or transform registryClient creds into auth compatible form, e.g.
+			//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
 			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-			if err := copyImage(srcRef.DockerReference().String(), "", targetImage, p.registryClient.Credentials()); err != nil {
+			if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
 				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
 			}
 		}
@@ -234,8 +237,13 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
-		"--src-no-creds",
 		"--dest-creds", destCreds,
+	}
+
+	if len(srcCeds) > 0 {
+		args = append(args, "--src-no-creds")
+	} else {
+		args = append(args, "--src-authfile", srcCeds)
 	}
 
 	cmd := exec.Command(app, args...)
