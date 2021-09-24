@@ -51,6 +51,78 @@ func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider sec
 	}
 }
 
+// NewImageSwapperWithOpts returns a configured ImageSwapper instance
+func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwhmutating.Mutator {
+	swapper := &ImageSwapper{
+		registryClient: registryClient,
+		imagePullSecretProvider: secrets.NewDummyImagePullSecretsProvider(),
+		filters: []config.JMESPathFilter{},
+		imageSwapPolicy: types.ImageSwapPolicyExists,
+		imageCopyPolicy: types.ImageCopyPolicyDelayed,
+	}
+
+	for _, opt := range opts {
+		opt(swapper)
+	}
+
+	// Initialise worker pool if not configured
+	if swapper.copier == nil {
+		swapper.copier = pond.New(100, 1000)
+	}
+
+	return swapper
+}
+
+// Option represents an option that can be passed when instantiating a worker pool to customize it
+type Option func(*ImageSwapper)
+
+// ImagePullSecretProvider allows to pass a provider reading out Kubernetes secrets
+func ImagePullSecretProvider(provider secrets.ImagePullSecretsProvider) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imagePullSecretProvider = provider
+	}
+}
+
+// Filters allows to pass JMESPathFilter to select the images to be swapped
+func Filters(filters []config.JMESPathFilter) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.filters = filters
+	}
+}
+
+// ImageSwapPolicy allows to pass the ImageSwapPolicy option
+func ImageSwapPolicy(policy types.ImageSwapPolicy) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageSwapPolicy = policy
+	}
+}
+
+// ImageCopyPolicy allows to pass the ImageCopyPolicy option
+func ImageCopyPolicy(policy types.ImageCopyPolicy) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageCopyPolicy = policy
+	}
+}
+
+// Copier allows to pass the copier option
+func Copier(pool *pond.WorkerPool) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.copier = pool
+	}
+}
+
+func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapperWithOpts(registryClient, opts...)
+	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
+	mcfg := kwhmutating.WebhookConfig{
+		ID:      "k8s-image-swapper",
+		Obj:     &corev1.Pod{},
+		Mutator: mt,
+	}
+
+	return kwhmutating.NewWebhook(mcfg)
+}
+
 func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
 	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)

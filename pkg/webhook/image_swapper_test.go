@@ -6,15 +6,17 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/alitto/pond"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
-	"github.com/estahn/k8s-image-swapper/pkg/secrets"
 	"github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -189,10 +191,12 @@ func TestFilterMatch(t *testing.T) {
 }
 
 type mockECRClient struct {
+	mock.Mock
 	ecriface.ECRAPI
 }
 
-func (m *mockECRClient) CreateRepository(*ecr.CreateRepositoryInput) (*ecr.CreateRepositoryOutput, error) {
+func (m *mockECRClient) CreateRepository(createRepositoryInput *ecr.CreateRepositoryInput) (*ecr.CreateRepositoryOutput, error) {
+	m.Called(createRepositoryInput)
 	return &ecr.CreateRepositoryOutput{}, nil
 }
 
@@ -211,15 +215,43 @@ func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview,
 }
 
 func TestImageSwapper_Mutate(t *testing.T) {
-	ecrClient := &mockECRClient{}
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "", "")
-	imagePullSecretProvider := secrets.NewDummyImagePullSecretsProvider()
+	ecrClient := new(mockECRClient)
+	ecrClient.On(
+		"CreateRepository",
+		&ecr.CreateRepositoryInput{
+			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+				ScanOnPush: aws.Bool(true),
+			},
+			ImageTagMutability: aws.String("MUTABLE"),
+			RepositoryName:     aws.String("docker.io/library/nginx"),
+			Tags: []*ecr.Tag{{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			}},
+		}).Return(mock.Anything)
+
+	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
 
 	admissionReview, _ := readAdmissionReviewFromFile("../../test/requests/admissionreview.json")
-	arm := model.NewAdmissionReviewV1(admissionReview)
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
 
-	wh, _ := NewImageSwapperWebhook(registryClient, imagePullSecretProvider, []config.JMESPathFilter{}, types.ImageSwapPolicyAlways, types.ImageSwapPolicyAlways)
-	resp, err := wh.Review(context.TODO(), arm)
+	copier := pond.New(1, 1)
+	// TODO: test types.ImageSwapPolicyExists
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
 	spew.Dump(resp)
-	spew.Dump(err)
+
+	assert.NoError(t, err, "Webhook executed without errors")
+
+	// Ensure the worker pool is empty before asserting ecrClient
+	copier.StopAndWait()
+
+	ecrClient.AssertExpectations(t)
 }

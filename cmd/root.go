@@ -82,7 +82,13 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 
 		imagePullSecretProvider := setupImagePullSecretsProvider()
 
-		wh, err := webhook.NewImageSwapperWebhook(rClient, imagePullSecretProvider, cfg.Source.Filters, imageSwapPolicy, imageCopyPolicy)
+		wh, err := webhook.NewImageSwapperWebhookWithOpts(
+			rClient,
+			webhook.Filters(cfg.Source.Filters),
+			webhook.ImagePullSecretProvider(imagePullSecretProvider),
+			webhook.ImageSwapPolicy(imageSwapPolicy),
+			webhook.ImageCopyPolicy(imageCopyPolicy),
+		)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")
 			os.Exit(1)

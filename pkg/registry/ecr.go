@@ -91,7 +91,7 @@ func (e *ECRClient) ImageExists(ref string) bool {
 		"inspect",
 		"--retry-times", "3",
 		"docker://" + ref,
-		"--creds", string(e.Credentials()),
+		"--creds", e.Credentials(),
 	}
 
 	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
