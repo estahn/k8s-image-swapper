@@ -8,7 +8,9 @@ require (
 	github.com/containerd/containerd v1.5.2 // indirect
 	github.com/containers/image/v5 v5.16.0
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.1.0
+	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/go-co-op/gocron v1.9.0
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -27,11 +29,9 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	google.golang.org/genproto v0.0.0-20210617175327-b9e0b3197ced // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.21.2 // indirect
-	k8s.io/klog/v2 v2.9.0 // indirect
+	k8s.io/client-go v0.21.2
 )
