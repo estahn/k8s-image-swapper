@@ -54,11 +54,11 @@ func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider sec
 // NewImageSwapperWithOpts returns a configured ImageSwapper instance
 func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwhmutating.Mutator {
 	swapper := &ImageSwapper{
-		registryClient: registryClient,
+		registryClient:          registryClient,
 		imagePullSecretProvider: secrets.NewDummyImagePullSecretsProvider(),
-		filters: []config.JMESPathFilter{},
-		imageSwapPolicy: types.ImageSwapPolicyExists,
-		imageCopyPolicy: types.ImageCopyPolicyDelayed,
+		filters:                 []config.JMESPathFilter{},
+		imageSwapPolicy:         types.ImageSwapPolicyExists,
+		imageCopyPolicy:         types.ImageCopyPolicyDelayed,
 	}
 
 	for _, opt := range opts {
