@@ -14,7 +14,7 @@ import (
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/estahn/k8s-image-swapper/pkg/secrets"
 	types "github.com/estahn/k8s-image-swapper/pkg/types"
-	"github.com/jmespath/go-jmespath"
+	jmespath "github.com/jmespath/go-jmespath"
 	"github.com/rs/zerolog/log"
 	kwhmodel "github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/slok/kubewebhook/v2/pkg/webhook"
@@ -22,6 +22,44 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Option represents an option that can be passed when instantiating the image swapper to customize it
+type Option func(*ImageSwapper)
+
+// ImagePullSecretProvider allows to pass a provider reading out Kubernetes secrets
+func ImagePullSecretProvider(provider secrets.ImagePullSecretsProvider) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imagePullSecretProvider = provider
+	}
+}
+
+// Filters allows to pass JMESPathFilter to select the images to be swapped
+func Filters(filters []config.JMESPathFilter) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.filters = filters
+	}
+}
+
+// ImageSwapPolicy allows to pass the ImageSwapPolicy option
+func ImageSwapPolicy(policy types.ImageSwapPolicy) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageSwapPolicy = policy
+	}
+}
+
+// ImageCopyPolicy allows to pass the ImageCopyPolicy option
+func ImageCopyPolicy(policy types.ImageCopyPolicy) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageCopyPolicy = policy
+	}
+}
+
+// Copier allows to pass the copier option
+func Copier(pool *pond.WorkerPool) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.copier = pool
+	}
+}
 
 // ImageSwapper is a mutator that will download images and change the image name.
 type ImageSwapper struct {
@@ -71,44 +109,6 @@ func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwh
 	}
 
 	return swapper
-}
-
-// Option represents an option that can be passed when instantiating a worker pool to customize it
-type Option func(*ImageSwapper)
-
-// ImagePullSecretProvider allows to pass a provider reading out Kubernetes secrets
-func ImagePullSecretProvider(provider secrets.ImagePullSecretsProvider) Option {
-	return func(swapper *ImageSwapper) {
-		swapper.imagePullSecretProvider = provider
-	}
-}
-
-// Filters allows to pass JMESPathFilter to select the images to be swapped
-func Filters(filters []config.JMESPathFilter) Option {
-	return func(swapper *ImageSwapper) {
-		swapper.filters = filters
-	}
-}
-
-// ImageSwapPolicy allows to pass the ImageSwapPolicy option
-func ImageSwapPolicy(policy types.ImageSwapPolicy) Option {
-	return func(swapper *ImageSwapper) {
-		swapper.imageSwapPolicy = policy
-	}
-}
-
-// ImageCopyPolicy allows to pass the ImageCopyPolicy option
-func ImageCopyPolicy(policy types.ImageCopyPolicy) Option {
-	return func(swapper *ImageSwapper) {
-		swapper.imageCopyPolicy = policy
-	}
-}
-
-// Copier allows to pass the copier option
-func Copier(pool *pond.WorkerPool) Option {
-	return func(swapper *ImageSwapper) {
-		swapper.copier = pool
-	}
 }
 
 func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
