@@ -9,13 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dgraph-io/ristretto"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 )
 
 type ECRClient struct {
-	client    *ecr.ECR
+	client    ecriface.ECRAPI
 	ecrDomain string
 	authToken []byte
 	cache     *ristretto.Cache
@@ -168,7 +169,18 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string) (*ECRClient, error) {
+	client := &ECRClient{
+		client:    ecrClient,
+		ecrDomain: ecrDomain,
+		cache:     nil,
+		scheduler: nil,
 	}
 
 	return client, nil
