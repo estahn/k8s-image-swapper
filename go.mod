@@ -11,7 +11,6 @@ require (
 	github.com/containers/image/v5 v5.16.0
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/containers/storage v1.36.0 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/go-co-op/gocron v1.9.0

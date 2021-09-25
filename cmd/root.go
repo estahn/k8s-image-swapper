@@ -85,7 +85,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		wh, err := webhook.NewImageSwapperWebhookWithOpts(
 			rClient,
 			webhook.Filters(cfg.Source.Filters),
-			webhook.ImagePullSecretProvider(imagePullSecretProvider),
+			webhook.ImagePullSecretsProvider(imagePullSecretProvider),
 			webhook.ImageSwapPolicy(imageSwapPolicy),
 			webhook.ImageCopyPolicy(imageCopyPolicy),
 		)

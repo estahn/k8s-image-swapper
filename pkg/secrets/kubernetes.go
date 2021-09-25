@@ -6,6 +6,7 @@ import (
 	"os"
 
 	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -64,16 +65,19 @@ func NewKubernetesImagePullSecretsProvider(clientset kubernetes.Interface) Image
 func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(pod *v1.Pod) (*ImagePullSecretsResult, error) {
 	var secrets = make(map[string][]byte)
 
+	imagePullSecrets := pod.Spec.ImagePullSecrets
+
 	// retrieve secret names from pod ServiceAccount (spec.imagePullSecrets)
 	serviceAccount, err := p.kubernetesClient.CoreV1().
 		ServiceAccounts(pod.Namespace).
 		Get(context.TODO(), pod.Spec.ServiceAccountName, metav1.GetOptions{})
 	if err != nil {
-		// TODO: Handle error gracefully, dont panic
-		return nil, err
+		log.Err(err).Msg("error fetching referenced service account, continue without service account imagePullSecrets")
 	}
 
-	imagePullSecrets := append(pod.Spec.ImagePullSecrets, serviceAccount.ImagePullSecrets...)
+	if serviceAccount != nil {
+		imagePullSecrets = append(imagePullSecrets, serviceAccount.ImagePullSecrets...)
+	}
 
 	result := NewImagePullSecretsResult()
 	for _, imagePullSecret := range imagePullSecrets {
@@ -82,9 +86,12 @@ func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(pod *v1.Pod) (*
 			continue
 		}
 
-		secret, _ := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(context.TODO(), imagePullSecret.Name, metav1.GetOptions{})
+		secret, err := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(context.TODO(), imagePullSecret.Name, metav1.GetOptions{})
+		if err != nil {
+			log.Err(err).Msg("error fetching secret, continue without imagePullSecrets")
+		}
 
-		if secret.Type != v1.SecretTypeDockerConfigJson {
+		if secret == nil || secret.Type != v1.SecretTypeDockerConfigJson {
 			continue
 		}
 

@@ -15,6 +15,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var execCommand = exec.Command
+
 type ECRClient struct {
 	client    ecriface.ECRAPI
 	ecrDomain string
@@ -95,7 +97,7 @@ func (e *ECRClient) ImageExists(ref string) bool {
 	}
 
 	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	cmd := exec.Command(app, args...)
+	cmd := execCommand(app, args...)
 
 	if _, err := cmd.Output(); err != nil {
 		return false
@@ -181,6 +183,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		ecrDomain: ecrDomain,
 		cache:     nil,
 		scheduler: nil,
+		authToken: []byte("mock-ecr-client-fake-auth-token"),
 	}
 
 	return client, nil

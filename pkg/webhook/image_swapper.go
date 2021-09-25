@@ -23,11 +23,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var execCommand = exec.Command
+
 // Option represents an option that can be passed when instantiating the image swapper to customize it
 type Option func(*ImageSwapper)
 
-// ImagePullSecretProvider allows to pass a provider reading out Kubernetes secrets
-func ImagePullSecretProvider(provider secrets.ImagePullSecretsProvider) Option {
+// ImagePullSecretsProvider allows to pass a provider reading out Kubernetes secrets
+func ImagePullSecretsProvider(provider secrets.ImagePullSecretsProvider) Option {
 	return func(swapper *ImageSwapper) {
 		swapper.imagePullSecretProvider = provider
 	}
@@ -193,6 +195,14 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			}
 
 			authFile, err := imagePullSecrets.AuthFile()
+			//if authFile != nil {
+			//	defer func() {
+			//		if err := os.RemoveAll(authFile.Name()); err != nil {
+			//			log.Err(err)
+			//		}
+			//	}()
+			//}
+
 			if err != nil {
 				log.Err(err)
 			}
@@ -309,16 +319,21 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
-		"--dest-creds", destCreds,
 	}
 
 	if len(srcCeds) > 0 {
-		args = append(args, "--src-no-creds")
-	} else {
 		args = append(args, "--src-authfile", srcCeds)
+	} else {
+		args = append(args, "--src-no-creds")
 	}
 
-	cmd := exec.Command(app, args...)
+	if len(destCreds) > 0 {
+		args = append(args, "--dest-creds", destCreds)
+	} else {
+		args = append(args, "--dest-no-creds")
+	}
+
+	cmd := execCommand(app, args...)
 	output, err := cmd.CombinedOutput()
 
 	log.Trace().
