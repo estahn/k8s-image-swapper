@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/alitto/pond"
@@ -195,13 +196,13 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			}
 
 			authFile, err := imagePullSecrets.AuthFile()
-			//if authFile != nil {
-			//	defer func() {
-			//		if err := os.RemoveAll(authFile.Name()); err != nil {
-			//			log.Err(err)
-			//		}
-			//	}()
-			//}
+			if authFile != nil {
+				defer func() {
+					if err := os.RemoveAll(authFile.Name()); err != nil {
+						log.Err(err)
+					}
+				}()
+			}
 
 			if err != nil {
 				log.Err(err)

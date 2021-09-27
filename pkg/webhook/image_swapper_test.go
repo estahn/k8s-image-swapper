@@ -278,7 +278,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 	ecrClient.AssertExpectations(t)
 }
 
-func TestImageSwapper_MutateWithPodImagePullSecrets(t *testing.T) {
+// TestImageSwapper_MutateWithImagePullSecrets tests mutating with imagePullSecret support
+func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	execCommand = fakeExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -299,7 +300,7 @@ func TestImageSwapper_MutateWithPodImagePullSecrets(t *testing.T) {
 
 	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
 
-	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-pod-secret.json")
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-imagepullsecrets.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
 
 	clientSet := fake.NewSimpleClientset()
