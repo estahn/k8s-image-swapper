@@ -1,6 +1,18 @@
 {
   "extends": [
     "config:base",
-    "group:recommended"
+    "group:recommended",
+    "schedule:monthly"
+  ],
+  "packageRules": [
+    {
+      "automerge": true,
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ]
+    }
   ]
 }

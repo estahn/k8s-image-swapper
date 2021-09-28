@@ -33,6 +33,7 @@ import (
 
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
+	"github.com/estahn/k8s-image-swapper/pkg/secrets"
 	"github.com/estahn/k8s-image-swapper/pkg/types"
 	"github.com/estahn/k8s-image-swapper/pkg/webhook"
 	homedir "github.com/mitchellh/go-homedir"
@@ -42,6 +43,8 @@ import (
 	kwhhttp "github.com/slok/kubewebhook/v2/pkg/http"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var cfgFile string
@@ -77,7 +80,15 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			log.Err(err)
 		}
 
-		wh, err := webhook.NewImageSwapperWebhook(rClient, cfg.Source.Filters, imageSwapPolicy, imageCopyPolicy)
+		imagePullSecretProvider := setupImagePullSecretsProvider()
+
+		wh, err := webhook.NewImageSwapperWebhookWithOpts(
+			rClient,
+			webhook.Filters(cfg.Source.Filters),
+			webhook.ImagePullSecretsProvider(imagePullSecretProvider),
+			webhook.ImageSwapPolicy(imageSwapPolicy),
+			webhook.ImageCopyPolicy(imageCopyPolicy),
+		)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")
 			os.Exit(1)
@@ -242,4 +253,21 @@ func initLogger() {
 	if lvl == zerolog.TraceLevel {
 		log.Logger = log.With().Caller().Logger()
 	}
+}
+
+// setupImagePullSecretsProvider configures the provider handling secrets
+func setupImagePullSecretsProvider() secrets.ImagePullSecretsProvider {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to configure Kubernetes client, will continue without reading secrets")
+		return secrets.NewDummyImagePullSecretsProvider()
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to configure Kubernetes client, will continue without reading secrets")
+		return secrets.NewDummyImagePullSecretsProvider()
+	}
+
+	return secrets.NewKubernetesImagePullSecretsProvider(clientset)
 }
