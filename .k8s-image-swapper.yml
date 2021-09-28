@@ -15,7 +15,7 @@ imageSwapPolicy: exists
 # - delayed: Submits the copy job to a process queue and moves on.
 # - immediate: Submits the copy job to a process queue and waits for it to finish (deadline 8s).
 # - force: Attempts to immediately copy the image (deadline 8s).
-imagePullPolicy: delayed
+imageCopyPolicy: delayed
 
 source:
   # Filters provide control over what pods will be processed.
