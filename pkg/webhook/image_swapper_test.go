@@ -1,12 +1,28 @@
 package webhook
 
 import (
+	"context"
+	"encoding/json"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"testing"
 
+	"github.com/alitto/pond"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
+	"github.com/estahn/k8s-image-swapper/pkg/secrets"
+	"github.com/estahn/k8s-image-swapper/pkg/types"
+	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 //func TestImageSwapperMutator(t *testing.T) {
@@ -148,7 +164,7 @@ import (
 func TestFilterMatch(t *testing.T) {
 	filterContext := FilterContext{
 		Obj: &corev1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "kube-system",
 			},
 			Spec: corev1.PodSpec{
@@ -175,4 +191,174 @@ func TestFilterMatch(t *testing.T) {
 	// non-boolean value
 	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "obj"}}))
 	assert.False(t, filterMatch(filterContext, []config.JMESPathFilter{{JMESPath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"}}))
+}
+
+type mockECRClient struct {
+	mock.Mock
+	ecriface.ECRAPI
+}
+
+func (m *mockECRClient) CreateRepository(createRepositoryInput *ecr.CreateRepositoryInput) (*ecr.CreateRepositoryOutput, error) {
+	m.Called(createRepositoryInput)
+	return &ecr.CreateRepositoryOutput{}, nil
+}
+
+func fakeExecCommand(command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestHelperProcess", "--", command}
+	cs = append(cs, args...)
+	cmd := exec.Command(os.Args[0], cs...)
+	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
+	return cmd
+}
+
+func TestHelperProcess(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	os.Exit(0)
+}
+
+func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview, error) {
+	data, err := ioutil.ReadFile("../../test/requests/" + filename)
+	if err != nil {
+		return nil, err
+	}
+
+	ar := &admissionv1.AdmissionReview{}
+	if err := json.Unmarshal(data, ar); err != nil {
+		return nil, err
+	}
+
+	return ar, nil
+}
+
+func TestImageSwapper_Mutate(t *testing.T) {
+	execCommand = fakeExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	ecrClient := new(mockECRClient)
+	ecrClient.On(
+		"CreateRepository",
+		&ecr.CreateRepositoryInput{
+			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+				ScanOnPush: aws.Bool(true),
+			},
+			ImageTagMutability: aws.String("MUTABLE"),
+			RepositoryName:     aws.String("docker.io/library/nginx"),
+			Tags: []*ecr.Tag{{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			}},
+		}).Return(mock.Anything)
+
+	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	copier := pond.New(1, 1)
+	// TODO: test types.ImageSwapPolicyExists
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	assert.JSONEq(t, "[{\"op\":\"replace\",\"path\":\"/spec/containers/0/image\",\"value\":\"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest\"}]", string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
+
+	// Ensure the worker pool is empty before asserting ecrClient
+	copier.StopAndWait()
+
+	ecrClient.AssertExpectations(t)
+}
+
+// TestImageSwapper_MutateWithImagePullSecrets tests mutating with imagePullSecret support
+func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
+	execCommand = fakeExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	ecrClient := new(mockECRClient)
+	ecrClient.On(
+		"CreateRepository",
+		&ecr.CreateRepositoryInput{
+			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+				ScanOnPush: aws.Bool(true),
+			},
+			ImageTagMutability: aws.String("MUTABLE"),
+			RepositoryName:     aws.String("docker.io/library/nginx"),
+			Tags: []*ecr.Tag{{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			}},
+		}).Return(mock.Anything)
+
+	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-imagepullsecrets.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	clientSet := fake.NewSimpleClientset()
+
+	svcAccount := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-service-account",
+		},
+		ImagePullSecrets: []corev1.LocalObjectReference{
+			{Name: "my-sa-secret"},
+		},
+	}
+	svcAccountSecretDockerConfigJson := []byte(`{"auths":{"my-sa-secret.registry.example.com":{"username":"my-sa-secret","password":"xxxxxxxxxxx","email":"jdoe@example.com","auth":"c3R...zE2"}}}`)
+	svcAccountSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-sa-secret",
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: svcAccountSecretDockerConfigJson,
+		},
+	}
+	podSecretDockerConfigJson := []byte(`{"auths":{"my-pod-secret.registry.example.com":{"username":"my-sa-secret","password":"xxxxxxxxxxx","email":"jdoe@example.com","auth":"c3R...zE2"}}}`)
+	podSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-pod-secret",
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: podSecretDockerConfigJson,
+		},
+	}
+
+	_, _ = clientSet.CoreV1().ServiceAccounts("test-ns").Create(context.TODO(), svcAccount, metav1.CreateOptions{})
+	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.TODO(), svcAccountSecret, metav1.CreateOptions{})
+	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.TODO(), podSecret, metav1.CreateOptions{})
+
+	provider := secrets.NewKubernetesImagePullSecretsProvider(clientSet)
+
+	copier := pond.New(1, 1)
+	// TODO: test types.ImageSwapPolicyExists
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		ImagePullSecretsProvider(provider),
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	assert.JSONEq(t, "[{\"op\":\"replace\",\"path\":\"/spec/containers/0/image\",\"value\":\"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest\"}]", string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
+
+	// Ensure the worker pool is empty before asserting ecrClient
+	copier.StopAndWait()
+
+	ecrClient.AssertExpectations(t)
 }

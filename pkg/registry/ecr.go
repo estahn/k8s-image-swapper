@@ -9,13 +9,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dgraph-io/ristretto"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 )
 
+var execCommand = exec.Command
+
 type ECRClient struct {
-	client    *ecr.ECR
+	client    ecriface.ECRAPI
 	ecrDomain string
 	authToken []byte
 	cache     *ristretto.Cache
@@ -94,7 +97,7 @@ func (e *ECRClient) ImageExists(ref string) bool {
 	}
 
 	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	cmd := exec.Command(app, args...)
+	cmd := execCommand(app, args...)
 
 	if _, err := cmd.Output(); err != nil {
 		return false
@@ -168,7 +171,19 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string) (*ECRClient, error) {
+	client := &ECRClient{
+		client:    ecrClient,
+		ecrDomain: ecrDomain,
+		cache:     nil,
+		scheduler: nil,
+		authToken: []byte("mock-ecr-client-fake-auth-token"),
 	}
 
 	return client, nil
