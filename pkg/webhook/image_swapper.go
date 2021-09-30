@@ -241,6 +241,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			if p.registryClient.ImageExists(targetImage) {
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 				pod.Spec.Containers[i].Image = targetImage
+			} else {
+				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("container image not found in target registry, not swapping")
 			}
 		default:
 			panic("unknown imageSwapPolicy")
