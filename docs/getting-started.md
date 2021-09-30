@@ -55,9 +55,9 @@ TBD
     `awsSecretName` is not required for the Service Account method and instead the service account is annotated:
     ```yaml
     serviceAccount:
-    create: true
-    annotations:
-      eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}
+      create: true
+      annotations:
+        eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}
     ```
 
 [^1]: Use a tool like [kubectx & kubens](https://github.com/ahmetb/kubectx) for convienience.
