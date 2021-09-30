@@ -174,8 +174,7 @@ func TestHelmDeployment(t *testing.T) {
 			fmt.Sprintf("--from-literal=aws_secret_access_key=%s", awsSecretAccessKey),
 		)
 
-		// Deploy the chart using `helm install`. Note that we use the version without `E`, since we want to assert the
-		// install succeeds without any errors.
+		helm.AddRepo(t, options, "estahn", "https://estahn.github.io/charts/")
 		helm.Install(t, options, "estahn/k8s-image-swapper", releaseName)
 	})
 
