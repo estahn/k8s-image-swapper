@@ -2,7 +2,7 @@
 
 ### Is pulling from private registries supported?
 
-Not yet, but hopefully soon (see [GitHub #19](https://github.com/estahn/k8s-image-swapper/issues/19))
+Yes, `imagePullSecrets` on `Pod` and `ServiceAccount` level are supported.
 
 ### Are config changes reloaded gracefully?
 
@@ -10,10 +10,7 @@ Not yet, they require a pod rotation.
 
 ### What happens if the image is not found in the target registry?
 
-There is no notion of whether the image exists in the target registry.
-`k8s-image-swapper` will blindly replace the images references.
-
-This feature is planned for a future release (see [GitHub #12](https://github.com/estahn/k8s-image-swapper/issues/12)).
+Please see [Configuration > ImageCopyPolicy](configuration.md#imagecopypolicy).
 
 ### What level of registry outage does this handle?
 
