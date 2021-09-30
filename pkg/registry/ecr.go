@@ -2,6 +2,7 @@ package registry
 
 import (
 	"encoding/base64"
+	"net/http"
 	"os/exec"
 	"time"
 
@@ -149,7 +150,15 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
-	ecrClient := ecr.New(sess, &aws.Config{Region: aws.String(region)})
+
+	config := aws.NewConfig().
+		WithRegion(region).
+		WithCredentialsChainVerboseErrors(true).
+		WithHTTPClient(&http.Client{
+			Timeout: 3 * time.Second,
+		})
+
+	ecrClient := ecr.New(sess, config)
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
