@@ -27,3 +27,6 @@ fmt: ## gofmt and goimports all go files
 
 lint: ## Run linters
 	golangci-lint run
+
+e2e: ## Run end-to-end tests
+	go test -v -run TestHelmDeployment ./test
