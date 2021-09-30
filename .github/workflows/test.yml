@@ -114,7 +114,7 @@ jobs:
         fail-build: true
 
   e2e:
-    name: "🎢 End-to-End Testing"
+    name: "🎢 End-to-End Tests"
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1

@@ -29,4 +29,4 @@ lint: ## Run linters
 	golangci-lint run
 
 e2e: ## Run end-to-end tests
-	go test -v -run TestHelmDeployment ./test
+	go test -v -run TestHelmDeployment --tags=e2e ./test
