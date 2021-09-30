@@ -123,7 +123,10 @@ jobs:
         kubernetes: [1.22.1]
     steps:
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
+      run: |
+        echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+        sudo apt-get update
+        sudo apt-get install -y libdevmapper-dev libbtrfs-dev goreleaser
 
     - name: Setup Go
       uses: actions/setup-go@v2.1.4
@@ -145,18 +148,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Install goreleaser
-      run: |
-        echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-        sudo apt update
-        sudo apt install goreleaser
-
     - name: Create kind cluster
       uses: helm/kind-action@v1.2.0
       with:
         node_image: kindest/node:v${{ matrix.kubernetes }}
 
-    - run: make e2e
+    - name: Run end-to-end tests
+      run: |
+        kubectl cluster-info --context kind-chart-testing
+        make e2e
       env:
         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
