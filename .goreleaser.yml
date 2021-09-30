@@ -1,3 +1,9 @@
+env:
+  - GO111MODULE=on
+
+gomod:
+  proxy: true
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -7,6 +13,11 @@ builds:
       - linux
     goarch:
       - amd64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
 
 dockers:
   - image_templates:
@@ -32,6 +43,7 @@ changelog:
   filters:
     exclude:
       - '^docs:'
+      - '^chore:'
 
 archives:
   - format: binary
