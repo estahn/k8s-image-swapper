@@ -7,12 +7,12 @@ reg_port='5000'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
-    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
 
 # create a cluster with the local registry enabled in containerd
-kind create cluster --config=$(dirname $0)/kind.yaml
+envsubst < test/kind.yaml | kind create cluster --config=-
 
 # connect the registry to the cluster network
 # (the network may already be connected)
@@ -29,5 +29,5 @@ metadata:
 data:
   localRegistryHosting.v1: |
     host: "localhost:${reg_port}"
-    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
+      help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
