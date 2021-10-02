@@ -43,7 +43,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.22.2
+	k8s.io/client-go/v12 v12.0.0
 	k8s.io/klog/v2 v2.20.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
