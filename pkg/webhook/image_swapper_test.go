@@ -244,6 +244,19 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				ScanOnPush: aws.Bool(true),
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
+			RepositoryName:     aws.String("docker.io/library/init-container"),
+			Tags: []*ecr.Tag{{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			}},
+		}).Return(mock.Anything)
+	ecrClient.On(
+		"CreateRepository",
+		&ecr.CreateRepositoryInput{
+			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+				ScanOnPush: aws.Bool(true),
+			},
+			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("docker.io/library/nginx"),
 			Tags: []*ecr.Tag{{
 				Key:   aws.String("CreatedBy"),
@@ -268,7 +281,12 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 	resp, err := wh.Review(context.TODO(), admissionReviewModel)
 
-	assert.JSONEq(t, "[{\"op\":\"replace\",\"path\":\"/spec/containers/0/image\",\"value\":\"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest\"}]", string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	expected := `[
+		{"op":"replace","path":"/spec/initContainers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest"},
+		{"op":"replace","path":"/spec/containers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest"}
+	]`
+
+	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
 	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
 	assert.NoError(t, err, "Webhook executed without errors")
 
