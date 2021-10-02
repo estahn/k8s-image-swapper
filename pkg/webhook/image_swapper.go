@@ -155,97 +155,101 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 	lctx := logger.
 		WithContext(ctx)
 
-	for i, container := range pod.Spec.Containers {
-		srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
-		if err != nil {
-			log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
-			continue
-		}
-
-		// skip if the source and target registry domain are equal (e.g. same ECR registries)
-		if domain := reference.Domain(srcRef.DockerReference()); domain == p.registryClient.Endpoint() {
-			continue
-		}
-
-		filterCtx := NewFilterContext(*ar, pod, container)
-		if filterMatch(filterCtx, p.filters) {
-			log.Ctx(lctx).Debug().Msg("skip due to filter condition")
-			continue
-		}
-
-		targetImage := p.targetName(srcRef)
-
-		copyFn := func() {
-			// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
-			// image pull policy.
-			if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
-				return
-			}
-
-			// Create repository
-			createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-			log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
-			if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-				log.Err(err)
-			}
-
-			// Retrieve secrets and auth credentials
-			imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
+	containerSets := []*[]corev1.Container{&pod.Spec.Containers, &pod.Spec.InitContainers}
+	for _, containerSet := range containerSets {
+		containers := *containerSet
+		for i, container := range containers {
+			srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
 			if err != nil {
-				log.Err(err)
+				log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
+				continue
 			}
 
-			authFile, err := imagePullSecrets.AuthFile()
-			if authFile != nil {
-				defer func() {
-					if err := os.RemoveAll(authFile.Name()); err != nil {
-						log.Err(err)
-					}
-				}()
+			// skip if the source and target registry domain are equal (e.g. same ECR registries)
+			if domain := reference.Domain(srcRef.DockerReference()); domain == p.registryClient.Endpoint() {
+				continue
 			}
 
-			if err != nil {
-				log.Err(err)
+			filterCtx := NewFilterContext(*ar, pod, container)
+			if filterMatch(filterCtx, p.filters) {
+				log.Ctx(lctx).Debug().Msg("skip due to filter condition")
+				continue
 			}
 
-			// Copy image
-			// TODO: refactor to use structure instead of passing file name / string
-			//       or transform registryClient creds into auth compatible form, e.g.
-			//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-			log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-			if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
-				log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+			targetImage := p.targetName(srcRef)
+
+			copyFn := func() {
+				// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
+				// image pull policy.
+				if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
+					return
+				}
+
+				// Create repository
+				createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
+				log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
+				if err := p.registryClient.CreateRepository(createRepoName); err != nil {
+					log.Err(err)
+				}
+
+				// Retrieve secrets and auth credentials
+				imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
+				if err != nil {
+					log.Err(err)
+				}
+
+				authFile, err := imagePullSecrets.AuthFile()
+				if authFile != nil {
+					defer func() {
+						if err := os.RemoveAll(authFile.Name()); err != nil {
+							log.Err(err)
+						}
+					}()
+				}
+
+				if err != nil {
+					log.Err(err)
+				}
+
+				// Copy image
+				// TODO: refactor to use structure instead of passing file name / string
+				//       or transform registryClient creds into auth compatible form, e.g.
+				//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
+				log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
+				if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
+					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+				}
 			}
-		}
 
-		// imageCopyPolicy
-		switch p.imageCopyPolicy {
-		case types.ImageCopyPolicyDelayed:
-			p.copier.Submit(copyFn)
-		case types.ImageCopyPolicyImmediate:
-			// TODO: Implement deadline
-			p.copier.SubmitAndWait(copyFn)
-		case types.ImageCopyPolicyForce:
-			// TODO: Implement deadline
-			copyFn()
-		default:
-			panic("unknown imageCopyPolicy")
-		}
+			// imageCopyPolicy
+			switch p.imageCopyPolicy {
+			case types.ImageCopyPolicyDelayed:
+				p.copier.Submit(copyFn)
+			case types.ImageCopyPolicyImmediate:
+				// TODO: Implement deadline
+				p.copier.SubmitAndWait(copyFn)
+			case types.ImageCopyPolicyForce:
+				// TODO: Implement deadline
+				copyFn()
+			default:
+				panic("unknown imageCopyPolicy")
+			}
 
-		// imageSwapPolicy
-		switch p.imageSwapPolicy {
-		case types.ImageSwapPolicyAlways:
-			log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-			pod.Spec.Containers[i].Image = targetImage
-		case types.ImageSwapPolicyExists:
-			if p.registryClient.ImageExists(targetImage) {
+			// imageSwapPolicy
+			switch p.imageSwapPolicy {
+			case types.ImageSwapPolicyAlways:
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
-				pod.Spec.Containers[i].Image = targetImage
-			} else {
-				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("container image not found in target registry, not swapping")
+				containers[i].Image = targetImage
+			case types.ImageSwapPolicyExists:
+				if p.registryClient.ImageExists(targetImage) {
+					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
+					containers[i].Image = targetImage
+				} else {
+					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("container image not found in target registry, not swapping")
+				}
+			default:
+				panic("unknown imageSwapPolicy")
 			}
-		default:
-			panic("unknown imageSwapPolicy")
 		}
 	}
 

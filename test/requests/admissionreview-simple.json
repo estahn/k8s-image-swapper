@@ -40,6 +40,23 @@
         ],
         "dnsPolicy": "ClusterFirst",
         "enableServiceLinks": true,
+        "initContainers": [
+          {
+            "image": "init-container",
+            "imagePullPolicy": "Always",
+            "name": "init-container28",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "name": "default-token-fxbar",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
         "priority": 0,
         "restartPolicy": "Never",
         "schedulerName": "default-scheduler",
