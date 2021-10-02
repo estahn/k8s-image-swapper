@@ -111,7 +111,7 @@ jobs:
       uses: anchore/scan-action@v3
       with:
         image: "ghcr.io/estahn/k8s-image-swapper:latest"
-        fail-build: true
+        fail-build: false
         acs-report-enable: true
 
     - name: Upload Anchore scan SARIF report
