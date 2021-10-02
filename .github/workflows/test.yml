@@ -112,3 +112,4 @@ jobs:
       with:
         image: "ghcr.io/estahn/k8s-image-swapper:latest"
         fail-build: true
+        acs-report-enable: true
