@@ -10,7 +10,7 @@
 It is an alternative to a [docker pull-through proxy](https://docs.docker.com/registry/recipes/mirror/).
 The feature set was primarily designed with Amazon ECR in mind but may work with other registries.
 
-## Benefits
+## :zap: Benefits
 
 Using `k8s-image-swapper` will improve the overall availability, reliability, durability and resiliency of your
 Kubernetes cluster by keeping 3rd-party images mirrored into your own registry.
@@ -29,11 +29,21 @@ while reducing data traffic and therefore cost.
 * Use in air-gaped environments without the need to change manifests
 * Reduce NAT ingress traffic/cost
 
-## Documentation
+## :book: Documentation
 
 The documentation is available at [https://estahn.github.io/k8s-image-swapper/](https://estahn.github.io/k8s-image-swapper/index.html).
 
-## Badges
+## :heart_decoration: Sponsor
+
+Does your company use `k8s-image-swapper`?
+Help keep the project bug-free and feature rich by [sponsoring the project](https://github.com/sponsors/estahn).
+
+## :office: Commercial Support
+
+Does your company require individual support or addition of features within a guaranteed timeframe?
+Contact me via [email](mailto:enrico.stahn@gmail.com) to discuss.
+
+## :octocat: Badges
 
 [![Release](https://img.shields.io/github/release/estahn/k8s-image-swapper.svg?style=for-the-badge)](https://github.com/estahn/k8s-image-swapper/releases/latest)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](/LICENSE.md)
@@ -43,6 +53,6 @@ The documentation is available at [https://estahn.github.io/k8s-image-swapper/](
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg?style=for-the-badge)](code_of_conduct.md)
 
-## Stargazers over time
+## :star2: Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/estahn/k8s-image-swapper.svg)](https://starchart.cc/estahn/k8s-image-swapper)
