@@ -26,3 +26,29 @@ is set to `Ignore`.
 !!! tip
     Environments with strict compliance requirements (or air-gapped) may overwrite this with `Fail` to
     avoid falling back to the public images.
+
+### Why are sidecar images not being replaced?
+
+A Kubernetes cluster can have multiple mutating webhooks.
+Mutating webhooks execute sequentiatlly and each can change a submitted object.
+Changes may be applied after `k8s-image-swapper` was executed, e.g. Istio injecting a sidecar.
+
+```
+... -> k8s-image-swapper -> Istio sidecar injection --> ...
+```
+
+Kubernetes 1.15+ allows to re-run webhooks if a mutating webhook modifies an object.
+The behaviour is controlled by the [Reinvocation policy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#reinvocation-policy).
+
+> reinvocationPolicy may be set to `Never` or `IfNeeded`. It defaults to Never.
+>
+> * `Never`: the webhook must not be called more than once in a single admission evaluation
+> * `IfNeeded`: the webhook may be called again as part of the admission evaluation if the object being admitted is modified by other admission plugins after the initial webhook call.
+
+The reinvocation policy can be set in the helm chart as follows:
+
+!!! example "Helm Chart"
+    ```yaml
+    webhook:
+      reinvocationPolicy: IfNeeded
+    ```
