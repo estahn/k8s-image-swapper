@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - 'releases/*'
+    paths-ignore:
+      - 'docs/**'
+      - 'mkdocs.yml'
 
 jobs:
 
