@@ -15,9 +15,11 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
+        
+      - name: Install mkdocs plugins
+        run: pip install mkdocs-minify-plugin mkdocs-markdownextradata-plugin mkdocs-macros-plugin
 
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EXTRA_PACKAGES: mkdocs-minify-plugin mkdocs-markdownextradata-plugin mkdocs-macros-plugin
