@@ -27,8 +27,6 @@ theme:
 
   features:
     - tabs
-  palette:
-    # primary: orange
 
 # Plugins
 plugins:
