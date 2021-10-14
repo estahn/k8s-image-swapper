@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
-     <loc>https://estahn.github.io/k8s-image-wapper/index.html</loc>
-     <lastmod>2021-01-04</lastmod>
-     <changefreq>daily</changefreq>
-    </url><url>
-     <loc>https://estahn.github.io/k8s-image-wapper/getting-started.html</loc>
-     <lastmod>2021-01-04</lastmod>
-     <changefreq>daily</changefreq>
-    </url><url>
-     <loc>https://estahn.github.io/k8s-image-wapper/configuration.html</loc>
-     <lastmod>2021-01-04</lastmod>
-     <changefreq>daily</changefreq>
-    </url><url>
-     <loc>https://estahn.github.io/k8s-image-wapper/faq.html</loc>
-     <lastmod>2021-01-04</lastmod>
-     <changefreq>daily</changefreq>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://estahn.github.io/k8s-image-swapper/index.html</loc>
+         <lastmod>2021-10-14</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://estahn.github.io/k8s-image-swapper/configuration.html</loc>
+         <lastmod>2021-10-14</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://estahn.github.io/k8s-image-swapper/faq.html</loc>
+         <lastmod>2021-10-14</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://estahn.github.io/k8s-image-swapper/getting-started.html</loc>
+         <lastmod>2021-10-14</lastmod>
+         <changefreq>daily</changefreq>
     </url>
 </urlset>
