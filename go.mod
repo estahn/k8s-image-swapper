@@ -13,6 +13,7 @@ require (
 	github.com/containers/storage v1.36.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
+	github.com/evanphx/json-patch/v5 v5.6.0
 	github.com/go-co-op/gocron v1.9.0
 	github.com/go-logr/logr v1.1.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
