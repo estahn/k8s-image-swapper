@@ -12,9 +12,8 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/containers/storage v1.36.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
-	github.com/evanphx/json-patch v4.11.0+incompatible
+	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/go-co-op/gocron v1.9.0
-	github.com/go-logr/logr v1.1.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -42,8 +41,7 @@ require (
 	google.golang.org/grpc v1.41.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
+	k8s.io/apimachinery v0.23.0
 	k8s.io/client-go v0.22.2
-	k8s.io/klog/v2 v2.20.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
