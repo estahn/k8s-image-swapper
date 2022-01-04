@@ -13,6 +13,7 @@ builds:
       - linux
     goarch:
       - amd64
+      - arm64
     mod_timestamp: '{{ .CommitTimestamp }}'
     flags:
       - -trimpath
@@ -21,11 +22,14 @@ builds:
 
 dockers:
   - image_templates:
-      - "ghcr.io/estahn/k8s-image-swapper:latest"
-      - "ghcr.io/estahn/k8s-image-swapper:{{ .Version }}"
-      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}"
-      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}"
+      - "ghcr.io/estahn/k8s-image-swapper:latest-amd64"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Version }}-amd64"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}-amd64"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}-amd64"
+    use: buildx
+    dockerfile: Dockerfile
+    goarch: amd64
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
@@ -35,6 +39,48 @@ dockers:
       - "--build-arg=VERSION={{.Version}}"
       - "--build-arg=BUILD_DATE={{.Date}}"
       - "--build-arg=VCS_REF={{.FullCommit}}"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/estahn/k8s-image-swapper:latest-arm64v8"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Version }}-arm64v8"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}-arm64v8"
+      - "ghcr.io/estahn/k8s-image-swapper:{{ .Major }}-arm64v8"
+    use: buildx
+    dockerfile: Dockerfile
+    goarch: arm64
+    build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--build-arg=VERSION={{.Version}}"
+    - "--build-arg=BUILD_DATE={{.Date}}"
+    - "--build-arg=VCS_REF={{.FullCommit}}"
+    - "--platform=linux/arm64/v8"
+
+docker_manifests:
+  - name_template: ghcr.io/estahn/k8s-image-swapper:latest
+    image_templates:
+    - ghcr.io/estahn/k8s-image-swapper:latest-amd64
+    - ghcr.io/estahn/k8s-image-swapper:latest-arm64v8
+  - name_template: ghcr.io/estahn/k8s-image-swapper:{{ .Version }}
+    image_templates:
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Version }}-amd64
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Version }}-arm64v8
+  - name_template: ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
+    image_templates:
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8
+  - name_template: ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}
+    image_templates:
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}-amd64
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}.{{ .Minor }}-arm64v8
+  - name_template: ghcr.io/estahn/k8s-image-swapper:{{ .Major }}
+    image_templates:
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}-amd64
+    - ghcr.io/estahn/k8s-image-swapper:{{ .Major }}-arm64v8
 
 release:
   prerelease: auto
