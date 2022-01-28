@@ -8,9 +8,9 @@
 FROM alpine:3.14
 RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community "skopeo>=1.2.0"
 
-COPY k8s-image-swapper /usr/bin/k8s-image-swapper
+COPY k8s-image-swapper /
 
-ENTRYPOINT ["/usr/bin/k8s-image-swapper"]
+ENTRYPOINT ["/k8s-image-swapper"]
 
 ARG BUILD_DATE
 ARG VCS_REF
