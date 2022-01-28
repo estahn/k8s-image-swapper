@@ -31,7 +31,30 @@ Choose from one of the strategies below or an alternative if needed.
 
 #### Service Account
 
-TBD
+1. Create an Webidentity IAM role (e.g. `k8s-image-swapper`) with the following trust policy, e.g
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${your_aws_account_id}:oidc-provider/${oidc_image_swapper_role_arn}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "$${oidc_image_swapper_role_arn}:sub": "system:serviceaccount:${k8s_image_swapper_namespace}:${k8s_image_swapper_serviceaccount_name}"
+        }
+      }
+    }
+  ]
+}
+```
+
+2. Create and attach permission policy[^2] to the role from Step 1..
+
+Note: You can see a complete example below in [Terraform](Terraform)
 
 ## Helm
 
@@ -57,7 +80,7 @@ TBD
     serviceAccount:
       create: true
       annotations:
-        eks.amazonaws.com/role-arn: ${oidc_image_sawpper_role_arn}
+        eks.amazonaws.com/role-arn: ${oidc_image_swapper_role_arn}
     ```
 
 [^1]: Use a tool like [kubectx & kubens](https://github.com/ahmetb/kubectx) for convienience.
@@ -101,3 +124,148 @@ TBD
             The resource configuration allows access to all AWS ECR repositories within the account 123456789.
             Restrict this further by repository name or tag.
             `k8s-image-swapper` will create repositories with the source registry as prefix, e.g. `nginx` --> `docker.io/library/nginx:latest`.
+
+### Terraform
+
+- Full example of helm chart deployment with AWS service account setup.
+
+
+```
+data "aws_caller_identity" "current" {
+}
+
+variable "cluster_oidc_provider" {
+  default = "oidc.eks.ap-southeast-1.amazonaws.com/id/ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+  description = "example oidc endpoint that is created during eks deployment"
+}
+
+variable  "cluster_name" {
+  default = "test"
+  description = "name of the eks cluster being deployed to"
+}
+
+
+variable  "region" {
+  default = "ap-southeast-1"
+  description = "name of the eks cluster being deployed to"
+}
+
+variable "k8s_image_swapper_namespace" {
+  default     = "kube-system"
+  description = "namespace to install k8s-image-swapper"
+}
+
+variable "k8s_image_swapper_name" {
+  default     = "k8s-image-swapper"
+  description = "name for k8s-image-swapper release and service account"
+}
+
+#k8s-image-swapper helm chart
+resource "helm_release" "k8s_image_swapper" {
+  name       = var.k8s_image_swapper_name
+  namespace  = "kube-system"
+  repository = "https://estahn.github.io/charts/"
+  chart   = "k8s-image-swapper"
+  keyring = ""
+  version = "1.0.1"
+  values = [
+    <<YAML
+config:
+  dryRun: true
+  logLevel: debug
+  logFormat: console
+
+  source:
+    # Filters provide control over what pods will be processed.
+    # By default all pods will be processed. If a condition matches, the pod will NOT be processed.
+    # For query language details see https://jmespath.org/
+    filters:
+      - jmespath: "obj.metadata.namespace != 'default'"
+      - jmespath: "contains(container.image, '.dkr.ecr.') && contains(container.image, '.amazonaws.com')"
+  target:
+    aws:
+      accountId: "${data.aws_caller_identity.current.account_id}"
+      region: ${var.region}
+
+secretReader:
+  enabled: true
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Specifies annotations for this service account
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role.k8s_image_swapper.name}"
+YAML
+    ,
+  ]
+}
+
+#iam policy for k8s-image-swapper service account
+resource "aws_iam_role_policy" "k8s_image_swapper" {
+  name = "${var.cluster_name}-${var.k8s_image_swapper_name}"
+  role = aws_iam_role.k8s_image_swapper.id
+
+  policy = <<-EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetAuthorizationToken",
+                "ecr:DescribeRepositories",
+                "ecr:DescribeRegistry"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:UploadLayerPart",
+                "ecr:PutImage",
+                "ecr:ListImages",
+                "ecr:InitiateLayerUpload",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:CreateRepository",
+                "ecr:CompleteLayerUpload",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability"
+            ],
+            "Resource": [
+              "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/docker.io/*",
+              "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/quay.io/*"
+	    ]
+        }
+    ]
+}
+EOF
+}
+
+#role for k8s-image-swapper service account
+resource "aws_iam_role" "k8s_image_swapper" {
+  name               = "${var.cluster_name}-${var.k8s_image_swapper_name}"
+  assume_role_policy = <<-EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(var.cluster_oidc_provider, "/https:///", "")}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${replace(var.cluster_oidc_provider, "/https:///", "")}:sub": "system:serviceaccount:${var.k8s_image_swapper_namespace}:${var.k8s_image_swapper_name}"
+        }
+      }
+    }
+  ]
+}
+EOF
+}
+
+```
