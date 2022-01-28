@@ -1,7 +1,7 @@
 # Configuration
 
 The configuration is managed via the config file `.k8s-image-swapper.yaml`.
-Some options can be overriden via parameters, e.g. `--dryrun`.
+Some options can be overriden via parameters, e.g. `--dry-run`.
 
 ## Dry Run
 
