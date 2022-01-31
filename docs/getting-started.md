@@ -44,7 +44,7 @@ Choose from one of the strategies below or an alternative if needed.
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "$${oidc_image_swapper_role_arn}:sub": "system:serviceaccount:${k8s_image_swapper_namespace}:${k8s_image_swapper_serviceaccount_name}"
+          "${oidc_image_swapper_role_arn}:sub": "system:serviceaccount:${k8s_image_swapper_namespace}:${k8s_image_swapper_serviceaccount_name}"
         }
       }
     }
