@@ -9,7 +9,9 @@ jobs:
     steps:
       - uses: bcoe/conventional-release-labels@v1
         with:
-          type_labels:
-            feat: feature
-            fix: bugfix
-            breaking: breaking-change
+          type_labels: >
+            {
+              "feat": "feature",
+              "fix": "bugfix",
+              "breaking": "breaking-change"
+            }
