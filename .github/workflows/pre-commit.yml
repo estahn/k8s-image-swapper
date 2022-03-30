@@ -13,7 +13,7 @@ jobs:
     if: github.ref != 'refs/heads/master'
 
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2.4.0
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v2.2.2
