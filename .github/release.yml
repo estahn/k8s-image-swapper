@@ -9,11 +9,11 @@ changelog:
       labels:
         - Semver-Major
         - breaking-change
-    - title: 🎉 Features 
+    - title: 🎉 Features
       labels:
         - Semver-Minor
         - feature
-    - title: 🐛 Bug Fixes 
+    - title: 🐛 Bug Fixes
       labels:
         - Semver-Minor
         - bugfix
