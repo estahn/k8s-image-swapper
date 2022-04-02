@@ -430,8 +430,8 @@ github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYis
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/go-co-op/gocron v1.9.0 h1:+V+DDenw3ryB7B+tK1bAIC5p0ruw4oX9IqAsdRnGIf0=
-github.com/go-co-op/gocron v1.9.0/go.mod h1:DbJm9kdgr1sEvWpHCA7dFFs/PGHPMil9/97EXCRPr4k=
+github.com/go-co-op/gocron v1.13.0 h1:BjkuNImPy5NuIPEifhWItFG7pYyr27cyjS6BN9w/D4c=
+github.com/go-co-op/gocron v1.13.0/go.mod h1:GD5EIEly1YNW+LovFVx5dzbYVcIc8544K99D8UVRpGo=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
 github.com/go-errors/errors v1.0.2-0.20180813162953-d98b870cc4e0 h1:skJKxRtNmevLqnayafdLe2AsenqRupVmzZSqrvb5caU=
 github.com/go-errors/errors v1.0.2-0.20180813162953-d98b870cc4e0/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
