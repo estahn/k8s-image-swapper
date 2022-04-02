@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.5.1
-	github.com/aws/aws-sdk-go v1.40.54
+	github.com/aws/aws-sdk-go v1.40.56
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
@@ -12,14 +12,14 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/containers/storage v1.36.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
-	github.com/evanphx/json-patch v4.11.0+incompatible
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-co-op/gocron v1.13.0
 	github.com/go-logr/logr v1.1.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/gruntwork-io/terratest v0.37.11
+	github.com/gruntwork-io/terratest v0.40.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/json-iterator/go v1.1.12 // indirect
