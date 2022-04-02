@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.7.1
-	github.com/aws/aws-sdk-go v1.40.56
+	github.com/aws/aws-sdk-go v1.43.31
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/containers/image/v5 v5.16.0
@@ -33,7 +33,6 @@ require (
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
