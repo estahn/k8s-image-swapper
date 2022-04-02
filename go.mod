@@ -29,7 +29,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rs/zerolog v1.25.0
 	github.com/slok/kubewebhook/v2 v2.1.0
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.1
