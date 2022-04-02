@@ -27,7 +27,7 @@ jobs:
       id: go
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3.1.0
@@ -49,7 +49,7 @@ jobs:
       id: go
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: actions/cache@v3.0.1
       with:
@@ -80,7 +80,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Unshallow
       run: git fetch --prune --unshallow
