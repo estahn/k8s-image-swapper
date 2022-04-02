@@ -3,7 +3,7 @@ module github.com/estahn/k8s-image-swapper
 go 1.16
 
 require (
-	github.com/alitto/pond v1.5.1
+	github.com/alitto/pond v1.7.1
 	github.com/aws/aws-sdk-go v1.40.56
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
