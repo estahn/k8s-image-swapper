@@ -13,11 +13,9 @@ require (
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-co-op/gocron v1.13.0
-	github.com/go-logr/logr v1.1.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gruntwork-io/terratest v0.40.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
@@ -34,9 +32,8 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.22.2
-	k8s.io/klog/v2 v2.20.0 // indirect
+	k8s.io/api v0.23.5
+	k8s.io/apimachinery v0.23.5
+	k8s.io/client-go v0.23.5
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
