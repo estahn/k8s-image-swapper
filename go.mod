@@ -6,7 +6,6 @@ require (
 	github.com/alitto/pond v1.7.1
 	github.com/aws/aws-sdk-go v1.40.56
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/containers/image/v5 v5.16.0
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
@@ -22,7 +21,6 @@ require (
 	github.com/gruntwork-io/terratest v0.40.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
@@ -32,14 +30,10 @@ require (
 	github.com/rs/zerolog v1.25.0
 	github.com/slok/kubewebhook/v2 v2.1.0
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.9.0
+	github.com/spf13/viper v1.10.1
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
-	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20210927142257-433400c27d05 // indirect
-	google.golang.org/grpc v1.41.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
