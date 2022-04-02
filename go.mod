@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.5.1
-	github.com/aws/aws-sdk-go v1.40.54
+	github.com/aws/aws-sdk-go v1.40.56
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
@@ -19,7 +19,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/gruntwork-io/terratest v0.37.11
+	github.com/gruntwork-io/terratest v0.40.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/json-iterator/go v1.1.12 // indirect
