@@ -23,7 +23,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/prometheus/client_golang v1.12.1
-	github.com/rs/zerolog v1.25.0
+	github.com/rs/zerolog v1.26.1
 	github.com/slok/kubewebhook/v2 v2.3.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
