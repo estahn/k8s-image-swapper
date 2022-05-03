@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/alitto/pond v1.7.1
-	github.com/aws/aws-sdk-go v1.43.31
+	github.com/aws/aws-sdk-go v1.44.5
 	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/containers/image/v5 v5.16.0
