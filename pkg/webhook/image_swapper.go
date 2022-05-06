@@ -138,6 +138,26 @@ func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvi
 	return kwhmutating.NewWebhook(mcfg)
 }
 
+// imageNamesWithDigestOrTag strips the tag from ambiguous image references that have a digest as well (e.g. `image:tag@sha256:123...`).
+// Such image references are supported by docker but, due to their ambiguity,
+// explicitly not by containers/image.
+func imageNamesWithDigestOrTag(imageName string) (string, error) {
+	ref, err := reference.ParseNormalizedNamed(imageName)
+	if err != nil {
+		return "", err
+	}
+	_, isTagged := ref.(reference.NamedTagged)
+	canonical, isDigested := ref.(reference.Canonical)
+	if isTagged && isDigested {
+		canonical, err = reference.WithDigest(reference.TrimNamed(ref), canonical.Digest())
+		if err != nil {
+			return "", err
+		}
+		imageName = canonical.String()
+	}
+	return imageName, nil
+}
+
 // Mutate replaces the image ref. Satisfies mutating.Mutator interface.
 func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview, obj metav1.Object) (*kwhmutating.MutatorResult, error) {
 	pod, ok := obj.(*corev1.Pod)
@@ -159,9 +179,15 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 	for _, containerSet := range containerSets {
 		containers := *containerSet
 		for i, container := range containers {
-			srcRef, err := alltransports.ParseImageName("docker://" + container.Image)
+			normalizedName, err := imageNamesWithDigestOrTag(container.Image)
 			if err != nil {
-				log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", container.Image, err)
+				log.Ctx(lctx).Warn().Msgf("unable to normalize source name %s: %v", container.Image, err)
+				continue
+			}
+
+			srcRef, err := alltransports.ParseImageName("docker://" + normalizedName)
+			if err != nil {
+				log.Ctx(lctx).Warn().Msgf("invalid source name %s: %v", normalizedName, err)
 				continue
 			}
 

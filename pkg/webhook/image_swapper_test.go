@@ -263,6 +263,19 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				Value: aws.String("k8s-image-swapper"),
 			}},
 		}).Return(mock.Anything)
+	ecrClient.On(
+		"CreateRepository",
+		&ecr.CreateRepositoryInput{
+			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+				ScanOnPush: aws.Bool(true),
+			},
+			ImageTagMutability: aws.String("MUTABLE"),
+			RepositoryName:     aws.String("k8s.gcr.io/ingress-nginx/controller"),
+			Tags: []*ecr.Tag{{
+				Key:   aws.String("CreatedBy"),
+				Value: aws.String("k8s-image-swapper"),
+			}},
+		}).Return(mock.Anything)
 
 	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
 
@@ -283,7 +296,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 	expected := `[
 		{"op":"replace","path":"/spec/initContainers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest"},
-		{"op":"replace","path":"/spec/containers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest"}
+		{"op":"replace","path":"/spec/containers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest"},
+		{"op":"replace","path":"/spec/containers/1/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
 	]`
 
 	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
