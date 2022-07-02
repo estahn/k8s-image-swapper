@@ -21,7 +21,7 @@ jobs:
 
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
 
     - name: Run semantic-release
       run: npx -p @semantic-release/changelog@v5.0.1 -p semantic-release@17.3.0 -p @semantic-release/git@v9.0.1 semantic-release
