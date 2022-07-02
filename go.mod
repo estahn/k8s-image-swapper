@@ -10,7 +10,7 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-co-op/gocron v1.13.0
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/gruntwork-io/terratest v0.40.6
+	github.com/gruntwork-io/terratest v0.40.17
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.12.1
