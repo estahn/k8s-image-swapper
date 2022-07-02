@@ -69,7 +69,7 @@ jobs:
     - name: Test
       run: go test -coverprofile cover.out ./...
 
-    - uses: codecov/codecov-action@v2
+    - uses: codecov/codecov-action@v3
       with:
         file: ./cover.out # optional
         fail_ci_if_error: true
