@@ -22,9 +22,10 @@ repos:
 #  - id: doctoc
 #    args: ['--title', '## Table of Contents']
 - repo:  https://github.com/golangci/golangci-lint
-  rev: a20748098fb3cb4b69f6b6ebb7809e7741122ef8 # v1.41.1
+  rev: a3336890904cd3efa4f1c7e3f82ce207fe125a6f # v1.46.2
   hooks:
     - id: golangci-lint
+      args: ['--timeout', '5m']
 - repo:  https://github.com/dnephin/pre-commit-golang
   rev: ac0f6582d2484b3aa90b05d568e70f9f3c1374c7 # v0.0.17
   hooks:
