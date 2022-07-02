@@ -19,6 +19,8 @@ jobs:
           fetch-depth: 0
 
       - uses: actions/setup-python@v4.0.0
+        with:
+          python-version: '3.x'
 
       - name: Install mkdocs
         run: pip install --upgrade pip && pip install mkdocs mkdocs-minify-plugin mkdocs-markdownextradata-plugin mkdocs-macros-plugin pymdown-extensions mkdocs-material
