@@ -3,6 +3,7 @@ module github.com/estahn/k8s-image-swapper
 go 1.16
 
 require (
+	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/alitto/pond v1.8.0
 	github.com/aws/aws-sdk-go v1.44.47
 	github.com/containers/image/v5 v5.21.1
@@ -17,7 +18,7 @@ require (
 	github.com/rs/zerolog v1.27.0
 	github.com/slok/kubewebhook/v2 v2.3.0
 	github.com/spf13/cobra v1.5.0
-	github.com/spf13/viper v1.10.1
+	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.24.2
