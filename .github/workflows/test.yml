@@ -30,7 +30,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3.1.0
+      uses: golangci/golangci-lint-action@v3.2.0
       with:
         version: v1.46.2
         args: --timeout=5m
@@ -126,6 +126,6 @@ jobs:
         acs-report-enable: true
 
     - name: Upload Anchore scan SARIF report
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ steps.scan.outputs.sarif }}
