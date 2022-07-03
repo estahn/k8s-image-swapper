@@ -1,3 +1,22 @@
+# [1.2.0](https://github.com/estahn/k8s-image-swapper/compare/v1.1.0...v1.2.0) (2022-07-03)
+
+
+### Bug Fixes
+
+* add missing dash ([228749d](https://github.com/estahn/k8s-image-swapper/commit/228749d98e32a7f90608b37b39d74a108f619f37))
+* bump alpine to 3.16 due to security reports ([f7d6564](https://github.com/estahn/k8s-image-swapper/commit/f7d6564e1d607fa53a44e73f8b495a859c31aac1))
+* docker references with both tag and digest ([5a17075](https://github.com/estahn/k8s-image-swapper/commit/5a170758a58b0244e6001a3aa5911c3be3d076f8)), closes [#48](https://github.com/estahn/k8s-image-swapper/issues/48)
+* failed to solve: executor failed running ([af7df18](https://github.com/estahn/k8s-image-swapper/commit/af7df18a02d6455a4ff8ef1495741ad59cbb4856))
+* setup buildx and qemu for image-scan ([c435048](https://github.com/estahn/k8s-image-swapper/commit/c43504873af1c5fd9c2551f8b77f3220f491ab6a))
+* standard_init_linux.go:228: exec user process caused: exec format error ([b7d0c89](https://github.com/estahn/k8s-image-swapper/commit/b7d0c89d162ed0d71e01620cb074be68b8612ab2))
+* **deps:** update module github.com/aws/aws-sdk-go to v1.40.54 ([7f9dbf5](https://github.com/estahn/k8s-image-swapper/commit/7f9dbf5cf5ddae16e252adc8ce21bb4039cd208d))
+
+
+### Features
+
+* add arm docker build ([be81815](https://github.com/estahn/k8s-image-swapper/commit/be8181590fb899f1515b78fbc02bf02986d72e9c))
+* add full arm support to image copying ([6f14156](https://github.com/estahn/k8s-image-swapper/commit/6f14156acb610541d54d16e85171529de39af6ab))
+
 # [1.1.0](https://github.com/estahn/k8s-image-swapper/compare/v1.0.0...v1.1.0) (2021-10-02)
 
 
