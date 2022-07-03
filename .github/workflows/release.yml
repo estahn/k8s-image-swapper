@@ -28,7 +28,7 @@ jobs:
     - name: Run semantic-release
       run: npx -p @semantic-release/changelog@v5.0.1 -p semantic-release@17.3.0 -p @semantic-release/git@v9.0.1 semantic-release
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.CR_PAT }}
 
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
