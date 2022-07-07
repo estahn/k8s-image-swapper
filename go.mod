@@ -5,7 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/alitto/pond v1.8.0
-	github.com/aws/aws-sdk-go v1.44.48
+	github.com/aws/aws-sdk-go v1.44.49
 	github.com/containers/image/v5 v5.21.1
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
