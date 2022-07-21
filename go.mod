@@ -9,7 +9,7 @@ require (
 	github.com/containers/image/v5 v5.21.1
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
-	github.com/go-co-op/gocron v1.15.0
+	github.com/go-co-op/gocron v1.15.1
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/gruntwork-io/terratest v0.40.18
 	github.com/jmespath/go-jmespath v0.4.0
