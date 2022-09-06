@@ -52,5 +52,48 @@ target:
       encryptionConfiguration:
         encryptionType: AES256
         kmsKey: string
+      accessPolicy: |
+        {
+          "Version": "2008-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowCrossAccountPull",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability"
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalOrgID": [
+                    "o-xxxxxxxx"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+
+      lifecyclePolicy: |
+        {
+          "rules": [
+            {
+              "rulePriority": 1,
+              "description": "Rule 1",
+              "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 1
+              },
+              "action": {
+                "type": "expire"
+              }
+            }
+          ]
+        }
 #    dockerio:
 #    quayio:
