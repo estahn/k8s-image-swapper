@@ -15,3 +15,5 @@
 # vendor/
 
 .idea/
+coverage.txt
+k8s-image-swapper
