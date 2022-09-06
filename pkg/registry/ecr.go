@@ -20,12 +20,14 @@ import (
 var execCommand = exec.Command
 
 type ECRClient struct {
-	client        ecriface.ECRAPI
-	ecrDomain     string
-	authToken     []byte
-	cache         *ristretto.Cache
-	scheduler     *gocron.Scheduler
-	targetAccount string
+	client          ecriface.ECRAPI
+	ecrDomain       string
+	authToken       []byte
+	cache           *ristretto.Cache
+	scheduler       *gocron.Scheduler
+	targetAccount   string
+	accessPolicy    string
+	lifecyclePolicy string
 }
 
 func (e *ECRClient) Credentials() string {
@@ -52,32 +54,6 @@ func (e *ECRClient) CreateRepository(name string) error {
 		},
 	})
 
-	// TODO: unhardcode
-	ecr_policy := `{
-		"Version": "2008-10-17",
-		"Statement": [
-			{
-				"Sid": "AllowCrossAccountPull",
-				"Effect": "Allow",
-				"Principal": {
-					"AWS": "*"
-				},
-				"Action": [
-					"ecr:GetDownloadUrlForLayer",
-					"ecr:BatchGetImage",
-					"ecr:BatchCheckLayerAvailability"
-				],
-				"Condition": {
-					"StringEquals": {
-						"aws:PrincipalOrgID": [
-							"o-15bbyi4pcp"
-						]
-					}
-				}
-			}
-		]
-	}`
-
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -93,17 +69,32 @@ func (e *ECRClient) CreateRepository(name string) error {
 		}
 	}
 
-	_, setpolicy_error := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
-		// TODO: unhardcode
-		PolicyText:     &ecr_policy,
-		RegistryId:     &e.targetAccount,
-		RepositoryName: aws.String(name),
-	})
+	if len(e.accessPolicy) > 0 {
+		log.Printf("Setting access policy on %s:\n%s", name, e.accessPolicy)
+		_, err := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
+			PolicyText:     &e.accessPolicy,
+			RegistryId:     &e.targetAccount,
+			RepositoryName: aws.String(name),
+		})
 
-	if setpolicy_error != nil {
-		log.Printf("COULDN'T SET POLICY")
-		log.Printf(setpolicy_error.Error())
-		return setpolicy_error
+		if err != nil {
+			log.Err(err).Msg(err.Error())
+			return err
+		}
+	}
+
+	if len(e.lifecyclePolicy) > 0 {
+		log.Printf("Setting lifecycle policy on %s:\n%s", name, e.lifecyclePolicy)
+		_, err := e.client.PutLifecyclePolicy(&ecr.PutLifecyclePolicyInput{
+			LifecyclePolicyText: &e.lifecyclePolicy,
+			RegistryId:          &e.targetAccount,
+			RepositoryName:      aws.String(name),
+		})
+
+		if err != nil {
+			log.Err(err).Msg(err.Error())
+			return err
+		}
 	}
 
 	e.cache.Set(name, "", 1)
@@ -159,7 +150,6 @@ func (e *ECRClient) Endpoint() string {
 // requestAuthToken requests and returns an authentication token from ECR with its expiration date
 func (e *ECRClient) requestAuthToken() ([]byte, time.Time, error) {
 	getAuthTokenOutput, err := e.client.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
-		// TODO: Unhardcode
 		RegistryIds: []*string{&e.targetAccount},
 	})
 
@@ -193,7 +183,7 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(region string, ecrDomain string, targetAccount, role string) (*ECRClient, error) {
+func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
 	var sess *session.Session
 	var config *aws.Config
 	if role != "" {
@@ -235,11 +225,13 @@ func NewECRClient(region string, ecrDomain string, targetAccount, role string) (
 	scheduler.StartAsync()
 
 	client := &ECRClient{
-		client:        ecrClient,
-		ecrDomain:     ecrDomain,
-		cache:         cache,
-		scheduler:     scheduler,
-		targetAccount: targetAccount,
+		client:          ecrClient,
+		ecrDomain:       ecrDomain,
+		cache:           cache,
+		scheduler:       scheduler,
+		targetAccount:   targetAccount,
+		accessPolicy:    accessPolicy,
+		lifecyclePolicy: lifecyclePolicy,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
