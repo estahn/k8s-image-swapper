@@ -10,6 +10,10 @@ plugins:
 - "@semantic-release/changelog"
 - "@semantic-release/github"
 - "@semantic-release/git"
+- - "@semantic-release/exec"
+  - generateNotesCmd: |
+      echo "${nextRelease.notes}" > /tmp/release-notes.md
+
 branch: main
 branches:
 - '+([0-9])?(.{+([0-9]),x}).x'
@@ -25,3 +29,22 @@ analyzeCommits:
     - type: "build"
       scope: "deps"
       release: "patch"
+
+generateNotes:
+  - path: "@semantic-release/release-notes-generator"
+    preset: "conventionalcommits"
+    presetConfig:
+      types:
+        - { type: 'feat', section: ':tada: Features' }
+        - { type: 'feature', section: ':tada: Features' }
+        - { type: 'fix', section: ':bug: Bug Fixes' }
+        - { type: 'perf', section: ':zap: Performance Improvements' }
+        - { type: 'revert', section: ':rewind: Reverts' }
+        - { type: 'docs', section: ':memo: Documentation', hidden: false }
+        - { type: 'style', section: 'Styles', hidden: true }
+        - { type: 'chore', section: 'Miscellaneous Chores', hidden: true }
+        - { type: 'refactor', section: 'Code Refactoring', hidden: true }
+        - { type: 'test', section: ':test_tube: Tests', hidden: true }
+        - { type: 'build', scope: 'deps', section: ':arrow_up: Dependencies' }
+        - { type: 'build', section: ':construction_worker: Build System' }
+        - { type: 'ci', section: 'Continuous Integration', hidden: true }
