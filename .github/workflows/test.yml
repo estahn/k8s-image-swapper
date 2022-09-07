@@ -24,14 +24,15 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
+    - name: Checkout
+      uses: actions/checkout@v3
+
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.16.5
-      id: go
-
-    - name: Checkout
-      uses: actions/checkout@v3
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3.2.0
@@ -46,16 +47,17 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: ^1.16.5
-      id: go
-
     - name: Checkout
       uses: actions/checkout@v3
 
-    - uses: actions/cache@v3.0.6
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
+
+    - uses: actions/cache@v3.0.8
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -96,13 +98,14 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
-    - name: Setup Go
+    - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.16.5
-      id: go
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
 
-    - uses: actions/cache@v3.0.6
+    - uses: actions/cache@v3.0.8
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -114,7 +117,7 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v3.0.0
+      uses: goreleaser/goreleaser-action@v3.1.0
       with:
         version: latest
         args: release --rm-dist --skip-validate --skip-publish
