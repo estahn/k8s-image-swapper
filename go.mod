@@ -1,6 +1,6 @@
 module github.com/estahn/k8s-image-swapper
 
-go 1.17
+go 1.18
 
 require (
 	github.com/alitto/pond v1.8.1
