@@ -245,6 +245,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("docker.io/library/init-container"),
+			RegistryId:         aws.String("123456789"),
 			Tags: []*ecr.Tag{{
 				Key:   aws.String("CreatedBy"),
 				Value: aws.String("k8s-image-swapper"),
@@ -258,6 +259,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("docker.io/library/nginx"),
+			RegistryId:         aws.String("123456789"),
 			Tags: []*ecr.Tag{{
 				Key:   aws.String("CreatedBy"),
 				Value: aws.String("k8s-image-swapper"),
@@ -271,13 +273,14 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("k8s.gcr.io/ingress-nginx/controller"),
+			RegistryId:         aws.String("123456789"),
 			Tags: []*ecr.Tag{{
 				Key:   aws.String("CreatedBy"),
 				Value: aws.String("k8s-image-swapper"),
 			}},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
+	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -323,6 +326,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 				ScanOnPush: aws.Bool(true),
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
+			RegistryId:         aws.String("123456789"),
 			RepositoryName:     aws.String("docker.io/library/nginx"),
 			Tags: []*ecr.Tag{{
 				Key:   aws.String("CreatedBy"),
@@ -330,7 +334,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 			}},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com")
+	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-imagepullsecrets.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)

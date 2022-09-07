@@ -29,6 +29,91 @@ Choose from one of the strategies below or an alternative if needed.
       --from-literal=aws_secret_access_key=<...>
     ```
 
+#### Using ECR registries cross-account
+
+Although ECR allows creating registry policy that allows reposistories creation from different account, there's no way to push anything to these repositories.
+ECR resource-level policy can not be applied during creation, and to apply it afterwards we need ecr:SetRepositoryPolicy permission, which foreign account doesn't have.
+
+One way out of this conundrum is to assume the role in target account
+
+```yaml
+target:
+  type: aws
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    role: arn:aws:iam::123456789012:role/roleName
+```
+!!! note
+Make sure that target role has proper trust permissions that allow to assume it cross-account
+
+!!! note
+In order te be able to pull images from outside accounts, you will have to apply proper access policy
+
+
+#### Access policy
+
+You can specify the access policy that will be applied to the created repos in config. Policy should be raw json string.
+For example:
+```yaml
+target:
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    role: arn:aws:iam::123456789012:role/roleName
+    accessPolicy: '{
+  "Statement": [
+    {
+      "Sid": "AllowCrossAccountPull",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:PrincipalOrgID": "o-xxxxxxxxxx"
+        }
+      }
+    }
+  ],
+  "Version": "2008-10-17"
+}'
+```
+
+#### Lifecycle policy
+
+Similarly to access policy, lifecycle policy can be specified, for example:
+
+```yaml
+target:
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    role: arn:aws:iam::123456789012:role/roleName
+    accessPolicy: '{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Rule 1",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "imageCountMoreThan",
+        "countNumber": 1000
+      },
+      "action": {
+        "type": "expire"
+      }
+    }
+  ]
+}
+'
+```
+
 #### Service Account
 
 1. Create an Webidentity IAM role (e.g. `k8s-image-swapper`) with the following trust policy, e.g

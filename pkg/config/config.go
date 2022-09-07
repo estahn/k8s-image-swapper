@@ -54,8 +54,11 @@ type Target struct {
 }
 
 type AWS struct {
-	AccountID string `yaml:"accountId"`
-	Region    string `yaml:"region"`
+	AccountID       string `yaml:"accountId"`
+	Region          string `yaml:"region"`
+	Role            string `yaml:"role"`
+	AccessPolicy    string `yaml:"accessPolicy"`
+	LifecyclePolicy string `yaml:"lifecyclePolicy"`
 }
 
 func (a *AWS) EcrDomain() string {

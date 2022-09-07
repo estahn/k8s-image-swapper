@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
@@ -19,11 +20,14 @@ import (
 var execCommand = exec.Command
 
 type ECRClient struct {
-	client    ecriface.ECRAPI
-	ecrDomain string
-	authToken []byte
-	cache     *ristretto.Cache
-	scheduler *gocron.Scheduler
+	client          ecriface.ECRAPI
+	ecrDomain       string
+	authToken       []byte
+	cache           *ristretto.Cache
+	scheduler       *gocron.Scheduler
+	targetAccount   string
+	accessPolicy    string
+	lifecyclePolicy string
 }
 
 func (e *ECRClient) Credentials() string {
@@ -41,6 +45,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 			ScanOnPush: aws.Bool(true),
 		},
 		ImageTagMutability: aws.String(ecr.ImageTagMutabilityMutable),
+		RegistryId:         &e.targetAccount,
 		Tags: []*ecr.Tag{
 			{
 				Key:   aws.String("CreatedBy"),
@@ -48,6 +53,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 			},
 		},
 	})
+
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -59,6 +65,37 @@ func (e *ECRClient) CreateRepository(name string) error {
 		} else {
 			// Print the error, cast err to awserr.Error to get the Code and
 			// Message from an error.
+			return err
+		}
+	}
+
+	if len(e.accessPolicy) > 0 {
+		log.Info().Msg("Setting access policy on" + name)
+		log.Debug().Msg("Access policy: \n" + e.accessPolicy)
+		_, err := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
+			PolicyText:     &e.accessPolicy,
+			RegistryId:     &e.targetAccount,
+			RepositoryName: aws.String(name),
+		})
+
+		if err != nil {
+			log.Err(err).Msg(err.Error())
+			return err
+		}
+	}
+
+	if len(e.lifecyclePolicy) > 0 {
+		log.Info().Msg("Setting lifecycle policy on" + name)
+		log.Debug().Msg("Lifecycle policy: \n" + e.lifecyclePolicy)
+
+		_, err := e.client.PutLifecyclePolicy(&ecr.PutLifecyclePolicyInput{
+			LifecyclePolicyText: &e.lifecyclePolicy,
+			RegistryId:          &e.targetAccount,
+			RepositoryName:      aws.String(name),
+		})
+
+		if err != nil {
+			log.Err(err).Msg(err.Error())
 			return err
 		}
 	}
@@ -115,7 +152,10 @@ func (e *ECRClient) Endpoint() string {
 
 // requestAuthToken requests and returns an authentication token from ECR with its expiration date
 func (e *ECRClient) requestAuthToken() ([]byte, time.Time, error) {
-	getAuthTokenOutput, err := e.client.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
+	getAuthTokenOutput, err := e.client.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
+		RegistryIds: []*string{&e.targetAccount},
+	})
+
 	if err != nil {
 		return []byte(""), time.Time{}, err
 	}
@@ -146,18 +186,33 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
+func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
+	var sess *session.Session
+	var config *aws.Config
+	if role != "" {
+		log.Debug().Msg("Role is specified. Assuming " + role)
+		stsSession, _ := session.NewSession(config)
+		creds := stscreds.NewCredentials(stsSession, role)
+		config = aws.NewConfig().
+			WithRegion(region).
+			WithCredentialsChainVerboseErrors(true).
+			WithHTTPClient(&http.Client{
+				Timeout: 3 * time.Second,
+			}).
+			WithCredentials(creds)
+	} else {
+		config = aws.NewConfig().
+			WithRegion(region).
+			WithCredentialsChainVerboseErrors(true).
+			WithHTTPClient(&http.Client{
+				Timeout: 3 * time.Second,
+			})
+	}
+
+	sess = session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
+		Config:            (*config),
 	}))
-
-	config := aws.NewConfig().
-		WithRegion(region).
-		WithCredentialsChainVerboseErrors(true).
-		WithHTTPClient(&http.Client{
-			Timeout: 3 * time.Second,
-		})
-
 	ecrClient := ecr.New(sess, config)
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
@@ -173,10 +228,13 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	scheduler.StartAsync()
 
 	client := &ECRClient{
-		client:    ecrClient,
-		ecrDomain: ecrDomain,
-		cache:     cache,
-		scheduler: scheduler,
+		client:          ecrClient,
+		ecrDomain:       ecrDomain,
+		cache:           cache,
+		scheduler:       scheduler,
+		targetAccount:   targetAccount,
+		accessPolicy:    accessPolicy,
+		lifecyclePolicy: lifecyclePolicy,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -186,13 +244,14 @@ func NewECRClient(region string, ecrDomain string) (*ECRClient, error) {
 	return client, nil
 }
 
-func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string) (*ECRClient, error) {
+func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string, targetAccount, role string) (*ECRClient, error) {
 	client := &ECRClient{
-		client:    ecrClient,
-		ecrDomain: ecrDomain,
-		cache:     nil,
-		scheduler: nil,
-		authToken: []byte("mock-ecr-client-fake-auth-token"),
+		client:        ecrClient,
+		ecrDomain:     ecrDomain,
+		cache:         nil,
+		scheduler:     nil,
+		targetAccount: targetAccount,
+		authToken:     []byte("mock-ecr-client-fake-auth-token"),
 	}
 
 	return client, nil
