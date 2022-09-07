@@ -31,11 +31,8 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version-file: 'go.mod'
+        check-latest: true
         cache: true
-      id: go
-
-    - name: Debug
-      run: go version
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3.2.0
@@ -50,14 +47,15 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: ^1.16.5
-      id: go
-
     - name: Checkout
       uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
 
     - uses: actions/cache@v3.0.6
       with:
@@ -100,11 +98,12 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
-    - name: Setup Go
+    - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.16.5
-      id: go
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
 
     - uses: actions/cache@v3.0.6
       with:

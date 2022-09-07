@@ -41,8 +41,9 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.16.5
-      id: go
+        go-version-file: 'go.mod'
+        check-latest: true
+        cache: true
 
     - name: Login to github registry
       uses: docker/login-action@v2.0.0
