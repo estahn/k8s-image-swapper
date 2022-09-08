@@ -70,8 +70,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 	}
 
 	if len(e.accessPolicy) > 0 {
-		log.Info().Msg("Setting access policy on repo:" + name)
-		log.Debug().Msg("Access policy: \n" + e.accessPolicy)
+		log.Debug().Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("setting access policy on repo")
 		_, err := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
 			PolicyText:     &e.accessPolicy,
 			RegistryId:     &e.targetAccount,
@@ -85,9 +84,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 	}
 
 	if len(e.lifecyclePolicy) > 0 {
-		log.Info().Msg("Setting lifecycle policy on repo: " + name)
-		log.Debug().Msg("Lifecycle policy: \n" + e.lifecyclePolicy)
-
+		log.Debug().Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("setting lifecycle policy on repo")
 		_, err := e.client.PutLifecyclePolicy(&ecr.PutLifecyclePolicyInput{
 			LifecyclePolicyText: &e.lifecyclePolicy,
 			RegistryId:          &e.targetAccount,
@@ -190,7 +187,7 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 	var sess *session.Session
 	var config *aws.Config
 	if role != "" {
-		log.Debug().Msg("Role is specified. Assuming " + role)
+		log.Info().Str("assumedRole", role).Msg("assuming specified role")
 		stsSession, _ := session.NewSession(config)
 		creds := stscreds.NewCredentials(stsSession, role)
 		config = aws.NewConfig().
