@@ -20,6 +20,7 @@ jobs:
       with:
         token: ${{ secrets.CR_PAT }}
         ref: ${{ inputs.forRef }}
+        fetch-depth: 0
 
     - uses: actions/setup-node@v3
       with:
@@ -31,7 +32,7 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
-    - run: semantic-release
+    - run: npx semantic-release
       env:
         GH_TOKEN: ${{ secrets.CR_PAT }}
 
@@ -51,6 +52,7 @@ jobs:
       with:
         token: ${{ secrets.CR_PAT }}
         ref: ${{ inputs.forRef }}
+        fetch-depth: 0
 
     - name: Unshallow
       run: git fetch --prune --unshallow
