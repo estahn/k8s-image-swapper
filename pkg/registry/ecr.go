@@ -70,7 +70,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 	}
 
 	if len(e.accessPolicy) > 0 {
-		log.Info().Msg("Setting access policy on" + name)
+		log.Info().Msg("Setting access policy on repo:" + name)
 		log.Debug().Msg("Access policy: \n" + e.accessPolicy)
 		_, err := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
 			PolicyText:     &e.accessPolicy,
@@ -85,7 +85,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 	}
 
 	if len(e.lifecyclePolicy) > 0 {
-		log.Info().Msg("Setting lifecycle policy on" + name)
+		log.Info().Msg("Setting lifecycle policy on repo: " + name)
 		log.Debug().Msg("Lifecycle policy: \n" + e.lifecyclePolicy)
 
 		_, err := e.client.PutLifecyclePolicy(&ecr.PutLifecyclePolicyInput{
