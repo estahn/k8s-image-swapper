@@ -6,10 +6,10 @@ on:
     - cron: "0 0 1 * *"
 
 jobs:
-  release:
-    name: Release
+  tag:
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    name: Tag
     runs-on: ubuntu-latest
-#     if: github.ref == 'refs/heads/master'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -26,16 +26,35 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
+    - run: semantic-release
+      env:
+        GH_TOKEN: ${{ secrets.CR_PAT }}
+
+    - name: Store release notes
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-notes
+        path: /tmp/release-notes.md
+
+  release:
+    if: "startsWith(github.ref, 'refs/tags/')"
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.CR_PAT }}
+
+    - name: Unshallow
+      run: git fetch --prune --unshallow
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
 
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
-
-    - run: npx semantic-release
-      env:
-        GH_TOKEN: ${{ secrets.CR_PAT }}
 
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
