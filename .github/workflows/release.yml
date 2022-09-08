@@ -55,6 +55,14 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
+    - uses: actions/download-artifact@v3
+      with:
+        name: release-notes
+        path: /tmp
+
+    - name: Ensure release-notes exists
+      run: touch /tmp/release-notes.md
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
 
