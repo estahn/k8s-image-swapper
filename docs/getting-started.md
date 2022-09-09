@@ -45,10 +45,10 @@ target:
     role: arn:aws:iam::123456789012:role/roleName
 ```
 !!! note
-Make sure that target role has proper trust permissions that allow to assume it cross-account
+    Make sure that target role has proper trust permissions that allow to assume it cross-account
 
 !!! note
-In order te be able to pull images from outside accounts, you will have to apply proper access policy
+    In order te be able to pull images from outside accounts, you will have to apply proper access policy
 
 
 #### Access policy
@@ -95,7 +95,7 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    accessPolicy: '{
+    lifecyclePolicy: '{
   "rules": [
     {
       "rulePriority": 1,
