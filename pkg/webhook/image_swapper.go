@@ -298,7 +298,7 @@ func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 		return false
 	}
 
-	log.Debug().Interface("object", filterContext).Msg("generated filter context")
+	log.Trace().Interface("object", filterContext).Msg("generated filter context")
 
 	for idx, filter := range filters {
 		results, err := jmespath.Search(filter.JMESPath, filterContext)
