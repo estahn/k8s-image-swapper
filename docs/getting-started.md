@@ -95,7 +95,7 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    accessPolicy: '{
+    lifecyclePolicy: '{
   "rules": [
     {
       "rulePriority": 1,
