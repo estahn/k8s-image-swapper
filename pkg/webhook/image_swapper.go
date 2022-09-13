@@ -213,7 +213,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 				// Create repository
 				createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-				log.Ctx(lctx).Info().Str("repository", createRepoName).Msg("create repository")
+				log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
 				if err := p.registryClient.CreateRepository(createRepoName); err != nil {
 					log.Err(err)
 				}
