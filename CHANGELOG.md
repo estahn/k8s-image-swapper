@@ -1,3 +1,20 @@
+## [1.3.1](https://github.com/estahn/k8s-image-swapper/compare/v1.3.0...v1.3.1) (2022-10-01)
+
+
+### :bug: Bug Fixes
+
+* set verbose level & use structured logging ([#346](https://github.com/estahn/k8s-image-swapper/issues/346)) ([9b21320](https://github.com/estahn/k8s-image-swapper/commit/9b21320a52d3f74ae4a6e8233cc3e310d2f5136b))
+
+
+### :arrow_up: Dependencies
+
+* **deps:** bump github.com/aws/aws-sdk-go from 1.44.92 to 1.44.95 ([#349](https://github.com/estahn/k8s-image-swapper/issues/349)) ([609e915](https://github.com/estahn/k8s-image-swapper/commit/609e91566628b2c89ee0f3a6f582993cb7df8154)), closes [#4553](https://github.com/estahn/k8s-image-swapper/issues/4553) [#4551](https://github.com/estahn/k8s-image-swapper/issues/4551) [#4550](https://github.com/estahn/k8s-image-swapper/issues/4550)
+* **deps:** bump github.com/aws/aws-sdk-go from 1.44.95 to 1.44.100 ([#351](https://github.com/estahn/k8s-image-swapper/issues/351)) ([c4aba7d](https://github.com/estahn/k8s-image-swapper/commit/c4aba7dd91b6128c4b6b70b52a3587d81a1b439f)), closes [#4560](https://github.com/estahn/k8s-image-swapper/issues/4560) [#4559](https://github.com/estahn/k8s-image-swapper/issues/4559) [#4558](https://github.com/estahn/k8s-image-swapper/issues/4558) [#4556](https://github.com/estahn/k8s-image-swapper/issues/4556) [#4555](https://github.com/estahn/k8s-image-swapper/issues/4555)
+* **deps:** bump github.com/gruntwork-io/terratest from 0.40.21 to 0.40.22 ([#348](https://github.com/estahn/k8s-image-swapper/issues/348)) ([b3fa94d](https://github.com/estahn/k8s-image-swapper/commit/b3fa94df956a05796d8fd396462d0bb6987c8f11)), closes [#1169](https://github.com/estahn/k8s-image-swapper/issues/1169)
+* **deps:** bump k8s.io/api from 0.25.0 to 0.25.1 ([#350](https://github.com/estahn/k8s-image-swapper/issues/350)) ([e1b358a](https://github.com/estahn/k8s-image-swapper/commit/e1b358aa28abacbf4e2c125032871d9db6fab401)), closes [#112161](https://github.com/estahn/k8s-image-swapper/issues/112161) [pohly/automated-cherry-pick-of-#112129](https://github.com/pohly/automated-cherry-pick-of-/issues/112129)
+* **deps:** bump k8s.io/apimachinery from 0.25.0 to 0.25.1 ([#352](https://github.com/estahn/k8s-image-swapper/issues/352)) ([046ad1e](https://github.com/estahn/k8s-image-swapper/commit/046ad1e07924a4b4e797e5984262ef09872e5e50)), closes [#112330](https://github.com/estahn/k8s-image-swapper/issues/112330) [enj/automated-cherry-pick-of-#112193](https://github.com/enj/automated-cherry-pick-of-/issues/112193) [#112161](https://github.com/estahn/k8s-image-swapper/issues/112161) [pohly/automated-cherry-pick-of-#112129](https://github.com/pohly/automated-cherry-pick-of-/issues/112129)
+* **deps:** bump k8s.io/client-go from 0.25.0 to 0.25.1 ([#353](https://github.com/estahn/k8s-image-swapper/issues/353)) ([4525ad4](https://github.com/estahn/k8s-image-swapper/commit/4525ad4a667fda8e86d4c19d3c57f9d2fe9ab7c3)), closes [#112161](https://github.com/estahn/k8s-image-swapper/issues/112161) [pohly/automated-cherry-pick-of-#112129](https://github.com/pohly/automated-cherry-pick-of-/issues/112129) [#112336](https://github.com/estahn/k8s-image-swapper/issues/112336) [enj/automated-cherry-pick-of-#112017](https://github.com/enj/automated-cherry-pick-of-/issues/112017) [#112055](https://github.com/estahn/k8s-image-swapper/issues/112055) [aanm/automated-cherry-pick-of-#111752](https://github.com/aanm/automated-cherry-pick-of-/issues/111752)
+
 ## [1.3.0](https://github.com/estahn/k8s-image-swapper/compare/v1.2.3...v1.3.0) (2022-09-07)
 
 
