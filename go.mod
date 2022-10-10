@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/alitto/pond v1.8.1
-	github.com/aws/aws-sdk-go v1.44.109
+	github.com/aws/aws-sdk-go v1.44.114
 	github.com/containers/image/v5 v5.23.0
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
