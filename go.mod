@@ -6,7 +6,7 @@ require (
 	github.com/alitto/pond v1.8.1
 	github.com/aws/aws-sdk-go v1.44.114
 	github.com/containers/image/v5 v5.23.0
-	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dgraph-io/ristretto v0.1.1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-co-op/gocron v1.17.0
 	github.com/golang/glog v1.0.0 // indirect
@@ -146,7 +146,7 @@ require (
 	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
