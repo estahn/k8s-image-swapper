@@ -20,57 +20,6 @@ type KubernetesImagePullSecretsProvider struct {
 	authenticatedRegistries []registry.Client
 }
 
-func NewKubernetesImagePullSecretsProvider(clientset kubernetes.Interface) ImagePullSecretsProvider {
-	return &KubernetesImagePullSecretsProvider{
-		kubernetesClient:        clientset,
-		authenticatedRegistries: []registry.Client{},
-	}
-}
-
-func (p *KubernetesImagePullSecretsProvider) SetAuthenticatedRegistries(registries []registry.Client) {
-	p.authenticatedRegistries = registries
-}
-
-// GetImagePullSecrets returns all secrets with their respective content
-func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(ctx context.Context, pod *v1.Pod) (*ImagePullSecretsResult, error) {
-	var secrets = make(map[string][]byte)
-
-	imagePullSecrets := pod.Spec.ImagePullSecrets
-
-	// retrieve secret names from pod ServiceAccount (spec.imagePullSecrets)
-	serviceAccount, err := p.kubernetesClient.CoreV1().
-		ServiceAccounts(pod.Namespace).
-		Get(ctx, pod.Spec.ServiceAccountName, metav1.GetOptions{})
-	if err != nil {
-		log.Ctx(ctx).Warn().Msg("error fetching referenced service account, continue without service account imagePullSecrets")
-	}
-
-	if serviceAccount != nil {
-		imagePullSecrets = append(imagePullSecrets, serviceAccount.ImagePullSecrets...)
-	}
-
-	result := NewImagePullSecretsResultWithDefaults(p.authenticatedRegistries)
-	for _, imagePullSecret := range imagePullSecrets {
-		// fetch a secret only once
-		if _, exists := secrets[imagePullSecret.Name]; exists {
-			continue
-		}
-
-		secret, err := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(ctx, imagePullSecret.Name, metav1.GetOptions{})
-		if err != nil {
-			log.Ctx(ctx).Err(err).Msg("error fetching secret, continue without imagePullSecrets")
-		}
-
-		if secret == nil || secret.Type != v1.SecretTypeDockerConfigJson {
-			continue
-		}
-
-		result.Add(imagePullSecret.Name, secret.Data[v1.DockerConfigJsonKey])
-	}
-
-	return result, nil
-}
-
 // ImagePullSecretsResult contains the result of GetImagePullSecrets
 type ImagePullSecretsResult struct {
 	Secrets   map[string][]byte
@@ -120,4 +69,55 @@ func (r *ImagePullSecretsResult) AuthFile() (*os.File, error) {
 	}
 
 	return tmpfile, nil
+}
+
+func NewKubernetesImagePullSecretsProvider(clientset kubernetes.Interface) ImagePullSecretsProvider {
+	return &KubernetesImagePullSecretsProvider{
+		kubernetesClient:        clientset,
+		authenticatedRegistries: []registry.Client{},
+	}
+}
+
+func (p *KubernetesImagePullSecretsProvider) SetAuthenticatedRegistries(registries []registry.Client) {
+	p.authenticatedRegistries = registries
+}
+
+// GetImagePullSecrets returns all secrets with their respective content
+func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(ctx context.Context, pod *v1.Pod) (*ImagePullSecretsResult, error) {
+	var secrets = make(map[string][]byte)
+
+	imagePullSecrets := pod.Spec.ImagePullSecrets
+
+	// retrieve secret names from pod ServiceAccount (spec.imagePullSecrets)
+	serviceAccount, err := p.kubernetesClient.CoreV1().
+		ServiceAccounts(pod.Namespace).
+		Get(ctx, pod.Spec.ServiceAccountName, metav1.GetOptions{})
+	if err != nil {
+		log.Ctx(ctx).Warn().Msg("error fetching referenced service account, continue without service account imagePullSecrets")
+	}
+
+	if serviceAccount != nil {
+		imagePullSecrets = append(imagePullSecrets, serviceAccount.ImagePullSecrets...)
+	}
+
+	result := NewImagePullSecretsResultWithDefaults(p.authenticatedRegistries)
+	for _, imagePullSecret := range imagePullSecrets {
+		// fetch a secret only once
+		if _, exists := secrets[imagePullSecret.Name]; exists {
+			continue
+		}
+
+		secret, err := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(ctx, imagePullSecret.Name, metav1.GetOptions{})
+		if err != nil {
+			log.Ctx(ctx).Err(err).Msg("error fetching secret, continue without imagePullSecrets")
+		}
+
+		if secret == nil || secret.Type != v1.SecretTypeDockerConfigJson {
+			continue
+		}
+
+		result.Add(imagePullSecret.Name, secret.Data[v1.DockerConfigJsonKey])
+	}
+
+	return result, nil
 }

@@ -47,7 +47,7 @@ type Config struct {
 }
 
 type Source struct {
-	PrivateRegistries []Registry       `json:"privateRegistries"`
+	PrivateRegistries []Registry       `yaml:"privateRegistries"`
 	Filters           []JMESPathFilter `yaml:"filters"`
 }
 
