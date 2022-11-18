@@ -3,7 +3,6 @@ package webhook
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -226,7 +225,7 @@ func TestHelperProcess(t *testing.T) {
 }
 
 func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview, error) {
-	data, err := ioutil.ReadFile("../../test/requests/" + filename)
+	data, err := os.ReadFile("../../test/requests/" + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +307,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	targetRegistryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -316,7 +315,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 	copier := pond.New(1, 1)
 	// TODO: test types.ImageSwapPolicyExists
 	wh, err := NewImageSwapperWebhookWithOpts(
-		registryClient,
+		targetRegistryClient,
 		Copier(copier),
 		ImageSwapPolicy(types.ImageSwapPolicyAlways),
 	)
@@ -369,7 +368,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	targetRegistryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-imagepullsecrets.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -414,7 +413,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	copier := pond.New(1, 1)
 	// TODO: test types.ImageSwapPolicyExists
 	wh, err := NewImageSwapperWebhookWithOpts(
-		registryClient,
+		targetRegistryClient,
 		ImagePullSecretsProvider(provider),
 		Copier(copier),
 		ImageSwapPolicy(types.ImageSwapPolicyAlways),

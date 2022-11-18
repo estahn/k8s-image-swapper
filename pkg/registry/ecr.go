@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"os/exec"
 	"time"
@@ -31,8 +32,33 @@ type ECRClient struct {
 	tags            []config.Tag
 }
 
+type Dockerconfig struct {
+	AuthConfigs map[string]AuthConfig `json:"auths"`
+}
+
+type AuthConfig struct {
+	Auth string `json:"auth,omitempty"`
+}
+
 func (e *ECRClient) Credentials() string {
 	return string(e.authToken)
+}
+
+func (e *ECRClient) Dockerconfig() ([]byte, error) {
+	dockerconfig := Dockerconfig{
+		AuthConfigs: map[string]AuthConfig{
+			e.ecrDomain: {
+				Auth: base64.StdEncoding.EncodeToString(e.authToken),
+			},
+		},
+	}
+
+	dockerconfigjson, err := json.Marshal(dockerconfig)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return dockerconfigjson, nil
 }
 
 func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {

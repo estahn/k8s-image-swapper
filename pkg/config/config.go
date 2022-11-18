@@ -47,7 +47,12 @@ type Config struct {
 }
 
 type Source struct {
-	Filters []JMESPathFilter `yaml:"filters"`
+	PrivateRegistries []Registry       `json:"privateRegistries"`
+	Filters           []JMESPathFilter `yaml:"filters"`
+}
+
+type Registry struct {
+	AWS AWS `yaml:"aws"`
 }
 
 type JMESPathFilter struct {

@@ -52,6 +52,23 @@ This option only applies for `immediate` and `force` image copy strategies.
 
 This section configures details about the image source.
 
+### Private Registries
+
+The option `source.privateRegistries` describes a list of private ECR to pull images from, using the same credentials as for the target registry. This authentication method is the default way to get authorized by a private registry if the targeted Pod does not provide an `imagePullSecret`.
+
+Registries are described with an AWS account ID and region, mostly to construct the ECR domain `[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com`.
+
+!!! example
+    ```yaml
+    source:
+      privateRegistries:
+        - aws:
+            accountId: 123456789
+            region: ap-southeast-2
+        - aws:
+            accountId: 234567890
+            region: us-east-1
+    ```
 ### Filters
 
 Filters provide control over what pods will be processed.
@@ -133,7 +150,7 @@ This section configures details about the image target.
 
 ### AWS
 
-The option `target.registry.aws` holds details about the target registry storing the images.
+The option `target.aws` holds details about the target registry storing the images.
 The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
