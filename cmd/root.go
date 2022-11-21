@@ -25,11 +25,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"os"
 
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
@@ -64,7 +63,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
-		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.AccessPolicy, cfg.Target.AWS.LifecyclePolicy)
+		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.AccessPolicy, cfg.Target.AWS.LifecyclePolicy, cfg.RepositoryCustomTags)
 		if err != nil {
 			log.Err(err).Msg("error connecting to registry client")
 			os.Exit(1)

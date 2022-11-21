@@ -37,6 +37,19 @@ source:
 				},
 			},
 		},
+		{
+			name: "should render custom tags config",
+			cfg: `
+repositoryCustomTags:
+  - name: A
+    value: b
+`,
+			expCfg: Config{
+				RepositoryCustomTags: []CustomTag{
+					{Name: "A", Value: "b"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

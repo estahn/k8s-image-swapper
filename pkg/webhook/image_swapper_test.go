@@ -246,10 +246,16 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("docker.io/library/init-container"),
 			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			}},
+			Tags: []*ecr.Tag{
+				{
+					Key:   aws.String("CreatedBy"),
+					Value: aws.String("k8s-image-swapper"),
+				},
+				{
+					Key:   aws.String("Mock"),
+					Value: aws.String("mocked-tag"),
+				},
+			},
 		}).Return(mock.Anything)
 	ecrClient.On(
 		"CreateRepository",
@@ -260,10 +266,16 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("docker.io/library/nginx"),
 			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			}},
+			Tags: []*ecr.Tag{
+				{
+					Key:   aws.String("CreatedBy"),
+					Value: aws.String("k8s-image-swapper"),
+				},
+				{
+					Key:   aws.String("Mock"),
+					Value: aws.String("mocked-tag"),
+				},
+			},
 		}).Return(mock.Anything)
 	ecrClient.On(
 		"CreateRepository",
@@ -274,10 +286,16 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			ImageTagMutability: aws.String("MUTABLE"),
 			RepositoryName:     aws.String("k8s.gcr.io/ingress-nginx/controller"),
 			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			}},
+			Tags: []*ecr.Tag{
+				{
+					Key:   aws.String("CreatedBy"),
+					Value: aws.String("k8s-image-swapper"),
+				},
+				{
+					Key:   aws.String("Mock"),
+					Value: aws.String("mocked-tag"),
+				},
+			},
 		}).Return(mock.Anything)
 
 	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
@@ -328,10 +346,16 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 			ImageTagMutability: aws.String("MUTABLE"),
 			RegistryId:         aws.String("123456789"),
 			RepositoryName:     aws.String("docker.io/library/nginx"),
-			Tags: []*ecr.Tag{{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			}},
+			Tags: []*ecr.Tag{
+				{
+					Key:   aws.String("CreatedBy"),
+					Value: aws.String("k8s-image-swapper"),
+				},
+				{
+					Key:   aws.String("Mock"),
+					Value: aws.String("mocked-tag"),
+				},
+			},
 		}).Return(mock.Anything)
 
 	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")

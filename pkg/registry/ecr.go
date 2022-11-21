@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dgraph-io/ristretto"
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 )
@@ -28,6 +29,7 @@ type ECRClient struct {
 	targetAccount   string
 	accessPolicy    string
 	lifecyclePolicy string
+	customTags      []config.CustomTag
 }
 
 func (e *ECRClient) Credentials() string {
@@ -46,12 +48,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 		},
 		ImageTagMutability: aws.String(ecr.ImageTagMutabilityMutable),
 		RegistryId:         &e.targetAccount,
-		Tags: []*ecr.Tag{
-			{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			},
-		},
+		Tags:               e.buildEcrTags(),
 	})
 
 	if err != nil {
@@ -100,6 +97,22 @@ func (e *ECRClient) CreateRepository(name string) error {
 	e.cache.Set(name, "", 1)
 
 	return nil
+}
+
+func (e *ECRClient) buildEcrTags() []*ecr.Tag {
+	ecrTags := []*ecr.Tag{
+		{
+			Key:   aws.String("CreatedBy"),
+			Value: aws.String("k8s-image-swapper"),
+		},
+	}
+
+	for _, t := range e.customTags {
+		tag := ecr.Tag{Key: &t.Name, Value: &t.Value}
+		ecrTags = append(ecrTags, &tag)
+	}
+
+	return ecrTags
 }
 
 func (e *ECRClient) RepositoryExists() bool {
@@ -183,7 +196,7 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
+func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string, ecrCustomTags []config.CustomTag) (*ECRClient, error) {
 	var sess *session.Session
 	var config *aws.Config
 	if role != "" {
@@ -232,6 +245,7 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 		targetAccount:   targetAccount,
 		accessPolicy:    accessPolicy,
 		lifecyclePolicy: lifecyclePolicy,
+		customTags:      ecrCustomTags,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -249,6 +263,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
+		customTags:    []config.CustomTag{{Name: "Mock", Value: "mocked-tag"}},
 	}
 
 	return client, nil

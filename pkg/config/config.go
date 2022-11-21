@@ -31,11 +31,12 @@ type Config struct {
 
 	ListenAddress string
 
-	DryRun          bool   `yaml:"dryRun"`
-	ImageSwapPolicy string `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy string `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
-	Source          Source `yaml:"source"`
-	Target          Target `yaml:"target"`
+	DryRun               bool        `yaml:"dryRun"`
+	ImageSwapPolicy      string      `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
+	ImageCopyPolicy      string      `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
+	Source               Source      `yaml:"source"`
+	Target               Target      `yaml:"target"`
+	RepositoryCustomTags []CustomTag `yaml:"repositoryCustomTags"`
 
 	TLSCertFile string
 	TLSKeyFile  string
@@ -47,6 +48,11 @@ type Source struct {
 
 type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
+}
+
+type CustomTag struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
 }
 
 type Target struct {
