@@ -99,6 +99,10 @@ func (e *ECRClient) CreateRepository(name string) error {
 	return nil
 }
 
+func (e *ECRClient) SetRepositoryCustomTags(tags []config.CustomTag) {
+	e.customTags = tags
+}
+
 func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	ecrTags := []*ecr.Tag{
 		{
@@ -196,7 +200,7 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string, ecrCustomTags []config.CustomTag) (*ECRClient, error) {
+func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
 	var sess *session.Session
 	var config *aws.Config
 	if role != "" {
@@ -245,7 +249,6 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 		targetAccount:   targetAccount,
 		accessPolicy:    accessPolicy,
 		lifecyclePolicy: lifecyclePolicy,
-		customTags:      ecrCustomTags,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
