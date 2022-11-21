@@ -75,6 +75,33 @@ target:
 				},
 			},
 		},
+		{
+			name: "should render multiple private registries",
+			cfg: `
+source:
+  privateRegistries:
+    - aws:
+        accountId: "12345678912"
+        region: "us-west-1"
+    - aws:
+        accountId: "12345678912"
+        region: "us-east-1"
+`,
+			expCfg: Config{
+				Source: Source{
+					PrivateRegistries: []Registry{
+						{AWS: AWS{
+							AccountID: "12345678912",
+							Region:    "us-west-1",
+						}},
+						{AWS: AWS{
+							AccountID: "12345678912",
+							Region:    "us-east-1",
+						}},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

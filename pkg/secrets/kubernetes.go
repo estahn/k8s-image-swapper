@@ -38,11 +38,11 @@ func NewImagePullSecretsResult() *ImagePullSecretsResult {
 func NewImagePullSecretsResultWithDefaults(defaultImagePullSecrets []registry.Client) *ImagePullSecretsResult {
 	imagePullSecretsResult := NewImagePullSecretsResult()
 	for index, registry := range defaultImagePullSecrets {
-		dockerconfig, err := registry.Dockerconfig()
+		dockerConfig, err := registry.DockerConfig()
 		if err != nil {
 			log.Err(err)
 		} else {
-			imagePullSecretsResult.Add(fmt.Sprintf("source-ecr-%d", index), dockerconfig)
+			imagePullSecretsResult.Add(fmt.Sprintf("source-ecr-%d", index), dockerConfig)
 		}
 	}
 	return imagePullSecretsResult
@@ -56,7 +56,7 @@ func (r *ImagePullSecretsResult) Add(name string, data []byte) {
 
 // AuthFile provides the aggregate as a file to be used by a docker client
 func (r *ImagePullSecretsResult) AuthFile() (*os.File, error) {
-	tmpfile, err := os.CreateTemp("", "imagePullAuth")
+	tmpfile, err := os.CreateTemp("", "auth")
 	if err != nil {
 		return nil, err
 	}

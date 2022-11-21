@@ -89,7 +89,7 @@ func (ic *ImageCopier) run(taskFunc func() error) error {
 }
 
 func (ic *ImageCopier) taskCheckImage() error {
-	registryClient := ic.imageSwapper.targetRegistryClient
+	registryClient := ic.imageSwapper.registryClient
 
 	imageAlreadyExists := registryClient.ImageExists(ic.context, ic.targetImage) && ic.imagePullPolicy != corev1.PullAlways
 
@@ -107,7 +107,7 @@ func (ic *ImageCopier) taskCreateRepository() error {
 
 	log.Ctx(ic.context).Debug().Str("repository", createRepoName).Msg("create repository")
 
-	return ic.imageSwapper.targetRegistryClient.CreateRepository(ic.context, createRepoName)
+	return ic.imageSwapper.registryClient.CreateRepository(ic.context, createRepoName)
 }
 
 func (ic *ImageCopier) taskCopyImage() error {
@@ -138,7 +138,7 @@ func (ic *ImageCopier) taskCopyImage() error {
 	//
 	//	or transform registryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-	return skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.targetRegistryClient.Credentials())
+	return skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials())
 }
 
 func skopeoCopyImage(ctx context.Context, src string, srcCeds string, dest string, destCreds string) error {

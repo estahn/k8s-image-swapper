@@ -70,7 +70,7 @@ func Copier(pool *pond.WorkerPool) Option {
 
 // ImageSwapper is a mutator that will download images and change the image name.
 type ImageSwapper struct {
-	targetRegistryClient    registry.Client
+	registryClient          registry.Client
 	imagePullSecretProvider secrets.ImagePullSecretsProvider
 
 	// filters defines a list of expressions to remove objects that should not be processed,
@@ -86,9 +86,9 @@ type ImageSwapper struct {
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(targetRegistryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
 	return &ImageSwapper{
-		targetRegistryClient:    targetRegistryClient,
+		registryClient:          registryClient,
 		imagePullSecretProvider: imagePullSecretProvider,
 		filters:                 filters,
 		copier:                  pond.New(100, 1000),
@@ -99,9 +99,9 @@ func NewImageSwapper(targetRegistryClient registry.Client, imagePullSecretProvid
 }
 
 // NewImageSwapperWithOpts returns a configured ImageSwapper instance
-func NewImageSwapperWithOpts(targetRegistryClient registry.Client, opts ...Option) kwhmutating.Mutator {
+func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwhmutating.Mutator {
 	swapper := &ImageSwapper{
-		targetRegistryClient:    targetRegistryClient,
+		registryClient:          registryClient,
 		imagePullSecretProvider: secrets.NewDummyImagePullSecretsProvider(),
 		filters:                 []config.JMESPathFilter{},
 		imageSwapPolicy:         types.ImageSwapPolicyExists,
@@ -120,8 +120,8 @@ func NewImageSwapperWithOpts(targetRegistryClient registry.Client, opts ...Optio
 	return swapper
 }
 
-func NewImageSwapperWebhookWithOpts(targetRegistryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapperWithOpts(targetRegistryClient, opts...)
+func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapperWithOpts(registryClient, opts...)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",
@@ -197,7 +197,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			}
 
 			// skip if the source and target registry domain are equal (e.g. same ECR registries)
-			if domain := reference.Domain(srcRef.DockerReference()); domain == p.targetRegistryClient.Endpoint() {
+			if domain := reference.Domain(srcRef.DockerReference()); domain == p.registryClient.Endpoint() {
 				continue
 			}
 
@@ -243,7 +243,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 				containers[i].Image = targetImage
 			case types.ImageSwapPolicyExists:
-				if p.targetRegistryClient.ImageExists(lctx, targetImage) {
+				if p.registryClient.ImageExists(lctx, targetImage) {
 					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 					containers[i].Image = targetImage
 				} else {
@@ -300,7 +300,7 @@ func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 
 // targetName returns the reference in the target repository
 func (p *ImageSwapper) targetName(ref ctypes.ImageReference) string {
-	return fmt.Sprintf("%s/%s", p.targetRegistryClient.Endpoint(), ref.DockerReference().String())
+	return fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), ref.DockerReference().String())
 }
 
 // FilterContext is being used by JMESPath to search and match

@@ -14,5 +14,5 @@ type Client interface {
 	// Endpoint returns the domain of the registry
 	Endpoint() string
 	Credentials() string
-	Dockerconfig() ([]byte, error)
+	DockerConfig() ([]byte, error)
 }

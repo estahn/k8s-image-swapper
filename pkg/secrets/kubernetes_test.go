@@ -2,8 +2,11 @@ package secrets
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"testing"
 
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,6 +99,34 @@ func TestKubernetesCredentialProvider_GetImagePullSecrets(t *testing.T) {
 	assert.Len(t, result.Secrets, 2)
 	assert.Equal(t, svcAccountSecretDockerConfigJson, result.Secrets["my-sa-secret"])
 	assert.Equal(t, podSecretDockerConfigJson, result.Secrets["my-pod-secret"])
+}
+
+// TestImagePullSecretsResult_WithDefault tests if authenticated private registries work
+func TestImagePullSecretsResult_WithDefault(t *testing.T) {
+	fakeToken := []byte("token")
+	fakeBase64Token := base64.StdEncoding.EncodeToString(fakeToken)
+	fakeAccountIds := []string{"12345678912", "9876543210"}
+	fakeRegions := []string{"us-east-1", "us-west-1"}
+	fakeEcrDomains := []string{
+		fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", fakeAccountIds[0], fakeRegions[0]),
+		fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", fakeAccountIds[1], fakeRegions[1]),
+	}
+
+	expected := &ImagePullSecretsResult{
+		Secrets: map[string][]byte{
+			"source-ecr-0": []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+			"source-ecr-1": []byte("{\"auths\":{\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+		},
+		Aggregate: []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"},\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+	}
+
+	fakeRegistry1 := registry.NewDummyECRClient(fakeRegions[0], fakeAccountIds[0], "", "", "", fakeToken)
+	fakeRegistry2 := registry.NewDummyECRClient(fakeRegions[1], fakeAccountIds[1], "", "", "", fakeToken)
+	fakeRegistries := []registry.Client{fakeRegistry1, fakeRegistry2}
+
+	r := NewImagePullSecretsResultWithDefaults(fakeRegistries)
+
+	assert.Equal(t, r, expected)
 }
 
 // TestImagePullSecretsResult_Add tests if aggregation works

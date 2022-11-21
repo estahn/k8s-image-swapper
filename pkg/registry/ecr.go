@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os/exec"
 	"time"
@@ -32,7 +33,7 @@ type ECRClient struct {
 	tags            []config.Tag
 }
 
-type Dockerconfig struct {
+type DockerConfig struct {
 	AuthConfigs map[string]AuthConfig `json:"auths"`
 }
 
@@ -44,8 +45,8 @@ func (e *ECRClient) Credentials() string {
 	return string(e.authToken)
 }
 
-func (e *ECRClient) Dockerconfig() ([]byte, error) {
-	dockerconfig := Dockerconfig{
+func (e *ECRClient) DockerConfig() ([]byte, error) {
+	dockerConfig := DockerConfig{
 		AuthConfigs: map[string]AuthConfig{
 			e.ecrDomain: {
 				Auth: base64.StdEncoding.EncodeToString(e.authToken),
@@ -53,12 +54,12 @@ func (e *ECRClient) Dockerconfig() ([]byte, error) {
 		},
 	}
 
-	dockerconfigjson, err := json.Marshal(dockerconfig)
+	dockerConfigJson, err := json.Marshal(dockerConfig)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	return dockerconfigjson, nil
+	return dockerConfigJson, nil
 }
 
 func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
@@ -216,6 +217,17 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	j.LimitRunsTo(1)
 
 	return nil
+}
+
+// For testing purposes
+func NewDummyECRClient(region string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string, authToken []byte) *ECRClient {
+	return &ECRClient{
+		targetAccount:   targetAccount,
+		accessPolicy:    accessPolicy,
+		lifecyclePolicy: lifecyclePolicy,
+		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
+		authToken:       authToken,
+	}
 }
 
 func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
