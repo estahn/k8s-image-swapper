@@ -63,26 +63,23 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
-		// Create ECR clients for private source registries
+		// Create registry clients for source registries
 		sourceRegistryClients := []registry.Client{}
-		for _, reg := range cfg.Source.PrivateRegistries {
-			aws := reg.AWS
-			sourceRegistryClient, err := registry.NewECRClient(aws.Region, aws.EcrDomain(), aws.AccountID, aws.Role, aws.ECROptions.AccessPolicy, aws.ECROptions.LifecyclePolicy)
+		for _, reg := range cfg.Source.Registries {
+			sourceRegistryClient, err := registry.NewClient(reg)
 			if err != nil {
-				log.Err(err).Msg(fmt.Sprintf("error connecting to source registry client at %s", aws.EcrDomain()))
+				log.Err(err).Msgf("error connecting to source registry at %s", reg.GetServerAddress())
 				os.Exit(1)
 			}
 			sourceRegistryClients = append(sourceRegistryClients, sourceRegistryClient)
 		}
 
-		// Create ECR client for private target registry
-		targetRegistryClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.ECROptions.AccessPolicy, cfg.Target.AWS.ECROptions.LifecyclePolicy)
+		// Create a registry client for private target registry
+		targetRegistryClient, err := registry.NewClient(cfg.Target.Registry)
 		if err != nil {
-			log.Err(err).Msg("error connecting to target registry client")
+			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Registry.GetServerAddress())
 			os.Exit(1)
 		}
-
-		targetRegistryClient.SetRepositoryTags(cfg.Target.AWS.ECROptions.Tags)
 
 		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
 		if err != nil {

@@ -46,21 +46,26 @@ type Config struct {
 	TLSKeyFile  string
 }
 
-type Source struct {
-	PrivateRegistries []Registry       `yaml:"privateRegistries"`
-	Filters           []JMESPathFilter `yaml:"filters"`
-}
-
-type Registry struct {
-	AWS AWS `yaml:"aws"`
-}
-
 type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
 }
+type Source struct {
+	Registries []Registry       `yaml:"registries"`
+	Filters    []JMESPathFilter `yaml:"filters"`
+}
 
 type Target struct {
-	AWS AWS `yaml:"aws"`
+	Registry Registry `yaml:"registry"`
+}
+
+type RegistryType string
+
+type Registry struct {
+	Type RegistryType `yaml:"type"`
+	AWS  AWS          `yaml:"aws,omitempty"`
+	// TODO add other possible types of registry
+	// example:
+	// DockerIO  DockerIO    `yaml:"dockerio,omitempty"`
 }
 
 type AWS struct {
@@ -93,6 +98,38 @@ type EncryptionConfiguration struct {
 	KmsKey         string `yaml:"kmsKey"`
 }
 
-func (a *AWS) EcrDomain() string {
-	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
+// TODO add additional structs for different types of registries
+
+// enum for the supported registry types
+const (
+	Aws RegistryType = "aws"
+	// TODO add other possible types of registry
+	// example:
+	// DockerIO RegistryType = "dockerio"
+)
+
+// provides detailed information about wrongly provided configuration
+func (r Registry) ValidateConfiguration() error {
+	switch r.Type {
+	case "":
+		return fmt.Errorf("a registry requires a type")
+	case Aws:
+		if r.AWS.Region == "" {
+			return fmt.Errorf(`registry of type "%s" requires a field "region"`, r.Type)
+		}
+		if r.AWS.AccountID == "" {
+			return fmt.Errorf(`registry of type "%s" requires a field "accountdId"`, r.Type)
+		}
+	}
+	return nil
+}
+
+func (r Registry) GetServerAddress() string {
+	switch r.Type {
+	case Aws:
+		aws := r.AWS
+		return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", aws.AccountID, aws.Region)
+	default:
+		return ""
+	}
 }

@@ -52,20 +52,27 @@ This option only applies for `immediate` and `force` image copy strategies.
 
 This section configures details about the image source.
 
-### Private Registries
+### Registries
 
-The option `source.privateRegistries` describes a list of private ECR to pull images from, using the same credentials as for the target registry. This authentication method is the default way to get authorized by a private registry if the targeted Pod does not provide an `imagePullSecret`.
+The option `source.registries` describes a list of registries to pull images from, using a specific configuration.
+
+#### AWS
+
+By providing configuration on AWS registries you can ask `k8s-image-swapper` to handle the authentication using the same credentials as for the target AWS registry.
+This authentication method is the default way to get authorized by a private registry if the targeted Pod does not provide an `imagePullSecret`.
 
 Registries are described with an AWS account ID and region, mostly to construct the ECR domain `[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
     ```yaml
     source:
-      privateRegistries:
-        - aws:
+      registries:
+        - type: aws
+          aws:
             accountId: 123456789
             region: ap-southeast-2
-        - aws:
+        - type: aws
+          aws:
             accountId: 234567890
             region: us-east-1
     ```
@@ -147,18 +154,22 @@ has a live editor that can be used as a playground to experiment with more compl
 ## Target
 
 This section configures details about the image target.
+The option `target.registry` allows to specify which type of registry you set as your target (AWS, Azure...).
+At the moment, `aws` is the only supported value.
 
 ### AWS
 
-The option `target.aws` holds details about the target registry storing the images.
+The option `target.registry.aws` holds details about the target registry storing the images.
 The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
     ```yaml
     target:
-      aws:
-        accountId: 123456789
-        region: ap-southeast-2
+      registry:
+        type: aws
+        aws:
+          accountId: 123456789
+          region: ap-southeast-2
     ```
 
 #### ECR Options

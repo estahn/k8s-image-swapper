@@ -125,10 +125,6 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	return nil
 }
 
-func (e *ECRClient) SetRepositoryTags(tags []config.Tag) {
-	e.tags = tags
-}
-
 func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	ecrTags := []*ecr.Tag{}
 
@@ -219,18 +215,7 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-// For testing purposes
-func NewDummyECRClient(region string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string, authToken []byte) *ECRClient {
-	return &ECRClient{
-		targetAccount:   targetAccount,
-		accessPolicy:    accessPolicy,
-		lifecyclePolicy: lifecyclePolicy,
-		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
-		authToken:       authToken,
-	}
-}
-
-func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
+func newECRClient(region string, ecrDomain string, targetAccount string, role string, options config.ECROptions) (*ECRClient, error) {
 	var sess *session.Session
 	var config *aws.Config
 	if role != "" {
@@ -277,8 +262,9 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 		cache:           cache,
 		scheduler:       scheduler,
 		targetAccount:   targetAccount,
-		accessPolicy:    accessPolicy,
-		lifecyclePolicy: lifecyclePolicy,
+		accessPolicy:    options.AccessPolicy,
+		lifecyclePolicy: options.LifecyclePolicy,
+		tags:            options.Tags,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -286,6 +272,17 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 	}
 
 	return client, nil
+}
+
+// For testing purposes
+func NewDummyECRClient(region string, targetAccount string, role string, options config.ECROptions, authToken []byte) *ECRClient {
+	return &ECRClient{
+		targetAccount:   targetAccount,
+		accessPolicy:    options.AccessPolicy,
+		lifecyclePolicy: options.LifecyclePolicy,
+		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
+		authToken:       authToken,
+	}
 }
 
 func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string, targetAccount, role string) (*ECRClient, error) {

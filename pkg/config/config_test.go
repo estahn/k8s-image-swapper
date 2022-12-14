@@ -41,33 +41,37 @@ source:
 			name: "should render tags config",
 			cfg: `
 target:
-  type: aws
-  aws:
-    accountId: 123456789
-    region: ap-southeast-2
-    role: arn:aws:iam::123456789012:role/roleName
-    ecrOptions:
-      tags:
-        - key: CreatedBy
-          value: k8s-image-swapper
-        - key: A
-          value: B
+  registry:
+    type: aws
+    aws:
+      accountId: 123456789
+      region: ap-southeast-2
+      role: arn:aws:iam::123456789012:role/roleName
+      ecrOptions:
+        tags:
+          - key: CreatedBy
+            value: k8s-image-swapper
+          - key: A
+            value: B
 `,
 			expCfg: Config{
 				Target: Target{
-					AWS: AWS{
-						AccountID: "123456789",
-						Region:    "ap-southeast-2",
-						Role:      "arn:aws:iam::123456789012:role/roleName",
-						ECROptions: ECROptions{
-							Tags: []Tag{
-								{
-									Key:   "CreatedBy",
-									Value: "k8s-image-swapper",
-								},
-								{
-									Key:   "A",
-									Value: "B",
+					Registry: Registry{
+						Type: "aws",
+						AWS: AWS{
+							AccountID: "123456789",
+							Region:    "ap-southeast-2",
+							Role:      "arn:aws:iam::123456789012:role/roleName",
+							ECROptions: ECROptions{
+								Tags: []Tag{
+									{
+										Key:   "CreatedBy",
+										Value: "k8s-image-swapper",
+									},
+									{
+										Key:   "A",
+										Value: "B",
+									},
 								},
 							},
 						},
@@ -76,28 +80,34 @@ target:
 			},
 		},
 		{
-			name: "should render multiple private registries",
+			name: "should render multiple source registries",
 			cfg: `
 source:
-  privateRegistries:
-    - aws:
+  registries:
+    - type: "aws"
+      aws:
         accountId: "12345678912"
         region: "us-west-1"
-    - aws:
+    - type: "aws"
+      aws:
         accountId: "12345678912"
         region: "us-east-1"
 `,
 			expCfg: Config{
 				Source: Source{
-					PrivateRegistries: []Registry{
-						{AWS: AWS{
-							AccountID: "12345678912",
-							Region:    "us-west-1",
-						}},
-						{AWS: AWS{
-							AccountID: "12345678912",
-							Region:    "us-east-1",
-						}},
+					Registries: []Registry{
+						{
+							Type: "aws",
+							AWS: AWS{
+								AccountID: "12345678912",
+								Region:    "us-west-1",
+							}},
+						{
+							Type: "aws",
+							AWS: AWS{
+								AccountID: "12345678912",
+								Region:    "us-east-1",
+							}},
 					},
 				},
 			},

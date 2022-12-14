@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -120,8 +121,8 @@ func TestImagePullSecretsResult_WithDefault(t *testing.T) {
 		Aggregate: []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"},\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
 	}
 
-	fakeRegistry1 := registry.NewDummyECRClient(fakeRegions[0], fakeAccountIds[0], "", "", "", fakeToken)
-	fakeRegistry2 := registry.NewDummyECRClient(fakeRegions[1], fakeAccountIds[1], "", "", "", fakeToken)
+	fakeRegistry1 := registry.NewDummyECRClient(fakeRegions[0], fakeAccountIds[0], "", config.ECROptions{}, fakeToken)
+	fakeRegistry2 := registry.NewDummyECRClient(fakeRegions[1], fakeAccountIds[1], "", config.ECROptions{}, fakeToken)
 	fakeRegistries := []registry.Client{fakeRegistry1, fakeRegistry2}
 
 	r := NewImagePullSecretsResultWithDefaults(fakeRegistries)
