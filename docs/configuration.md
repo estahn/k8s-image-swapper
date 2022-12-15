@@ -122,18 +122,6 @@ Below you will find a list of common queries and/or ideas:
 This can be used in conjunction with [JMESPath.org](https://jmespath.org/) which
 has a live editor that can be used as a playground to experiment with more complex queries.
 
-### RepositoryCustomTags
-
-This provides a way to add custom tags to newly created repositories. This may be useful while looking at AWS costs.
-It's a slice of `Name` and `Value`.
-
-!!! example
-    ```yaml
-    repositoryCustomTags:
-      - name: cluster
-        value: myCluster
-    ```
-
 ## Target
 
 This section configures details about the image target.
@@ -149,4 +137,20 @@ The AWS Account ID and Region is primarily used to construct the ECR domain `[AC
       aws:
         accountId: 123456789
         region: ap-southeast-2
+    ```
+
+### RepositoryTags
+
+This provides a way to add custom tags to newly created repositories. This may be useful while looking at AWS costs.
+It's a slice of `Key` and `Value`.
+
+!!! example
+    ```yaml
+    target:
+      type: aws
+        aws:
+          ecrOptions:
+            tags:
+              - name: cluster
+                value: myCluster
     ```

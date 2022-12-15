@@ -29,7 +29,7 @@ type ECRClient struct {
 	targetAccount   string
 	accessPolicy    string
 	lifecyclePolicy string
-	customTags      []config.CustomTag
+	tags            []config.Tag
 }
 
 func (e *ECRClient) Credentials() string {
@@ -99,20 +99,15 @@ func (e *ECRClient) CreateRepository(name string) error {
 	return nil
 }
 
-func (e *ECRClient) SetRepositoryCustomTags(tags []config.CustomTag) {
-	e.customTags = tags
+func (e *ECRClient) SetRepositoryTags(tags []config.Tag) {
+	e.tags = tags
 }
 
 func (e *ECRClient) buildEcrTags() []*ecr.Tag {
-	ecrTags := []*ecr.Tag{
-		{
-			Key:   aws.String("CreatedBy"),
-			Value: aws.String("k8s-image-swapper"),
-		},
-	}
+	ecrTags := []*ecr.Tag{}
 
-	for _, t := range e.customTags {
-		tag := ecr.Tag{Key: &t.Name, Value: &t.Value}
+	for _, t := range e.tags {
+		tag := ecr.Tag{Key: &t.Key, Value: &t.Value}
 		ecrTags = append(ecrTags, &tag)
 	}
 
@@ -266,7 +261,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
-		customTags:    []config.CustomTag{{Name: "Mock", Value: "mocked-tag"}},
+		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}},
 	}
 
 	return client, nil

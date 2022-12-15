@@ -63,13 +63,13 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
-		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.AccessPolicy, cfg.Target.AWS.LifecyclePolicy)
+		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.ECROptions.AccessPolicy, cfg.Target.AWS.ECROptions.LifecyclePolicy)
 		if err != nil {
 			log.Err(err).Msg("error connecting to registry client")
 			os.Exit(1)
 		}
 
-		rClient.SetRepositoryCustomTags(cfg.RepositoryCustomTags)
+		rClient.SetRepositoryTags(cfg.Target.AWS.ECROptions.Tags)
 
 		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
 		if err != nil {

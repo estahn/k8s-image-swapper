@@ -31,12 +31,11 @@ type Config struct {
 
 	ListenAddress string
 
-	DryRun               bool        `yaml:"dryRun"`
-	ImageSwapPolicy      string      `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy      string      `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
-	Source               Source      `yaml:"source"`
-	Target               Target      `yaml:"target"`
-	RepositoryCustomTags []CustomTag `yaml:"repositoryCustomTags"`
+	DryRun          bool   `yaml:"dryRun"`
+	ImageSwapPolicy string `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
+	ImageCopyPolicy string `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
+	Source          Source `yaml:"source"`
+	Target          Target `yaml:"target"`
 
 	TLSCertFile string
 	TLSKeyFile  string
@@ -50,21 +49,38 @@ type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
 }
 
-type CustomTag struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
-}
-
 type Target struct {
 	AWS AWS `yaml:"aws"`
 }
 
 type AWS struct {
-	AccountID       string `yaml:"accountId"`
-	Region          string `yaml:"region"`
-	Role            string `yaml:"role"`
-	AccessPolicy    string `yaml:"accessPolicy"`
-	LifecyclePolicy string `yaml:"lifecyclePolicy"`
+	AccountID  string     `yaml:"accountId"`
+	Region     string     `yaml:"region"`
+	Role       string     `yaml:"role"`
+	ECROptions ECROptions `yaml:"ecrOptions"`
+}
+
+type ECROptions struct {
+	AccessPolicy               string                     `yaml:"accessPolicy"`
+	LifecyclePolicy            string                     `yaml:"lifecyclePolicy"`
+	Tags                       []Tag                      `yaml:"tags"`
+	ImageTagMutability         string                     `yaml:"imageTagMutability"`
+	ImageScanningConfiguration ImageScanningConfiguration `yaml:"imageScanningConfiguration"`
+	EncryptionConfiguration    EncryptionConfiguration    `yaml:"encryptionConfiguration"`
+}
+
+type Tag struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
+}
+
+type ImageScanningConfiguration struct {
+	ImageScanOnPush bool `yaml:"imageScanOnPush"`
+}
+
+type EncryptionConfiguration struct {
+	EncryptionType string `yaml:"encryptionType"`
+	KmsKey         string `yaml:"kmsKey"`
 }
 
 func (a *AWS) EcrDomain() string {

@@ -251,10 +251,6 @@ func TestImageSwapper_Mutate(t *testing.T) {
 					Key:   aws.String("CreatedBy"),
 					Value: aws.String("k8s-image-swapper"),
 				},
-				{
-					Key:   aws.String("Mock"),
-					Value: aws.String("mocked-tag"),
-				},
 			},
 		}).Return(mock.Anything)
 	ecrClient.On(
@@ -271,10 +267,6 @@ func TestImageSwapper_Mutate(t *testing.T) {
 					Key:   aws.String("CreatedBy"),
 					Value: aws.String("k8s-image-swapper"),
 				},
-				{
-					Key:   aws.String("Mock"),
-					Value: aws.String("mocked-tag"),
-				},
 			},
 		}).Return(mock.Anything)
 	ecrClient.On(
@@ -290,10 +282,6 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				{
 					Key:   aws.String("CreatedBy"),
 					Value: aws.String("k8s-image-swapper"),
-				},
-				{
-					Key:   aws.String("Mock"),
-					Value: aws.String("mocked-tag"),
 				},
 			},
 		}).Return(mock.Anything)
@@ -350,10 +338,6 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 				{
 					Key:   aws.String("CreatedBy"),
 					Value: aws.String("k8s-image-swapper"),
-				},
-				{
-					Key:   aws.String("Mock"),
-					Value: aws.String("mocked-tag"),
 				},
 			},
 		}).Return(mock.Anything)
