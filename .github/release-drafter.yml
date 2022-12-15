@@ -1,0 +1,48 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '📝 Documentation'
+    label: 'docs'
+  - title: '🧰 Maintenance'
+    label: 'chore'
+  - title: '⬆️ Dependencies'
+    collapse-after: 3
+    labels:
+      - 'dependencies'
+  - title: '👷 Continuous Integration'
+    collapse-after: 3
+    labels:
+      - 'ci'
+
+replacers:
+  - search: '/^(fix|feat|ci)(\(.+?\))?: /g'
+    replace: ''
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+autolabeler:
+  - label: 'bug'
+    branch:
+      - '/fix\/.+/'
+    title:
+      - '/fix/i'
+  - label: 'enhancement'
+    branch:
+      - '/feature\/.+/'
+    body:
+      - '/JIRA-[0-9]{1,4}/'
+  - label: 'ci'
+    title:
+      - '/ci/i'
