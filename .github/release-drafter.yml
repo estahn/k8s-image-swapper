@@ -24,7 +24,7 @@ categories:
       - 'ci'
 
 replacers:
-  - search: '/^(fix|feat|ci)(\(.+?\))?: /g'
+  - search: '/^(fix|feat|ci|build)(\(.+?\))?: /g'
     replace: ''
 
 template: |
