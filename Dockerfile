@@ -8,8 +8,7 @@
 FROM alpine:3.17.0
 RUN ["apk", "add", "--no-cache", "--repository=http://dl-cdn.alpinelinux.org/alpine/edge/community", "skopeo>=1.2.0"]
 
-ARG TARGETARCH
-COPY k8s-image-swapper-$TARGETARCH /k8s-image-swapper
+COPY k8s-image-swapper /
 
 ENTRYPOINT ["/k8s-image-swapper"]
 
