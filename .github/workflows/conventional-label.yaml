@@ -11,7 +11,7 @@ jobs:
         with:
           type_labels: >
             {
-              "feat": "feature",
-              "fix": "bugfix",
+              "feat": "enhancement",
+              "fix": "bug",
               "breaking": "breaking-change"
             }
