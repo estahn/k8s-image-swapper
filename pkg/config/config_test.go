@@ -37,6 +37,44 @@ source:
 				},
 			},
 		},
+		{
+			name: "should render tags config",
+			cfg: `
+target:
+  type: aws
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    role: arn:aws:iam::123456789012:role/roleName
+    ecrOptions:
+      tags:
+        - key: CreatedBy
+          value: k8s-image-swapper
+        - key: A
+          value: B
+`,
+			expCfg: Config{
+				Target: Target{
+					AWS: AWS{
+						AccountID: "123456789",
+						Region:    "ap-southeast-2",
+						Role:      "arn:aws:iam::123456789012:role/roleName",
+						ECROptions: ECROptions{
+							Tags: []Tag{
+								{
+									Key:   "CreatedBy",
+									Value: "k8s-image-swapper",
+								},
+								{
+									Key:   "A",
+									Value: "B",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
