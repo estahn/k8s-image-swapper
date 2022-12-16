@@ -139,9 +139,9 @@ The AWS Account ID and Region is primarily used to construct the ECR domain `[AC
         region: ap-southeast-2
     ```
 
-### ECR Options
+#### ECR Options
 
-#### Tags
+##### Tags
 
 This provides a way to add custom tags to newly created repositories. This may be useful while looking at AWS costs.
 It's a slice of `Key` and `Value`.
