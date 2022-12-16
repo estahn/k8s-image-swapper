@@ -32,17 +32,26 @@ template: |
 
   $CHANGES
 
+version-resolver:
+  major:
+    labels:
+      - 'type: breaking'
+  minor:
+    labels:
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bugfix'
+      - 'maintenance'
+      - 'docs'
+      - 'dependencies'
+      - 'security'
+
 autolabeler:
-  - label: 'bug'
-    branch:
-      - '/fix\/.+/'
+  - label: 'bugfix'
     title:
-      - '/fix/i'
+      - '/fix:/i'
   - label: 'enhancement'
-    branch:
-      - '/feature\/.+/'
-    body:
-      - '/JIRA-[0-9]{1,4}/'
-  - label: 'ci'
     title:
-      - '/ci/i'
+      - '/feat:/i'
+
