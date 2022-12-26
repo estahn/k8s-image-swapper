@@ -11,7 +11,7 @@ require (
 	github.com/go-co-op/gocron v1.18.0
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/gruntwork-io/terratest v0.41.6
+	github.com/gruntwork-io/terratest v0.41.7
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.14.0
