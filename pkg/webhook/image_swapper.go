@@ -204,46 +204,50 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 			targetImage := p.targetName(srcRef)
 
-			copyFn := func() {
-				// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
-				// image pull policy.
-				if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
-					return
-				}
-
-				// Create repository
-				createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-				log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
-				if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-					log.Err(err).Str("repository", createRepoName).Msg("failed to create repository")
-				}
-
-				// Retrieve secrets and auth credentials
-				imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
-				if err != nil {
-					log.Err(err).Msg("failed to retrieve image pull secrets from provider")
-				}
-
-				authFile, err := imagePullSecrets.AuthFile()
-				if err != nil {
-					log.Err(err).Msg("failed generating authFile")
-				}
-
-				defer func() {
-					if err := os.RemoveAll(authFile.Name()); err != nil {
-						log.Err(err).Str("file", authFile.Name()).Msg("failed removing auth file")
+			copyFn := func(targetImage string, container corev1.Container) func() {
+				return func() {
+					// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
+					// image pull policy.
+					if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
+						return
 					}
-				}()
 
-				// Copy image
-				// TODO: refactor to use structure instead of passing file name / string
-				//       or transform registryClient creds into auth compatible form, e.g.
-				//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-				log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-				if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
-					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+					// Create repository
+					createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
+					log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
+					if err := p.registryClient.CreateRepository(createRepoName); err != nil {
+						log.Err(err)
+					}
+
+					// Retrieve secrets and auth credentials
+					imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
+					if err != nil {
+						log.Err(err)
+					}
+
+					authFile, err := imagePullSecrets.AuthFile()
+					if authFile != nil {
+						defer func() {
+							if err := os.RemoveAll(authFile.Name()); err != nil {
+								log.Err(err)
+							}
+						}()
+					}
+
+					if err != nil {
+						log.Err(err)
+					}
+
+					// Copy image
+					// TODO: refactor to use structure instead of passing file name / string
+					//       or transform registryClient creds into auth compatible form, e.g.
+					//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
+					log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
+					if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
+						log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+					}
 				}
-			}
+			}(targetImage, container)
 
 			// imageCopyPolicy
 			switch p.imageCopyPolicy {
