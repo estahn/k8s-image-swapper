@@ -350,6 +350,7 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 		"--override-os", "linux",
 		"copy",
 		"--all",
+		"--multi-arch", "all",
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
