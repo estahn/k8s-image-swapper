@@ -10,6 +10,7 @@ import (
 
 	"github.com/alitto/pond"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
@@ -24,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
+
+var execCommand = exec.Command
 
 //func TestImageSwapperMutator(t *testing.T) {
 //	tests := []struct {
@@ -198,8 +201,12 @@ type mockECRClient struct {
 	ecriface.ECRAPI
 }
 
-func (m *mockECRClient) CreateRepository(createRepositoryInput *ecr.CreateRepositoryInput) (*ecr.CreateRepositoryOutput, error) {
-	m.Called(createRepositoryInput)
+func (m *mockECRClient) CreateRepositoryWithContext(ctx context.Context, createRepositoryInput *ecr.CreateRepositoryInput, opts ...request.Option) (*ecr.CreateRepositoryOutput, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	m.Called(ctx, createRepositoryInput)
 	return &ecr.CreateRepositoryOutput{}, nil
 }
 
@@ -238,7 +245,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 	ecrClient := new(mockECRClient)
 	ecrClient.On(
-		"CreateRepository",
+		"CreateRepositoryWithContext",
+		mock.AnythingOfType("*context.valueCtx"),
 		&ecr.CreateRepositoryInput{
 			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 				ScanOnPush: aws.Bool(true),
@@ -258,7 +266,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 	ecrClient.On(
-		"CreateRepository",
+		"CreateRepositoryWithContext",
+		mock.AnythingOfType("*context.valueCtx"),
 		&ecr.CreateRepositoryInput{
 			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 				ScanOnPush: aws.Bool(true),
@@ -278,7 +287,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 	ecrClient.On(
-		"CreateRepository",
+		"CreateRepositoryWithContext",
+		mock.AnythingOfType("*context.valueCtx"),
 		&ecr.CreateRepositoryInput{
 			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 				ScanOnPush: aws.Bool(true),
@@ -313,7 +323,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
 
-	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+	resp, err := wh.Review(context.Background(), admissionReviewModel)
 
 	expected := `[
 		{"op":"replace","path":"/spec/initContainers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest"},
@@ -338,7 +348,8 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 
 	ecrClient := new(mockECRClient)
 	ecrClient.On(
-		"CreateRepository",
+		"CreateRepositoryWithContext",
+		mock.AnythingOfType("*context.valueCtx"),
 		&ecr.CreateRepositoryInput{
 			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 				ScanOnPush: aws.Bool(true),
@@ -394,9 +405,9 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 		},
 	}
 
-	_, _ = clientSet.CoreV1().ServiceAccounts("test-ns").Create(context.TODO(), svcAccount, metav1.CreateOptions{})
-	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.TODO(), svcAccountSecret, metav1.CreateOptions{})
-	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.TODO(), podSecret, metav1.CreateOptions{})
+	_, _ = clientSet.CoreV1().ServiceAccounts("test-ns").Create(context.Background(), svcAccount, metav1.CreateOptions{})
+	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.Background(), svcAccountSecret, metav1.CreateOptions{})
+	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.Background(), podSecret, metav1.CreateOptions{})
 
 	provider := secrets.NewKubernetesImagePullSecretsProvider(clientSet)
 
@@ -411,7 +422,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 
 	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
 
-	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+	resp, err := wh.Review(context.Background(), admissionReviewModel)
 
 	assert.JSONEq(t, "[{\"op\":\"replace\",\"path\":\"/spec/containers/0/image\",\"value\":\"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest\"}]", string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
 	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"os/exec"
@@ -18,8 +19,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var execCommand = exec.Command
-
 type ECRClient struct {
 	client          ecriface.ECRAPI
 	ecrDomain       string
@@ -36,12 +35,12 @@ func (e *ECRClient) Credentials() string {
 	return string(e.authToken)
 }
 
-func (e *ECRClient) CreateRepository(name string) error {
+func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	if _, found := e.cache.Get(name); found {
 		return nil
 	}
 
-	_, err := e.client.CreateRepository(&ecr.CreateRepositoryInput{
+	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
 		RepositoryName: aws.String(name),
 		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 			ScanOnPush: aws.Bool(true),
@@ -68,7 +67,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 
 	if len(e.accessPolicy) > 0 {
 		log.Debug().Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("setting access policy on repo")
-		_, err := e.client.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
+		_, err := e.client.SetRepositoryPolicyWithContext(ctx, &ecr.SetRepositoryPolicyInput{
 			PolicyText:     &e.accessPolicy,
 			RegistryId:     &e.targetAccount,
 			RepositoryName: aws.String(name),
@@ -82,7 +81,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 
 	if len(e.lifecyclePolicy) > 0 {
 		log.Debug().Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("setting lifecycle policy on repo")
-		_, err := e.client.PutLifecyclePolicy(&ecr.PutLifecyclePolicyInput{
+		_, err := e.client.PutLifecyclePolicyWithContext(ctx, &ecr.PutLifecyclePolicyInput{
 			LifecyclePolicyText: &e.lifecyclePolicy,
 			RegistryId:          &e.targetAccount,
 			RepositoryName:      aws.String(name),
@@ -130,7 +129,7 @@ func (e *ECRClient) PutImage() error {
 	panic("implement me")
 }
 
-func (e *ECRClient) ImageExists(ref string) bool {
+func (e *ECRClient) ImageExists(ctx context.Context, ref string) bool {
 	if _, found := e.cache.Get(ref); found {
 		return true
 	}
@@ -143,10 +142,8 @@ func (e *ECRClient) ImageExists(ref string) bool {
 		"--creds", e.Credentials(),
 	}
 
-	log.Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	cmd := execCommand(app, args...)
-
-	if _, err := cmd.Output(); err != nil {
+	log.Ctx(ctx).Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
+	if err := exec.CommandContext(ctx, app, args...).Run(); err != nil {
 		return false
 	}
 

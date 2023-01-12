@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
+	"time"
 
 	"github.com/alitto/pond"
 	"github.com/containers/image/v5/docker/reference"
@@ -23,8 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var execCommand = exec.Command
 
 // Option represents an option that can be passed when instantiating the image swapper to customize it
 type Option func(*ImageSwapper)
@@ -57,6 +54,13 @@ func ImageCopyPolicy(policy types.ImageCopyPolicy) Option {
 	}
 }
 
+// ImageCopyDeadline allows to pass the ImageCopyPolicy option
+func ImageCopyDeadline(deadline time.Duration) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageCopyDeadline = deadline
+	}
+}
+
 // Copier allows to pass the copier option
 func Copier(pool *pond.WorkerPool) Option {
 	return func(swapper *ImageSwapper) {
@@ -74,14 +78,15 @@ type ImageSwapper struct {
 	filters []config.JMESPathFilter
 
 	// copier manages the jobs copying the images to the target registry
-	copier *pond.WorkerPool
+	copier            *pond.WorkerPool
+	imageCopyDeadline time.Duration
 
 	imageSwapPolicy types.ImageSwapPolicy
 	imageCopyPolicy types.ImageCopyPolicy
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) kwhmutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
 	return &ImageSwapper{
 		registryClient:          registryClient,
 		imagePullSecretProvider: imagePullSecretProvider,
@@ -89,6 +94,7 @@ func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider sec
 		copier:                  pond.New(100, 1000),
 		imageSwapPolicy:         imageSwapPolicy,
 		imageCopyPolicy:         imageCopyPolicy,
+		imageCopyDeadline:       imageCopyDeadline,
 	}
 }
 
@@ -126,8 +132,8 @@ func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Opti
 	return kwhmutating.NewWebhook(mcfg)
 }
 
-func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy)
+func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy, imageCopyDeadline)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",
@@ -204,61 +210,30 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 			targetImage := p.targetName(srcRef)
 
-			copyFn := func(targetImage string, container corev1.Container) func() {
-				return func() {
-					// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
-					// image pull policy.
-					if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
-						return
-					}
+			imageCopierLogger := logger.With().
+				Str("source-image", srcRef.DockerReference().Name()).
+				Str("target-image", targetImage).
+				Logger()
 
-					// Create repository
-					createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-					log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
-					if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-						log.Err(err)
-					}
-
-					// Retrieve secrets and auth credentials
-					imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
-					if err != nil {
-						log.Err(err)
-					}
-
-					authFile, err := imagePullSecrets.AuthFile()
-					if authFile != nil {
-						defer func() {
-							if err := os.RemoveAll(authFile.Name()); err != nil {
-								log.Err(err)
-							}
-						}()
-					}
-
-					if err != nil {
-						log.Err(err)
-					}
-
-					// Copy image
-					// TODO: refactor to use structure instead of passing file name / string
-					//       or transform registryClient creds into auth compatible form, e.g.
-					//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-					log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-					if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
-						log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
-					}
-				}
-			}(targetImage, container)
+			imageCopierContext := imageCopierLogger.WithContext(lctx)
+			// create an object responsible for the image copy
+			imageCopier := ImageCopier{
+				sourcePod:       pod,
+				sourceImageRef:  srcRef,
+				targetImage:     targetImage,
+				imagePullPolicy: container.ImagePullPolicy,
+				imageSwapper:    p,
+				context:         imageCopierContext,
+			}
 
 			// imageCopyPolicy
 			switch p.imageCopyPolicy {
 			case types.ImageCopyPolicyDelayed:
-				p.copier.Submit(copyFn)
+				p.copier.Submit(imageCopier.start)
 			case types.ImageCopyPolicyImmediate:
-				// TODO: Implement deadline
-				p.copier.SubmitAndWait(copyFn)
+				p.copier.SubmitAndWait(imageCopier.withDeadline().start)
 			case types.ImageCopyPolicyForce:
-				// TODO: Implement deadline
-				copyFn()
+				imageCopier.withDeadline().start()
 			default:
 				panic("unknown imageCopyPolicy")
 			}
@@ -269,7 +244,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 				containers[i].Image = targetImage
 			case types.ImageSwapPolicyExists:
-				if p.registryClient.ImageExists(targetImage) {
+				if p.registryClient.ImageExists(lctx, targetImage) {
 					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 					containers[i].Image = targetImage
 				} else {
@@ -344,39 +319,4 @@ func NewFilterContext(request kwhmodel.AdmissionReview, obj metav1.Object, conta
 	}
 
 	return FilterContext{Obj: obj, Container: container}
-}
-
-func copyImage(src string, srcCeds string, dest string, destCreds string) error {
-	app := "skopeo"
-	args := []string{
-		"--override-os", "linux",
-		"copy",
-		"--multi-arch", "all",
-		"--retry-times", "3",
-		"docker://" + src,
-		"docker://" + dest,
-	}
-
-	if len(srcCeds) > 0 {
-		args = append(args, "--src-authfile", srcCeds)
-	} else {
-		args = append(args, "--src-no-creds")
-	}
-
-	if len(destCreds) > 0 {
-		args = append(args, "--dest-creds", destCreds)
-	} else {
-		args = append(args, "--dest-no-creds")
-	}
-
-	cmd := execCommand(app, args...)
-	output, err := cmd.CombinedOutput()
-
-	log.Trace().
-		Str("app", app).
-		Strs("args", args).
-		Bytes("output", output).
-		Msg("executed command to copy image")
-
-	return err
 }

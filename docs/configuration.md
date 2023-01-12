@@ -38,9 +38,14 @@ The option `imageSwapPolicy` (default: `exists`) defines the mutation strategy u
 The option `imageCopyPolicy` (default: `delayed`) defines the image copy strategy used.
 
 * `delayed`: Submits the copy job to a process queue and moves on.
-* `immediate`: Submits the copy job to a process queue and waits for it to finish (deadline 8s).
-* `force`: Attempts to immediately copy the image (deadline 8s).
+* `immediate`: Submits the copy job to a process queue and waits for it to finish (deadline defined by `imageCopyDeadline`).
+* `force`: Attempts to immediately copy the image (deadline defined by `imageCopyDeadline`).
 
+## ImageCopyDeadline
+
+The option `imageCopyDeadline` (default: `8s`) defines the duration after which the image copy if aborted.
+
+This option only applies for `immediate` and `force` image copy strategies.
 
 
 ## Source

@@ -81,6 +81,11 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			log.Err(err).Str("policy", cfg.ImageCopyPolicy).Msg("parsing image copy policy failed")
 		}
 
+		imageCopyDeadline := config.DefaultImageCopyDeadline
+		if cfg.ImageCopyDeadline != 0 {
+			imageCopyDeadline = cfg.ImageCopyDeadline
+		}
+
 		imagePullSecretProvider := setupImagePullSecretsProvider()
 
 		wh, err := webhook.NewImageSwapperWebhookWithOpts(
@@ -89,6 +94,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			webhook.ImagePullSecretsProvider(imagePullSecretProvider),
 			webhook.ImageSwapPolicy(imageSwapPolicy),
 			webhook.ImageCopyPolicy(imageCopyPolicy),
+			webhook.ImageCopyDeadline(imageCopyDeadline),
 		)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")

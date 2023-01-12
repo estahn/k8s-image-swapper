@@ -89,7 +89,7 @@ func TestKubernetesCredentialProvider_GetImagePullSecrets(t *testing.T) {
 	_, _ = clientSet.CoreV1().Secrets("test-ns").Create(context.TODO(), podSecret, metav1.CreateOptions{})
 
 	provider := NewKubernetesImagePullSecretsProvider(clientSet)
-	result, err := provider.GetImagePullSecrets(pod)
+	result, err := provider.GetImagePullSecrets(context.Background(), pod)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)

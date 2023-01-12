@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -41,7 +42,7 @@ func TestDummyImagePullSecretsProvider_GetImagePullSecrets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &DummyImagePullSecretsProvider{}
-			got, err := p.GetImagePullSecrets(tt.args.pod)
+			got, err := p.GetImagePullSecrets(context.Background(), tt.args.pod)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetImagePullSecrets() error = %v, wantErr %v", err, tt.wantErr)
 				return
