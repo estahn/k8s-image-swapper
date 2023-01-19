@@ -215,13 +215,13 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
 				log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
 				if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-					log.Err(err).Send()
+					log.Err(err).Str("repository", createRepoName).Msg("failed to create repository")
 				}
 
 				// Retrieve secrets and auth credentials
 				imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
 				if err != nil {
-					log.Err(err).Send()
+					log.Err(err).Msg("failed to retrieve image pull secrets from provider")
 				}
 
 				authFile, err := imagePullSecrets.AuthFile()
