@@ -225,17 +225,15 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				}
 
 				authFile, err := imagePullSecrets.AuthFile()
-				if authFile != nil {
-					defer func() {
-						if err := os.RemoveAll(authFile.Name()); err != nil {
-							log.Err(err).Send()
-						}
-					}()
+				if err != nil {
+					log.Err(err).Msg("generating authFile")
 				}
 
-				if err != nil {
-					log.Err(err).Send()
-				}
+				defer func() {
+					if err := os.RemoveAll(authFile.Name()); err != nil {
+						log.Err(err).Str("file", authFile.Name()).Msg("removing auth file")
+					}
+				}()
 
 				// Copy image
 				// TODO: refactor to use structure instead of passing file name / string
