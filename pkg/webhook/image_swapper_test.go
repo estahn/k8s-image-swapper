@@ -253,7 +253,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				},
 				{
 					Key:   aws.String("AnotherTag"),
-					Value: aws.String("k8s-image-swapper"),
+					Value: aws.String("another-tag"),
 				},
 			},
 		}).Return(mock.Anything)
@@ -273,7 +273,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				},
 				{
 					Key:   aws.String("AnotherTag"),
-					Value: aws.String("k8s-image-swapper"),
+					Value: aws.String("another-tag"),
 				},
 			},
 		}).Return(mock.Anything)
@@ -293,7 +293,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				},
 				{
 					Key:   aws.String("AnotherTag"),
-					Value: aws.String("k8s-image-swapper"),
+					Value: aws.String("another-tag"),
 				},
 			},
 		}).Return(mock.Anything)
@@ -353,7 +353,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 				},
 				{
 					Key:   aws.String("AnotherTag"),
-					Value: aws.String("k8s-image-swapper"),
+					Value: aws.String("another-tag"),
 				},
 			},
 		}).Return(mock.Anything)

@@ -107,8 +107,7 @@ func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	ecrTags := []*ecr.Tag{}
 
 	for _, t := range e.tags {
-		t := t
-		tag := ecr.Tag{Key: &t.Key, Value: &t.Value}
+		tag := ecr.Tag{Key: aws.String(t.Key), Value: aws.String(t.Value)}
 		ecrTags = append(ecrTags, &tag)
 	}
 
@@ -262,7 +261,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
-		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "k8s-image-swapper"}},
+		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
 	}
 
 	return client, nil

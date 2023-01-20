@@ -47,7 +47,7 @@ target:
         - key: CreatedBy
           value: k8s-image-swapper
         - key: AnotherTag
-          value: k8s-image-swapper
+          value: another-tag
       imageTagMutability: MUTABLE
       imageScanningConfiguration:
         imageScanOnPush: true
