@@ -70,14 +70,14 @@ jobs:
         cache: true
 
     - name: Login to github registry
-      uses: docker/login-action@v2.0.0
+      uses: docker/login-action@v2.1.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.CR_PAT }}
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v3.1.0
+      uses: goreleaser/goreleaser-action@v4.1.0
       with:
         version: latest
         args: release --rm-dist

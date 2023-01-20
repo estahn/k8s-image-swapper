@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dgraph-io/ristretto"
+	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 )
@@ -28,6 +29,7 @@ type ECRClient struct {
 	targetAccount   string
 	accessPolicy    string
 	lifecyclePolicy string
+	tags            []config.Tag
 }
 
 func (e *ECRClient) Credentials() string {
@@ -46,12 +48,7 @@ func (e *ECRClient) CreateRepository(name string) error {
 		},
 		ImageTagMutability: aws.String(ecr.ImageTagMutabilityMutable),
 		RegistryId:         &e.targetAccount,
-		Tags: []*ecr.Tag{
-			{
-				Key:   aws.String("CreatedBy"),
-				Value: aws.String("k8s-image-swapper"),
-			},
-		},
+		Tags:               e.buildEcrTags(),
 	})
 
 	if err != nil {
@@ -100,6 +97,21 @@ func (e *ECRClient) CreateRepository(name string) error {
 	e.cache.Set(name, "", 1)
 
 	return nil
+}
+
+func (e *ECRClient) SetRepositoryTags(tags []config.Tag) {
+	e.tags = tags
+}
+
+func (e *ECRClient) buildEcrTags() []*ecr.Tag {
+	ecrTags := []*ecr.Tag{}
+
+	for _, t := range e.tags {
+		tag := ecr.Tag{Key: &t.Key, Value: &t.Value}
+		ecrTags = append(ecrTags, &tag)
+	}
+
+	return ecrTags
 }
 
 func (e *ECRClient) RepositoryExists() bool {
@@ -249,6 +261,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
+		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}},
 	}
 
 	return client, nil

@@ -54,11 +54,33 @@ type Target struct {
 }
 
 type AWS struct {
-	AccountID       string `yaml:"accountId"`
-	Region          string `yaml:"region"`
-	Role            string `yaml:"role"`
-	AccessPolicy    string `yaml:"accessPolicy"`
-	LifecyclePolicy string `yaml:"lifecyclePolicy"`
+	AccountID  string     `yaml:"accountId"`
+	Region     string     `yaml:"region"`
+	Role       string     `yaml:"role"`
+	ECROptions ECROptions `yaml:"ecrOptions"`
+}
+
+type ECROptions struct {
+	AccessPolicy               string                     `yaml:"accessPolicy"`
+	LifecyclePolicy            string                     `yaml:"lifecyclePolicy"`
+	Tags                       []Tag                      `yaml:"tags"`
+	ImageTagMutability         string                     `yaml:"imageTagMutability"`
+	ImageScanningConfiguration ImageScanningConfiguration `yaml:"imageScanningConfiguration"`
+	EncryptionConfiguration    EncryptionConfiguration    `yaml:"encryptionConfiguration"`
+}
+
+type Tag struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
+}
+
+type ImageScanningConfiguration struct {
+	ImageScanOnPush bool `yaml:"imageScanOnPush"`
+}
+
+type EncryptionConfiguration struct {
+	EncryptionType string `yaml:"encryptionType"`
+	KmsKey         string `yaml:"kmsKey"`
 }
 
 func (a *AWS) EcrDomain() string {

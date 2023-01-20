@@ -1,0 +1,57 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '📝 Documentation'
+    label: 'docs'
+  - title: '🧰 Maintenance'
+    label: 'chore'
+  - title: '⬆️ Dependencies'
+    collapse-after: 3
+    labels:
+      - 'dependencies'
+  - title: '👷 Continuous Integration'
+    collapse-after: 3
+    labels:
+      - 'ci'
+
+replacers:
+  - search: '/^(fix|feat|ci|build)(\(.+?\))?: /g'
+    replace: ''
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+version-resolver:
+  major:
+    labels:
+      - 'type: breaking'
+  minor:
+    labels:
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bugfix'
+      - 'maintenance'
+      - 'docs'
+      - 'dependencies'
+      - 'security'
+
+autolabeler:
+  - label: 'bugfix'
+    title:
+      - '/fix:/i'
+  - label: 'enhancement'
+    title:
+      - '/feat:/i'
+
