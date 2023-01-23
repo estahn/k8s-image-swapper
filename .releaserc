@@ -13,6 +13,8 @@ plugins:
 - - "@semantic-release/exec"
   - generateNotesCmd: |
       echo "${nextRelease.notes}" > /tmp/release-notes.md
+    verifyReleaseCmd: |
+      echo "${nextRelease.version}" > /tmp/next-release-version.txt
 
 branch: main
 branches:

@@ -7,16 +7,28 @@ changelog:
   categories:
     - title: 🛠 Breaking Changes
       labels:
-        - Semver-Major
         - breaking-change
-    - title: 🎉 Features
+    - title: '🚀 Features'
       labels:
-        - Semver-Minor
-        - feature
-    - title: 🐛 Bug Fixes
+        - 'feature'
+        - 'enhancement'
+    - title: '🐛 Bug Fixes'
       labels:
-        - Semver-Minor
-        - bugfix
+        - 'fix'
+        - 'bugfix'
+        - 'bug'
+    - title: '📝 Documentation'
+      label: 'docs'
+    - title: '🧰 Maintenance'
+      label: 'chore'
+    - title: '⬆️ Dependencies'
+      collapse-after: 3
+      labels:
+        - 'dependencies'
+    - title: '👷 Continuous Integration'
+      collapse-after: 3
+      labels:
+        - 'ci'
     - title: Other Changes
       labels:
         - "*"
