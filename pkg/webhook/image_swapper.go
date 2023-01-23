@@ -226,12 +226,12 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 				authFile, err := imagePullSecrets.AuthFile()
 				if err != nil {
-					log.Err(err).Msg("generating authFile")
+					log.Err(err).Msg("failed generating authFile")
 				}
 
 				defer func() {
 					if err := os.RemoveAll(authFile.Name()); err != nil {
-						log.Err(err).Str("file", authFile.Name()).Msg("removing auth file")
+						log.Err(err).Str("file", authFile.Name()).Msg("failed removing auth file")
 					}
 				}()
 
