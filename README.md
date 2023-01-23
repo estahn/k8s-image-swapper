@@ -33,6 +33,16 @@ while reducing data traffic and therefore cost.
 
 The documentation is available at [https://estahn.github.io/k8s-image-swapper/](https://estahn.github.io/k8s-image-swapper/index.html).
 
+## :question: Community
+
+You have questions, need support and or just want to talk about `k8s-image-swapper`?
+
+Here are ways to get in touch with the community:
+
+[![Slack channel](https://img.shields.io/badge/Slack_Channel-4A154B?style=for-the-badge&logo=slack&logoColor=white)](http://slack.kubernetes.io/)
+[![GitHub Discussions](https://img.shields.io/badge/GITHUB_DISCUSSION-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/estahn/k8s-image-swapper/discussions)
+
+
 ## :heart_decoration: Sponsor
 
 Does your company use `k8s-image-swapper`?
