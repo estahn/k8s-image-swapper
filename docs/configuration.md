@@ -153,6 +153,6 @@ It's a slice of `Key` and `Value`.
       aws:
         ecrOptions:
           tags:
-            - name: cluster
+            - key: cluster
               value: myCluster
     ```

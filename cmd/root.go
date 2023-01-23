@@ -73,12 +73,12 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 
 		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
 		if err != nil {
-			log.Err(err)
+			log.Err(err).Str("policy", cfg.ImageSwapPolicy).Msg("parsing image swap policy failed")
 		}
 
 		imageCopyPolicy, err := types.ParseImageCopyPolicy(cfg.ImageCopyPolicy)
 		if err != nil {
-			log.Err(err)
+			log.Err(err).Str("policy", cfg.ImageCopyPolicy).Msg("parsing image copy policy failed")
 		}
 
 		imagePullSecretProvider := setupImagePullSecretsProvider()
