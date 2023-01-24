@@ -347,7 +347,6 @@ func copyImage(src string, srcCeds string, dest string, destCreds string) error 
 	args := []string{
 		"--override-os", "linux",
 		"copy",
-		"--all",
 		"--multi-arch", "all",
 		"--retry-times", "3",
 		"docker://" + src,
