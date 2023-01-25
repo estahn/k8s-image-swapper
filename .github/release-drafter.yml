@@ -23,6 +23,9 @@ categories:
     labels:
       - 'ci'
 
+exclude-labels:
+  - 'skip-changelog'
+
 replacers:
   - search: '/^(fix|feat|ci|build)(\(.+?\))?: /g'
     replace: ''
