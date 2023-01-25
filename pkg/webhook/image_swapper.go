@@ -178,8 +178,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 		Str("name", pod.Name).
 		Logger()
 
-	lctx := logger.
-		WithContext(ctx)
+	lctx := logger.WithContext(context.Background())
 
 	containerSets := []*[]corev1.Container{&pod.Spec.Containers, &pod.Spec.InitContainers}
 	for _, containerSet := range containerSets {

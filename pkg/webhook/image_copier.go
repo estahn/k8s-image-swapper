@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -25,6 +26,11 @@ type ImageCopier struct {
 	cancelContext context.CancelFunc
 }
 
+type Task struct {
+	function    func() error
+	description string
+}
+
 var ErrImageAlreadyPresent = errors.New("image already present in target registry")
 
 // replace the default context with a new one with a timeout
@@ -42,34 +48,44 @@ func (ic *ImageCopier) start() {
 	}
 
 	// list of actions to execute in order to copy an image
-	tasks := []func() error{
-		ic.taskCheckImage,
-		ic.taskCreateRepository,
-		ic.taskCopyImage,
+	tasks := []*Task{
+		{
+			function:    ic.taskCheckImage,
+			description: "checking image presence in target registry",
+		},
+		{
+			function:    ic.taskCreateRepository,
+			description: "creating a new repository in target registry",
+		},
+		{
+			function:    ic.taskCopyImage,
+			description: "copying image data to target repository",
+		},
 	}
 
 	for _, task := range tasks {
-		err := ic.run(task)
+		err := ic.run(task.function)
 
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
 				log.Ctx(ic.context).Err(err).Msg("timeout during image copy")
-			}
-			if errors.Is(err, ErrImageAlreadyPresent) {
+			} else if errors.Is(err, ErrImageAlreadyPresent) {
 				log.Ctx(ic.context).Trace().Msgf("image copy aborted: %s", err.Error())
+			} else {
+				log.Ctx(ic.context).Err(err).Msgf("image copy error while %s", task.description)
 			}
 			break
 		}
 	}
 }
 
-// run a task and update the copy status
-func (ic *ImageCopier) run(task func() error) error {
+// run a task function and check for timeout
+func (ic *ImageCopier) run(taskFunc func() error) error {
 	if err := ic.context.Err(); err != nil {
 		return err
 	}
 
-	return task()
+	return taskFunc()
 }
 
 func (ic *ImageCopier) taskCheckImage() error {
@@ -117,18 +133,12 @@ func (ic *ImageCopier) taskCopyImage() error {
 		}
 	}()
 
-	log.Ctx(ctx).Trace().Msg("copy image")
-
 	// Copy image
 	// TODO: refactor to use structure instead of passing file name / string
 	//
 	//	or transform registryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-	if err := skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials()); err != nil {
-		return err
-	}
-
-	return nil
+	return skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials())
 }
 
 func skopeoCopyImage(ctx context.Context, src string, srcCeds string, dest string, destCreds string) error {
@@ -158,14 +168,23 @@ func skopeoCopyImage(ctx context.Context, src string, srcCeds string, dest strin
 		args = append(args, "--dest-no-creds")
 	}
 
-	output, err := exec.CommandContext(ctx, app, args...).CombinedOutput()
-
 	log.Ctx(ctx).
 		Trace().
 		Str("app", app).
 		Strs("args", args).
-		Bytes("output", output).
-		Msg("executed command to copy image")
+		Msg("execute command to copy image")
 
-	return err
+	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
+
+	// check if the command timed out during execution for proper logging
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	// enrich error with output from the command which may contain the actual reason
+	if cmdErr != nil {
+		return fmt.Errorf("Command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
+	}
+
+	return nil
 }
