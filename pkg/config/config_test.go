@@ -55,6 +55,7 @@ target:
 `,
 			expCfg: Config{
 				Target: Target{
+					Type: "aws",
 					AWS: AWS{
 						AccountID: "123456789",
 						Region:    "ap-southeast-2",

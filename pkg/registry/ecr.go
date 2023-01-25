@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"os/exec"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	ctypes "github.com/containers/image/v5/types"
 	"github.com/dgraph-io/ristretto"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
@@ -40,6 +42,8 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		return nil
 	}
 
+	log.Ctx(ctx).Debug().Str("repository", name).Msg("create repository")
+
 	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
 		RepositoryName: aws.String(name),
 		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
@@ -66,7 +70,7 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	}
 
 	if len(e.accessPolicy) > 0 {
-		log.Debug().Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("setting access policy on repo")
+		log.Ctx(ctx).Debug().Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("setting access policy on repo")
 		_, err := e.client.SetRepositoryPolicyWithContext(ctx, &ecr.SetRepositoryPolicyInput{
 			PolicyText:     &e.accessPolicy,
 			RegistryId:     &e.targetAccount,
@@ -80,7 +84,7 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	}
 
 	if len(e.lifecyclePolicy) > 0 {
-		log.Debug().Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("setting lifecycle policy on repo")
+		log.Ctx(ctx).Debug().Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("setting lifecycle policy on repo")
 		_, err := e.client.PutLifecyclePolicyWithContext(ctx, &ecr.PutLifecyclePolicyInput{
 			LifecyclePolicyText: &e.lifecyclePolicy,
 			RegistryId:          &e.targetAccount,
@@ -98,10 +102,6 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	return nil
 }
 
-func (e *ECRClient) SetRepositoryTags(tags []config.Tag) {
-	e.tags = tags
-}
-
 func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	ecrTags := []*ecr.Tag{}
 
@@ -117,8 +117,50 @@ func (e *ECRClient) RepositoryExists() bool {
 	panic("implement me")
 }
 
-func (e *ECRClient) CopyImage() error {
-	panic("implement me")
+func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
+	src := srcRef.DockerReference().String()
+	dest := destRef.DockerReference().String()
+	app := "skopeo"
+	args := []string{
+		"--override-os", "linux",
+		"copy",
+		"--multi-arch", "all",
+		"--retry-times", "3",
+		"docker://" + src,
+		"docker://" + dest,
+	}
+
+	if len(srcCreds) > 0 {
+		args = append(args, "--src-authfile", srcCreds)
+	} else {
+		args = append(args, "--src-no-creds")
+	}
+
+	if len(destCreds) > 0 {
+		args = append(args, "--dest-creds", destCreds)
+	} else {
+		args = append(args, "--dest-no-creds")
+	}
+
+	log.Ctx(ctx).
+		Trace().
+		Str("app", app).
+		Strs("args", args).
+		Msg("execute command to copy image")
+
+	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
+
+	// check if the command timed out during execution for proper logging
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	// enrich error with output from the command which may contain the actual reason
+	if cmdErr != nil {
+		return fmt.Errorf("Command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
+	}
+
+	return nil
 }
 
 func (e *ECRClient) PullImage() error {
@@ -129,8 +171,10 @@ func (e *ECRClient) PutImage() error {
 	panic("implement me")
 }
 
-func (e *ECRClient) ImageExists(ctx context.Context, ref string) bool {
+func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
+	ref := imageRef.DockerReference().String()
 	if _, found := e.cache.Get(ref); found {
+		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
 		return true
 	}
 
@@ -144,8 +188,11 @@ func (e *ECRClient) ImageExists(ctx context.Context, ref string) bool {
 
 	log.Ctx(ctx).Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
 	if err := exec.CommandContext(ctx, app, args...).Run(); err != nil {
+		log.Ctx(ctx).Trace().Str("ref", ref).Msg("not found in target repository")
 		return false
 	}
+
+	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
 
 	e.cache.Set(ref, "", 1)
 
@@ -192,15 +239,17 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(region string, ecrDomain string, targetAccount string, role string, accessPolicy string, lifecyclePolicy string) (*ECRClient, error) {
+func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
+	ecrDomain := clientConfig.EcrDomain()
+
 	var sess *session.Session
 	var config *aws.Config
-	if role != "" {
-		log.Info().Str("assumedRole", role).Msg("assuming specified role")
+	if clientConfig.Role != "" {
+		log.Info().Str("assumedRole", clientConfig.Role).Msg("assuming specified role")
 		stsSession, _ := session.NewSession(config)
-		creds := stscreds.NewCredentials(stsSession, role)
+		creds := stscreds.NewCredentials(stsSession, clientConfig.Role)
 		config = aws.NewConfig().
-			WithRegion(region).
+			WithRegion(clientConfig.Region).
 			WithCredentialsChainVerboseErrors(true).
 			WithHTTPClient(&http.Client{
 				Timeout: 3 * time.Second,
@@ -208,7 +257,7 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 			WithCredentials(creds)
 	} else {
 		config = aws.NewConfig().
-			WithRegion(region).
+			WithRegion(clientConfig.Region).
 			WithCredentialsChainVerboseErrors(true).
 			WithHTTPClient(&http.Client{
 				Timeout: 3 * time.Second,
@@ -238,9 +287,10 @@ func NewECRClient(region string, ecrDomain string, targetAccount string, role st
 		ecrDomain:       ecrDomain,
 		cache:           cache,
 		scheduler:       scheduler,
-		targetAccount:   targetAccount,
-		accessPolicy:    accessPolicy,
-		lifecyclePolicy: lifecyclePolicy,
+		targetAccount:   clientConfig.AccountID,
+		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
+		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
+		tags:            clientConfig.ECROptions.Tags,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {

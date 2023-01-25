@@ -207,7 +207,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				continue
 			}
 
-			targetImage := p.targetName(srcRef)
+			targetRef := p.targetRef(srcRef)
+			targetImage := targetRef.DockerReference().String()
 
 			imageCopierLogger := logger.With().
 				Str("source-image", srcRef.DockerReference().Name()).
@@ -219,7 +220,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			imageCopier := ImageCopier{
 				sourcePod:       pod,
 				sourceImageRef:  srcRef,
-				targetImage:     targetImage,
+				targetImageRef:  targetRef,
 				imagePullPolicy: container.ImagePullPolicy,
 				imageSwapper:    p,
 				context:         imageCopierContext,
@@ -243,7 +244,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 				containers[i].Image = targetImage
 			case types.ImageSwapPolicyExists:
-				if p.registryClient.ImageExists(lctx, targetImage) {
+				if p.registryClient.ImageExists(lctx, targetRef) {
 					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 					containers[i].Image = targetImage
 				} else {
@@ -299,8 +300,15 @@ func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 }
 
 // targetName returns the reference in the target repository
-func (p *ImageSwapper) targetName(ref ctypes.ImageReference) string {
-	return fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), ref.DockerReference().String())
+func (p *ImageSwapper) targetRef(srcRef ctypes.ImageReference) ctypes.ImageReference {
+	targetImage := fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), srcRef.DockerReference().String())
+
+	ref, err := alltransports.ParseImageName("docker://" + targetImage)
+	if err != nil {
+		log.Warn().Msgf("invalid target name %s: %v", targetImage, err)
+	}
+
+	return ref
 }
 
 // FilterContext is being used by JMESPath to search and match
