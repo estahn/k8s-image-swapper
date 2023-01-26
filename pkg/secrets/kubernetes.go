@@ -62,7 +62,7 @@ func NewKubernetesImagePullSecretsProvider(clientset kubernetes.Interface) Image
 }
 
 // GetImagePullSecrets returns all secrets with their respective content
-func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(pod *v1.Pod) (*ImagePullSecretsResult, error) {
+func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(ctx context.Context, pod *v1.Pod) (*ImagePullSecretsResult, error) {
 	var secrets = make(map[string][]byte)
 
 	imagePullSecrets := pod.Spec.ImagePullSecrets
@@ -70,9 +70,9 @@ func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(pod *v1.Pod) (*
 	// retrieve secret names from pod ServiceAccount (spec.imagePullSecrets)
 	serviceAccount, err := p.kubernetesClient.CoreV1().
 		ServiceAccounts(pod.Namespace).
-		Get(context.TODO(), pod.Spec.ServiceAccountName, metav1.GetOptions{})
+		Get(ctx, pod.Spec.ServiceAccountName, metav1.GetOptions{})
 	if err != nil {
-		log.Err(err).Msg("error fetching referenced service account, continue without service account imagePullSecrets")
+		log.Ctx(ctx).Warn().Msg("error fetching referenced service account, continue without service account imagePullSecrets")
 	}
 
 	if serviceAccount != nil {
@@ -86,9 +86,9 @@ func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(pod *v1.Pod) (*
 			continue
 		}
 
-		secret, err := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(context.TODO(), imagePullSecret.Name, metav1.GetOptions{})
+		secret, err := p.kubernetesClient.CoreV1().Secrets(pod.Namespace).Get(ctx, imagePullSecret.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Err(err).Msg("error fetching secret, continue without imagePullSecrets")
+			log.Ctx(ctx).Err(err).Msg("error fetching secret, continue without imagePullSecrets")
 		}
 
 		if secret == nil || secret.Type != v1.SecretTypeDockerConfigJson {

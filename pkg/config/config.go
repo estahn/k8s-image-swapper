@@ -23,7 +23,10 @@ package config
 
 import (
 	"fmt"
+	"time"
 )
+
+const DefaultImageCopyDeadline = 8 * time.Second
 
 type Config struct {
 	LogLevel  string `yaml:"logLevel" validate:"oneof=trace debug info warn error fatal"`
@@ -31,11 +34,13 @@ type Config struct {
 
 	ListenAddress string
 
-	DryRun          bool   `yaml:"dryRun"`
-	ImageSwapPolicy string `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy string `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
-	Source          Source `yaml:"source"`
-	Target          Target `yaml:"target"`
+	DryRun            bool          `yaml:"dryRun"`
+	ImageSwapPolicy   string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
+	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
+	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
+
+	Source Source `yaml:"source"`
+	Target Target `yaml:"target"`
 
 	TLSCertFile string
 	TLSKeyFile  string
