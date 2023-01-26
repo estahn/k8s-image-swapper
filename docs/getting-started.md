@@ -45,44 +45,45 @@ target:
     role: arn:aws:iam::123456789012:role/roleName
 ```
 !!! note
-Make sure that target role has proper trust permissions that allow to assume it cross-account
+    Make sure that target role has proper trust permissions that allow to assume it cross-account
 
 !!! note
-In order te be able to pull images from outside accounts, you will have to apply proper access policy
+    In order te be able to pull images from outside accounts, you will have to apply proper access policy
 
 
 #### Access policy
 
 You can specify the access policy that will be applied to the created repos in config. Policy should be raw json string.
 For example:
-```yaml
+```yaml title="Configuration"
 target:
   aws:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    accessPolicy: '{
-  "Statement": [
-    {
-      "Sid": "AllowCrossAccountPull",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": [
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability"
-      ],
-      "Condition": {
-        "StringEquals": {
-          "aws:PrincipalOrgID": "o-xxxxxxxxxx"
-        }
+    accessPolicy: |
+      {
+        "Statement": [
+          {
+            "Sid": "AllowCrossAccountPull",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ecr:GetDownloadUrlForLayer",
+              "ecr:BatchGetImage",
+              "ecr:BatchCheckLayerAvailability"
+            ],
+            "Condition": {
+              "StringEquals": {
+                "aws:PrincipalOrgID": "o-xxxxxxxxxx"
+              }
+            }
+          }
+        ],
+        "Version": "2008-10-17"
       }
-    }
-  ],
-  "Version": "2008-10-17"
-}'
 ```
 
 #### Lifecycle policy
@@ -95,23 +96,23 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    lifecyclePolicy: '{
-  "rules": [
-    {
-      "rulePriority": 1,
-      "description": "Rule 1",
-      "selection": {
-        "tagStatus": "any",
-        "countType": "imageCountMoreThan",
-        "countNumber": 1000
-      },
-      "action": {
-        "type": "expire"
+    lifecyclePolicy: |
+      {
+        "rules": [
+          {
+            "rulePriority": 1,
+            "description": "Rule 1",
+            "selection": {
+              "tagStatus": "any",
+              "countType": "imageCountMoreThan",
+              "countNumber": 1000
+            },
+            "action": {
+              "type": "expire"
+            }
+          }
+        ]
       }
-    }
-  ]
-}
-'
 ```
 
 #### Service Account
@@ -181,7 +182,8 @@ Note: You can see a complete example below in [Terraform](Terraform)
                     "Action": [
                         "ecr:GetAuthorizationToken",
                         "ecr:DescribeRepositories",
-                        "ecr:DescribeRegistry"
+                        "ecr:DescribeRegistry",
+                        "ecr:TagResource"
                     ],
                     "Resource": "*"
                 },
@@ -210,12 +212,12 @@ Note: You can see a complete example below in [Terraform](Terraform)
             Restrict this further by repository name or tag.
             `k8s-image-swapper` will create repositories with the source registry as prefix, e.g. `nginx` --> `docker.io/library/nginx:latest`.
 
-### Terraform
+## Terraform
 
-- Full example of helm chart deployment with AWS service account setup.
+Full example of helm chart deployment with AWS service account setup in Terraform.
 
 
-```
+```terraform
 data "aws_caller_identity" "current" {
 }
 
