@@ -55,7 +55,7 @@ target:
 
 You can specify the access policy that will be applied to the created repos in config. Policy should be raw json string.
 For example:
-```yaml title="Configuration"
+```yaml
 target:
   aws:
     accountId: 123456789
