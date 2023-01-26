@@ -22,5 +22,5 @@ updates:
     directory: "/"
     target-branch: "main"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     versioning-strategy: increase
