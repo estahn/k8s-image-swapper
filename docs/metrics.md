@@ -15,5 +15,6 @@ k8s_image_swapper_main_errors | Number of errors
 k8s_image_swapper_cache_hits | Number of registry cache hits
 k8s_image_swapper_cache_misses | Number of registry cache misses
 k8s_image_swapper_cache_filtered | Number of registry cache filtered out
-k8s_image_swapper_cache_images_copied | Number of images copied
+k8s_image_swapper_cache_image_copy_duration_seconds | Image copy duration in seconds
+k8s_image_swapper_cache_repos_create_requests | Number of repositories create attempts
 k8s_image_swapper_cache_repos_created | Number of repositories created
