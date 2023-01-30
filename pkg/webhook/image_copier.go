@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/containers/image/v5/docker/reference"
 	ctypes "github.com/containers/image/v5/types"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/estahn/k8s-image-swapper/pkg/metrics"
 )
 
 // struct representing a job of copying an image with its subcontext
@@ -68,10 +71,12 @@ func (ic *ImageCopier) start() {
 
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
+				metrics.IncrementError("TimeoutDuringImageCopy")
 				log.Ctx(ic.context).Err(err).Msg("timeout during image copy")
 			} else if errors.Is(err, ErrImageAlreadyPresent) {
 				log.Ctx(ic.context).Trace().Msgf("image copy aborted: %s", err.Error())
 			} else {
+				metrics.IncrementError("ImageCopyError")
 				log.Ctx(ic.context).Err(err).Msgf("image copy error while %s", task.description)
 			}
 			break
@@ -104,10 +109,14 @@ func (ic *ImageCopier) taskCheckImage() error {
 
 func (ic *ImageCopier) taskCreateRepository() error {
 	createRepoName := reference.TrimNamed(ic.sourceImageRef.DockerReference()).String()
-
+	metrics.IncrementReposCreateRequests(ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), createRepoName)
 	log.Ctx(ic.context).Debug().Str("repository", createRepoName).Msg("create repository")
 
-	return ic.imageSwapper.registryClient.CreateRepository(ic.context, createRepoName)
+	err := ic.imageSwapper.registryClient.CreateRepository(ic.context, createRepoName)
+	if err != nil {
+		metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), createRepoName, "CreateRepositoryFail")
+	}
+	return err
 }
 
 func (ic *ImageCopier) taskCopyImage() error {
@@ -119,16 +128,19 @@ func (ic *ImageCopier) taskCopyImage() error {
 	imagePullSecrets, err := ic.imageSwapper.imagePullSecretProvider.GetImagePullSecrets(ctx, ic.sourcePod)
 	// not possible at the moment
 	if err != nil {
+		metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), "GetImagePullSecretsFail")
 		return err
 	}
 
 	authFile, err := imagePullSecrets.AuthFile()
 	if err != nil {
+		metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), "AuthFileGenerateFail")
 		log.Ctx(ctx).Err(err).Msg("failed generating authFile")
 	}
 
 	defer func() {
 		if err := os.RemoveAll(authFile.Name()); err != nil {
+			metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), "AuthFileRemoveFail")
 			log.Ctx(ctx).Err(err).Str("file", authFile.Name()).Msg("failed removing auth file")
 		}
 	}()
@@ -138,10 +150,20 @@ func (ic *ImageCopier) taskCopyImage() error {
 	//
 	//	or transform registryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-	return skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials())
+	copyStart := time.Now()
+	copyErr := skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials())
+	if copyErr != nil {
+		metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), "CopyImageFail")
+		log.Ctx(ctx).Err(err).Msg("copying image to target registry failed")
+	} else {
+		duration := time.Since(copyStart).Seconds()
+		metrics.SetImageCopyDuration(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), duration)
+		log.Ctx(ctx).Debug().Float64("duration", duration).Msg("copied image")
+	}
+	return copyErr
 }
 
-func skopeoCopyImage(ctx context.Context, src string, srcCeds string, dest string, destCreds string) error {
+func skopeoCopyImage(ctx context.Context, src string, srcCreds string, dest string, destCreds string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -156,8 +178,8 @@ func skopeoCopyImage(ctx context.Context, src string, srcCeds string, dest strin
 		"docker://" + dest,
 	}
 
-	if len(srcCeds) > 0 {
-		args = append(args, "--src-authfile", srcCeds)
+	if len(srcCreds) > 0 {
+		args = append(args, "--src-authfile", srcCreds)
 	} else {
 		args = append(args, "--src-no-creds")
 	}

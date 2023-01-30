@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dgraph-io/ristretto"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
+	"github.com/estahn/k8s-image-swapper/pkg/metrics"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 )
@@ -74,7 +76,7 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		})
 
 		if err != nil {
-			log.Err(err).Msg(err.Error())
+			log.Err(err).Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("error setting access policy on repo")
 			return err
 		}
 	}
@@ -88,12 +90,16 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		})
 
 		if err != nil {
-			log.Err(err).Msg(err.Error())
+			log.Err(err).Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("error setting lifecycle policy on repo")
 			return err
 		}
 	}
 
 	e.cache.Set(name, "", 1)
+
+	registry := strings.SplitN(name, "/", 2)[0]
+	repo := strings.SplitN(name, "/", 2)[1]
+	metrics.IncrementReposCreated(registry, repo)
 
 	return nil
 }
