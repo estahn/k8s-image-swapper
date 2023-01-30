@@ -81,7 +81,7 @@ jobs:
         password: ${{ secrets.CR_PAT }}
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v4.1.0
+      uses: goreleaser/goreleaser-action@v4.1.1
       with:
         version: latest
         args: release --rm-dist
