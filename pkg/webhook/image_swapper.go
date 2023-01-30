@@ -204,46 +204,48 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 			targetImage := p.targetName(srcRef)
 
-			copyFn := func() {
-				// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
-				// image pull policy.
-				if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
-					return
-				}
+			var copyFn func()
 
-				// Create repository
-				createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
-				log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
-				if err := p.registryClient.CreateRepository(createRepoName); err != nil {
-					log.Err(err)
-				}
+			// Avoid unnecessary copying by ending early. For images such as :latest we adhere to the
+			// image pull policy.
+			if p.registryClient.ImageExists(targetImage) && container.ImagePullPolicy != corev1.PullAlways {
+				copyFn = func() {}
+			} else {
+				copyFn = func() {
+					// Create repository
+					createRepoName := reference.TrimNamed(srcRef.DockerReference()).String()
+					log.Ctx(lctx).Debug().Str("repository", createRepoName).Msg("create repository")
+					if err := p.registryClient.CreateRepository(createRepoName); err != nil {
+						log.Err(err)
+					}
 
-				// Retrieve secrets and auth credentials
-				imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
-				if err != nil {
-					log.Err(err)
-				}
+					// Retrieve secrets and auth credentials
+					imagePullSecrets, err := p.imagePullSecretProvider.GetImagePullSecrets(pod)
+					if err != nil {
+						log.Err(err)
+					}
 
-				authFile, err := imagePullSecrets.AuthFile()
-				if authFile != nil {
-					defer func() {
-						if err := os.RemoveAll(authFile.Name()); err != nil {
-							log.Err(err)
-						}
-					}()
-				}
+					authFile, err := imagePullSecrets.AuthFile()
+					if authFile != nil {
+						defer func() {
+							if err := os.RemoveAll(authFile.Name()); err != nil {
+								log.Err(err)
+							}
+						}()
+					}
 
-				if err != nil {
-					log.Err(err)
-				}
+					if err != nil {
+						log.Err(err)
+					}
 
-				// Copy image
-				// TODO: refactor to use structure instead of passing file name / string
-				//       or transform registryClient creds into auth compatible form, e.g.
-				//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-				log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
-				if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
-					log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+					// Copy image
+					// TODO: refactor to use structure instead of passing file name / string
+					//       or transform registryClient creds into auth compatible form, e.g.
+					//       {"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
+					log.Ctx(lctx).Trace().Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copy image")
+					if err := copyImage(srcRef.DockerReference().String(), authFile.Name(), targetImage, p.registryClient.Credentials()); err != nil {
+						log.Ctx(lctx).Err(err).Str("source", srcRef.DockerReference().String()).Str("target", targetImage).Msg("copying image to target registry failed")
+					}
 				}
 			}
 
