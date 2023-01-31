@@ -1,14 +1,16 @@
 name: Auto-Merge
-on:
-  pull_request_target
+on: pull_request
+
+permissions:
+  pull-requests: write
+  contents: write
 
 jobs:
-  enable-auto-merge:
+  automerge:
     runs-on: ubuntu-latest
-
-    #if: github.event.pull_request.user.login == 'dependabot[bot]' && contains(github.event.pull_request.labels.*.name, 'dependencies')
-    if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
+    if: github.actor == 'dependabot[bot]'
     steps:
-    - uses: alexwilson/enable-github-automerge-action@main
-      with:
-        github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
