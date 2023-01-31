@@ -24,7 +24,7 @@ categories:
       - 'ci'
 
 exclude-labels:
-  - 'skip-changelog'
+  - 'ignore-for-release'
 
 replacers:
   - search: '/^(fix|feat|ci|build)(\(.+?\))?: /g'
@@ -57,3 +57,9 @@ autolabeler:
   - label: 'enhancement'
     title:
       - '/feat:/i'
+  - label: 'docs'
+    title:
+      - '/docs:/i'
+  - label: 'chore'
+    title:
+      - '/chore:/i'
