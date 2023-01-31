@@ -1,11 +1,6 @@
 name: Release
 on:
   workflow_dispatch:
-    inputs:
-      forRef:
-        description: 'Branch, SHA or Tag to release'
-        required: false
-        type: string
   # Release patches and secruity updates on a schedule
   schedule:
     - cron: "0 0 1 * *"
