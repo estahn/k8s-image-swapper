@@ -31,7 +31,9 @@ while reducing data traffic and therefore cost.
 
 ## :book: Documentation
 
-The documentation is available at [https://estahn.github.io/k8s-image-swapper/](https://estahn.github.io/k8s-image-swapper/index.html).
+A comprehensive guide on getting started and a list of configuration options can be found in the documentation.
+
+[![Documentation](https://img.shields.io/badge/Documentation-2FA4E7?style=for-the-badge&logo=ReadMe&logoColor=white)](https://estahn.github.io/k8s-image-swapper/index.html)
 
 ## :question: Community
 
@@ -56,12 +58,10 @@ Contact me via [email](mailto:enrico.stahn@gmail.com) to discuss.
 ## :octocat: Badges
 
 [![Release](https://img.shields.io/github/release/estahn/k8s-image-swapper.svg?style=for-the-badge)](https://github.com/estahn/k8s-image-swapper/releases/latest)
+[![Artifact Hub](https://img.shields.io/badge/Artifact_Hub-417598?style=for-the-badge&logo=artifacthub&logoColor=white)](https://artifacthub.io/packages/helm/estahn/k8s-image-swapper)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](/LICENSE.md)
-[![Build status](https://img.shields.io/github/workflow/status/estahn/k8s-image-swapper/Test?style=for-the-badge)](https://github.com/estahn/k8s-image-swapper/actions?workflow=build)
 [![Codecov branch](https://img.shields.io/codecov/c/github/estahn/k8s-image-swapper/main.svg?style=for-the-badge)](https://codecov.io/gh/estahn/k8s-image-swapper)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=for-the-badge)](http://godoc.org/github.com/estahn/k8s-image-swapper)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg?style=for-the-badge)](code_of_conduct.md)
 
 ## :star2: Stargazers over time
 
