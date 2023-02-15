@@ -3,15 +3,15 @@ module github.com/estahn/k8s-image-swapper
 go 1.18
 
 require (
-	github.com/alitto/pond v1.8.2
-	github.com/aws/aws-sdk-go v1.44.189
+	github.com/alitto/pond v1.8.3
+	github.com/aws/aws-sdk-go v1.44.199
 	github.com/containers/image/v5 v5.24.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-co-op/gocron v1.18.0
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/gruntwork-io/terratest v0.41.9
+	github.com/gruntwork-io/terratest v0.41.10
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.14.0
