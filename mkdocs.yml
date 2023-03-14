@@ -52,6 +52,7 @@ theme:
   features:
     - tabs
     - content.action.edit
+    - content.code.copy
 
 # Plugins
 plugins:
@@ -65,6 +66,7 @@ plugins:
 markdown_extensions:
   - admonition
   - attr_list
+  - md_in_html
   - codehilite:
       guess_lang: false
   - def_list
@@ -94,7 +96,8 @@ markdown_extensions:
   - pymdownx.snippets:
       check_paths: true
   - pymdownx.superfences
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde

@@ -63,13 +63,11 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
-		rClient, err := registry.NewECRClient(cfg.Target.AWS.Region, cfg.Target.AWS.EcrDomain(), cfg.Target.AWS.AccountID, cfg.Target.AWS.Role, cfg.Target.AWS.ECROptions.AccessPolicy, cfg.Target.AWS.ECROptions.LifecyclePolicy)
+		rClient, err := setupTargetRegistryClient()
 		if err != nil {
 			log.Err(err).Msg("error connecting to registry client")
 			os.Exit(1)
 		}
-
-		rClient.SetRepositoryTags(cfg.Target.AWS.ECROptions.Tags)
 
 		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
 		if err != nil {
@@ -206,6 +204,9 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	// Default to aws target registry type if none are defined
+	viper.SetDefault("target.type", "aws")
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -277,4 +278,21 @@ func setupImagePullSecretsProvider() secrets.ImagePullSecretsProvider {
 	}
 
 	return secrets.NewKubernetesImagePullSecretsProvider(clientset)
+}
+
+// setupRegistry configures a target registry client connection
+func setupTargetRegistryClient() (registry.Client, error) {
+	targetRegistry, err := types.ParseTargetRegistry(cfg.Target.Type)
+	if err != nil {
+		log.Err(err)
+	}
+
+	switch targetRegistry {
+	case types.TargetRegistryAws:
+		return registry.NewECRClient(cfg.Target.AWS)
+	case types.TargetRegistryGcp:
+		return registry.NewGARClient(cfg.Target.GCP)
+	}
+
+	return nil, fmt.Errorf("no registry for target registry type: '%s'", targetRegistry)
 }

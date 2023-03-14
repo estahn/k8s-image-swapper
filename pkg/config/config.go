@@ -55,7 +55,9 @@ type JMESPathFilter struct {
 }
 
 type Target struct {
-	AWS AWS `yaml:"aws"`
+	Type string `yaml:"type"`
+	AWS  AWS    `yaml:"aws"`
+	GCP  GCP    `yaml:"gcp"`
 }
 
 type AWS struct {
@@ -90,4 +92,10 @@ type EncryptionConfiguration struct {
 
 func (a *AWS) EcrDomain() string {
 	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
+}
+
+type GCP struct {
+	Location     string `yaml:"location"`
+	ProjectID    string `yaml:"projectId"`
+	RepositoryID string `yaml:"repositoryId"`
 }
