@@ -24,6 +24,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/estahn/k8s-image-swapper/pkg/types"
 )
 
 const DefaultImageCopyDeadline = 8 * time.Second
@@ -109,10 +111,11 @@ func (g *GCP) GarDomain() string {
 }
 
 func (r Registry) Domain() string {
-	switch r.Type {
-	case "aws":
+	registry, _ := types.ParseRegistry(r.Type)
+	switch registry {
+	case types.RegistryAWS:
 		return r.AWS.EcrDomain()
-	case "gcp":
+	case types.RegistryGCP:
 		return r.GCP.GarDomain()
 	default:
 		return ""
@@ -121,21 +124,24 @@ func (r Registry) Domain() string {
 
 // provides detailed information about wrongly provided configuration
 func CheckRegistryConfiguration(r Registry) error {
+	if r.Type == "" {
+		return fmt.Errorf("a registry requires a type")
+	}
+
 	errorWithType := func(info string) error {
 		return fmt.Errorf(`registry of type "%s" %s`, r.Type, info)
 	}
 
-	switch r.Type {
-	case "":
-		return fmt.Errorf("a registry requires a type")
-	case "aws":
+	registry, _ := types.ParseRegistry(r.Type)
+	switch registry {
+	case types.RegistryAWS:
 		if r.AWS.Region == "" {
 			return errorWithType(`requires a field "region"`)
 		}
 		if r.AWS.AccountID == "" {
 			return errorWithType(`requires a field "accountdId"`)
 		}
-	case "gcp":
+	case types.RegistryGCP:
 		if r.GCP.Location == "" {
 			return errorWithType(`requires a field "location"`)
 		}
@@ -146,5 +152,6 @@ func CheckRegistryConfiguration(r Registry) error {
 			return errorWithType(`requires a field "repositoryId"`)
 		}
 	}
+
 	return nil
 }
