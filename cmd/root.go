@@ -68,7 +68,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		for _, reg := range cfg.Source.Registries {
 			sourceRegistryClient, err := registry.NewClient(reg)
 			if err != nil {
-				log.Err(err).Msgf("error connecting to source registry at %s", reg.GetServerAddress())
+				log.Err(err).Msgf("error connecting to source registry at %s", reg.Domain())
 				os.Exit(1)
 			}
 			sourceRegistryClients = append(sourceRegistryClients, sourceRegistryClient)
@@ -77,7 +77,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		// Create a registry client for private target registry
 		targetRegistryClient, err := registry.NewClient(cfg.Target.Registry)
 		if err != nil {
-			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Registry.GetServerAddress())
+			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Registry.Domain())
 			os.Exit(1)
 		}
 
@@ -219,6 +219,9 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	// Default to aws target registry type if none are defined
+	viper.SetDefault("target.type", "aws")
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

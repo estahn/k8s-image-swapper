@@ -58,14 +58,10 @@ type Target struct {
 	Registry Registry `yaml:"registry"`
 }
 
-type RegistryType string
-
 type Registry struct {
-	Type RegistryType `yaml:"type"`
-	AWS  AWS          `yaml:"aws,omitempty"`
-	// TODO add other possible types of registry
-	// example:
-	// DockerIO  DockerIO    `yaml:"dockerio,omitempty"`
+	Type string `yaml:"type"`
+	AWS  AWS    `yaml:"aws"`
+	GCP  GCP    `yaml:"gcp"`
 }
 
 type AWS struct {
@@ -73,6 +69,12 @@ type AWS struct {
 	Region     string     `yaml:"region"`
 	Role       string     `yaml:"role"`
 	ECROptions ECROptions `yaml:"ecrOptions"`
+}
+
+type GCP struct {
+	Location     string `yaml:"location"`
+	ProjectID    string `yaml:"projectId"`
+	RepositoryID string `yaml:"repositoryId"`
 }
 
 type ECROptions struct {
@@ -98,38 +100,51 @@ type EncryptionConfiguration struct {
 	KmsKey         string `yaml:"kmsKey"`
 }
 
-// TODO add additional structs for different types of registries
-
-// enum for the supported registry types
-const (
-	Aws RegistryType = "aws"
-	// TODO add other possible types of registry
-	// example:
-	// DockerIO RegistryType = "dockerio"
-)
-
-// provides detailed information about wrongly provided configuration
-func (r Registry) ValidateConfiguration() error {
-	switch r.Type {
-	case "":
-		return fmt.Errorf("a registry requires a type")
-	case Aws:
-		if r.AWS.Region == "" {
-			return fmt.Errorf(`registry of type "%s" requires a field "region"`, r.Type)
-		}
-		if r.AWS.AccountID == "" {
-			return fmt.Errorf(`registry of type "%s" requires a field "accountdId"`, r.Type)
-		}
-	}
-	return nil
+func (a *AWS) EcrDomain() string {
+	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
 }
 
-func (r Registry) GetServerAddress() string {
+func (g *GCP) GarDomain() string {
+	return fmt.Sprintf("%s-docker.pkg.dev/%s/%s", g.Location, g.ProjectID, g.RepositoryID)
+}
+
+func (r Registry) Domain() string {
 	switch r.Type {
-	case Aws:
-		aws := r.AWS
-		return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", aws.AccountID, aws.Region)
+	case "aws":
+		return r.AWS.EcrDomain()
+	case "gcp":
+		return r.GCP.GarDomain()
 	default:
 		return ""
 	}
+}
+
+// provides detailed information about wrongly provided configuration
+func CheckRegistryConfiguration(r Registry) error {
+	errorWithType := func(info string) error {
+		return fmt.Errorf(`registry of type "%s" %s`, r.Type, info)
+	}
+
+	switch r.Type {
+	case "":
+		return fmt.Errorf("a registry requires a type")
+	case "aws":
+		if r.AWS.Region == "" {
+			return errorWithType(`requires a field "region"`)
+		}
+		if r.AWS.AccountID == "" {
+			return errorWithType(`requires a field "accountdId"`)
+		}
+	case "gcp":
+		if r.GCP.Location == "" {
+			return errorWithType(`requires a field "location"`)
+		}
+		if r.GCP.ProjectID == "" {
+			return errorWithType(`requires a field "projectId"`)
+		}
+		if r.GCP.RepositoryID == "" {
+			return errorWithType(`requires a field "repositoryId"`)
+		}
+	}
+	return nil
 }

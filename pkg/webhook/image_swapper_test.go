@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/alitto/pond"
@@ -24,8 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
-
-var execCommand = exec.Command
 
 //func TestImageSwapperMutator(t *testing.T) {
 //	tests := []struct {
@@ -209,14 +206,6 @@ func (m *mockECRClient) CreateRepositoryWithContext(ctx context.Context, createR
 	return &ecr.CreateRepositoryOutput{}, nil
 }
 
-func fakeExecCommand(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestHelperProcess", "--", command}
-	cs = append(cs, args...)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	return cmd
-}
-
 func TestHelperProcess(t *testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
@@ -239,9 +228,6 @@ func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview,
 }
 
 func TestImageSwapper_Mutate(t *testing.T) {
-	execCommand = fakeExecCommand
-	defer func() { execCommand = exec.Command }()
-
 	ecrClient := new(mockECRClient)
 	ecrClient.On(
 		"CreateRepositoryWithContext",
@@ -342,9 +328,6 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 // TestImageSwapper_MutateWithImagePullSecrets tests mutating with imagePullSecret support
 func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
-	execCommand = fakeExecCommand
-	defer func() { execCommand = exec.Command }()
-
 	ecrClient := new(mockECRClient)
 	ecrClient.On(
 		"CreateRepositoryWithContext",
@@ -431,4 +414,33 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	copier.StopAndWait()
 
 	ecrClient.AssertExpectations(t)
+}
+
+func TestImageSwapper_GAR_Mutate(t *testing.T) {
+	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	copier := pond.New(1, 1)
+	// TODO: test types.ImageSwapPolicyExists
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	expected := `[
+		{"op":"replace","path":"/spec/initContainers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/init-container:latest"},
+		{"op":"replace","path":"/spec/containers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/nginx:latest"},
+		{"op":"replace","path":"/spec/containers/1/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
+	]`
+
+	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
 }

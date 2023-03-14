@@ -37,8 +37,8 @@ func NewImagePullSecretsResult() *ImagePullSecretsResult {
 // Initialiaze an ImagePullSecretsResult and registers image pull secrets from the given registries
 func NewImagePullSecretsResultWithDefaults(defaultImagePullSecrets []registry.Client) *ImagePullSecretsResult {
 	imagePullSecretsResult := NewImagePullSecretsResult()
-	for index, registry := range defaultImagePullSecrets {
-		dockerConfig, err := registry.DockerConfig()
+	for index, reg := range defaultImagePullSecrets {
+		dockerConfig, err := registry.GenerateDockerConfig(reg)
 		if err != nil {
 			log.Err(err)
 		} else {

@@ -182,10 +182,27 @@ It's a slice of `Key` and `Value`.
 !!! example
     ```yaml
     target:
-      type: aws
-      aws:
-        ecrOptions:
-          tags:
-            - key: cluster
-              value: myCluster
+      registry:
+        type: aws
+        aws:
+          ecrOptions:
+            tags:
+              - key: cluster
+                value: myCluster
+    ```
+
+### GCP
+
+The option `target.registry.gcp` holds details about the target registry storing the images.
+The GCP location, projectId, and repositoryId are used to constrct the GCP Artifact Registry domain `[LOCATION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY_ID]`.
+
+!!! example
+    ```yaml
+    target:
+      registry:
+        type: gcp
+        gcp:
+          location: us-central1
+          projectId: gcp-project-123
+          repositoryId: main
     ```

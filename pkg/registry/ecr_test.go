@@ -16,7 +16,7 @@ func TestDockerConfig(t *testing.T) {
 
 	fakeRegistry := NewDummyECRClient("us-east-1", "12345678912", "", config.ECROptions{}, fakeToken)
 
-	r, _ := fakeRegistry.DockerConfig()
+	r, _ := GenerateDockerConfig(fakeRegistry)
 
 	assert.Equal(t, r, expected)
 }
