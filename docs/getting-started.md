@@ -62,29 +62,30 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    accessPolicy: |
-      {
-        "Statement": [
-          {
-            "Sid": "AllowCrossAccountPull",
-            "Effect": "Allow",
-            "Principal": {
-              "AWS": "*"
-            },
-            "Action": [
-              "ecr:GetDownloadUrlForLayer",
-              "ecr:BatchGetImage",
-              "ecr:BatchCheckLayerAvailability"
-            ],
-            "Condition": {
-              "StringEquals": {
-                "aws:PrincipalOrgID": "o-xxxxxxxxxx"
+    ecrOptions:
+      accessPolicy: |
+        {
+          "Statement": [
+            {
+              "Sid": "AllowCrossAccountPull",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability"
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalOrgID": "o-xxxxxxxxxx"
+                }
               }
             }
-          }
-        ],
-        "Version": "2008-10-17"
-      }
+          ],
+          "Version": "2008-10-17"
+        }
 ```
 
 #### Lifecycle policy
@@ -98,23 +99,24 @@ target:
     accountId: 123456789
     region: ap-southeast-2
     role: arn:aws:iam::123456789012:role/roleName
-    lifecyclePolicy: |
-      {
-        "rules": [
-          {
-            "rulePriority": 1,
-            "description": "Rule 1",
-            "selection": {
-              "tagStatus": "any",
-              "countType": "imageCountMoreThan",
-              "countNumber": 1000
-            },
-            "action": {
-              "type": "expire"
+    ecrOptions:
+      lifecyclePolicy: |
+        {
+          "rules": [
+            {
+              "rulePriority": 1,
+              "description": "Rule 1",
+              "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 1000
+              },
+              "action": {
+                "type": "expire"
+              }
             }
-          }
-        ]
-      }
+          ]
+        }
 ```
 
 #### Service Account
