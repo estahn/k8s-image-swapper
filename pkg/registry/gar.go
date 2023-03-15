@@ -2,6 +2,8 @@ package registry
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -22,13 +24,11 @@ import (
 type GARAPI interface{}
 
 type GARClient struct {
-	client       GARAPI
-	location     string
-	projectId    string
-	repositoryId string
-	cache        *ristretto.Cache
-	scheduler    *gocron.Scheduler
-	authToken    []byte
+	client    GARAPI
+	garDomain string
+	cache     *ristretto.Cache
+	scheduler *gocron.Scheduler
+	authToken []byte
 }
 
 func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
@@ -45,12 +45,10 @@ func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
 	scheduler.StartAsync()
 
 	client := &GARClient{
-		client:       nil,
-		location:     clientConfig.Location,
-		projectId:    clientConfig.ProjectID,
-		repositoryId: clientConfig.RepositoryID,
-		cache:        cache,
-		scheduler:    scheduler,
+		client:    nil,
+		garDomain: clientConfig.GarDomain(),
+		cache:     cache,
+		scheduler: scheduler,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -160,7 +158,7 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 }
 
 func (e *GARClient) Endpoint() string {
-	return fmt.Sprintf("%s-docker.pkg.dev/%s/%s", e.location, e.projectId, e.repositoryId)
+	return e.garDomain
 }
 
 // requestAuthToken requests and returns an authentication token from GAR with its expiration date
@@ -202,15 +200,30 @@ func (e *GARClient) Credentials() string {
 	return string(e.authToken)
 }
 
-func NewMockGARClient(garClient GARAPI, location string, projectId string, repositoryId string) (*GARClient, error) {
+func (e *GARClient) DockerConfig() ([]byte, error) {
+	dockerConfig := DockerConfig{
+		AuthConfigs: map[string]AuthConfig{
+			e.garDomain: {
+				Auth: base64.StdEncoding.EncodeToString(e.authToken),
+			},
+		},
+	}
+
+	dockerConfigJson, err := json.Marshal(dockerConfig)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return dockerConfigJson, nil
+}
+
+func NewMockGARClient(garClient GARAPI, garDomain string) (*GARClient, error) {
 	client := &GARClient{
-		client:       garClient,
-		location:     location,
-		projectId:    projectId,
-		repositoryId: repositoryId,
-		cache:        nil,
-		scheduler:    nil,
-		authToken:    []byte("oauth2accesstoken:mock-gar-client-fake-auth-token"),
+		client:    garClient,
+		garDomain: garDomain,
+		cache:     nil,
+		scheduler: nil,
+		authToken: []byte("oauth2accesstoken:mock-gar-client-fake-auth-token"),
 	}
 
 	return client, nil

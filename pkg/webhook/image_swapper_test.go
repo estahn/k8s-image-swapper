@@ -3,7 +3,6 @@ package webhook
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -215,7 +214,7 @@ func TestHelperProcess(t *testing.T) {
 }
 
 func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview, error) {
-	data, err := ioutil.ReadFile("../../test/requests/" + filename)
+	data, err := os.ReadFile("../../test/requests/" + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -418,7 +417,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 }
 
 func TestImageSwapper_GAR_Mutate(t *testing.T) {
-	registryClient, _ := registry.NewMockGARClient(nil, "us-central1", "gcp-project-123", "main")
+	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)

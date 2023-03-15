@@ -211,7 +211,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			targetImage := targetRef.DockerReference().String()
 
 			imageCopierLogger := logger.With().
-				Str("source-image", srcRef.DockerReference().Name()).
+				Str("source-image", srcRef.DockerReference().String()).
 				Str("target-image", targetImage).
 				Logger()
 

@@ -2,26 +2,26 @@ package types
 
 import "fmt"
 
-type TargetRegistry int
+type Registry int
 
 const (
-	TargetRegistryUnknown = iota
-	TargetRegistryAws
-	TargetRegistryGcp
+	RegistryUnknown = iota
+	RegistryAWS
+	RegistryGCP
 )
 
-func (p TargetRegistry) String() string {
+func (p Registry) String() string {
 	return [...]string{"unknown", "aws", "gcp"}[p]
 }
 
-func ParseTargetRegistry(p string) (TargetRegistry, error) {
+func ParseRegistry(p string) (Registry, error) {
 	switch p {
-	case TargetRegistry(TargetRegistryAws).String():
-		return TargetRegistryAws, nil
-	case TargetRegistry(TargetRegistryGcp).String():
-		return TargetRegistryGcp, nil
+	case Registry(RegistryAWS).String():
+		return RegistryAWS, nil
+	case Registry(RegistryGCP).String():
+		return RegistryGCP, nil
 	}
-	return TargetRegistryUnknown, fmt.Errorf("unknown target registry string: '%s', defaulting to unknown", p)
+	return RegistryUnknown, fmt.Errorf("unknown target registry string: '%s', defaulting to unknown", p)
 }
 
 type ImageSwapPolicy int

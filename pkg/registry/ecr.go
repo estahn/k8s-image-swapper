@@ -33,6 +33,67 @@ type ECRClient struct {
 	tags            []config.Tag
 }
 
+func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
+	ecrDomain := clientConfig.EcrDomain()
+
+	var sess *session.Session
+	var config *aws.Config
+	if clientConfig.Role != "" {
+		log.Info().Str("assumedRole", clientConfig.Role).Msg("assuming specified role")
+		stsSession, _ := session.NewSession(config)
+		creds := stscreds.NewCredentials(stsSession, clientConfig.Role)
+		config = aws.NewConfig().
+			WithRegion(clientConfig.Region).
+			WithCredentialsChainVerboseErrors(true).
+			WithHTTPClient(&http.Client{
+				Timeout: 3 * time.Second,
+			}).
+			WithCredentials(creds)
+	} else {
+		config = aws.NewConfig().
+			WithRegion(clientConfig.Region).
+			WithCredentialsChainVerboseErrors(true).
+			WithHTTPClient(&http.Client{
+				Timeout: 3 * time.Second,
+			})
+	}
+
+	sess = session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+		Config:            (*config),
+	}))
+	ecrClient := ecr.New(sess, config)
+
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,     // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 64,      // number of keys per Get buffer.
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	scheduler := gocron.NewScheduler(time.UTC)
+	scheduler.StartAsync()
+
+	client := &ECRClient{
+		client:          ecrClient,
+		ecrDomain:       ecrDomain,
+		cache:           cache,
+		scheduler:       scheduler,
+		targetAccount:   clientConfig.AccountID,
+		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
+		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
+		tags:            clientConfig.ECROptions.Tags,
+	}
+
+	if err := client.scheduleTokenRenewal(); err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func (e *ECRClient) Credentials() string {
 	return string(e.authToken)
 }
@@ -239,65 +300,15 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 	return nil
 }
 
-func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
-	ecrDomain := clientConfig.EcrDomain()
-
-	var sess *session.Session
-	var config *aws.Config
-	if clientConfig.Role != "" {
-		log.Info().Str("assumedRole", clientConfig.Role).Msg("assuming specified role")
-		stsSession, _ := session.NewSession(config)
-		creds := stscreds.NewCredentials(stsSession, clientConfig.Role)
-		config = aws.NewConfig().
-			WithRegion(clientConfig.Region).
-			WithCredentialsChainVerboseErrors(true).
-			WithHTTPClient(&http.Client{
-				Timeout: 3 * time.Second,
-			}).
-			WithCredentials(creds)
-	} else {
-		config = aws.NewConfig().
-			WithRegion(clientConfig.Region).
-			WithCredentialsChainVerboseErrors(true).
-			WithHTTPClient(&http.Client{
-				Timeout: 3 * time.Second,
-			})
+// For testing purposes
+func NewDummyECRClient(region string, targetAccount string, role string, options config.ECROptions, authToken []byte) *ECRClient {
+	return &ECRClient{
+		targetAccount:   targetAccount,
+		accessPolicy:    options.AccessPolicy,
+		lifecyclePolicy: options.LifecyclePolicy,
+		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
+		authToken:       authToken,
 	}
-
-	sess = session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Config:            (*config),
-	}))
-	ecrClient := ecr.New(sess, config)
-
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e7,     // number of keys to track frequency of (10M).
-		MaxCost:     1 << 30, // maximum cost of cache (1GB).
-		BufferItems: 64,      // number of keys per Get buffer.
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	scheduler := gocron.NewScheduler(time.UTC)
-	scheduler.StartAsync()
-
-	client := &ECRClient{
-		client:          ecrClient,
-		ecrDomain:       ecrDomain,
-		cache:           cache,
-		scheduler:       scheduler,
-		targetAccount:   clientConfig.AccountID,
-		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
-		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
-		tags:            clientConfig.ECROptions.Tags,
-	}
-
-	if err := client.scheduleTokenRenewal(); err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string, targetAccount, role string) (*ECRClient, error) {

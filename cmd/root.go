@@ -63,9 +63,21 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
-		rClient, err := setupTargetRegistryClient()
+		// Create registry clients for source registries
+		sourceRegistryClients := []registry.Client{}
+		for _, reg := range cfg.Source.Registries {
+			sourceRegistryClient, err := registry.NewClient(reg)
+			if err != nil {
+				log.Err(err).Msgf("error connecting to source registry at %s", reg.Domain())
+				os.Exit(1)
+			}
+			sourceRegistryClients = append(sourceRegistryClients, sourceRegistryClient)
+		}
+
+		// Create a registry client for private target registry
+		targetRegistryClient, err := registry.NewClient(cfg.Target)
 		if err != nil {
-			log.Err(err).Msg("error connecting to registry client")
+			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Domain())
 			os.Exit(1)
 		}
 
@@ -86,8 +98,11 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 
 		imagePullSecretProvider := setupImagePullSecretsProvider()
 
+		// Inform secret provider about managed private source registries
+		imagePullSecretProvider.SetAuthenticatedRegistries(sourceRegistryClients)
+
 		wh, err := webhook.NewImageSwapperWebhookWithOpts(
-			rClient,
+			targetRegistryClient,
 			webhook.Filters(cfg.Source.Filters),
 			webhook.ImagePullSecretsProvider(imagePullSecretProvider),
 			webhook.ImageSwapPolicy(imageSwapPolicy),
@@ -278,21 +293,4 @@ func setupImagePullSecretsProvider() secrets.ImagePullSecretsProvider {
 	}
 
 	return secrets.NewKubernetesImagePullSecretsProvider(clientset)
-}
-
-// setupRegistry configures a target registry client connection
-func setupTargetRegistryClient() (registry.Client, error) {
-	targetRegistry, err := types.ParseTargetRegistry(cfg.Target.Type)
-	if err != nil {
-		log.Err(err)
-	}
-
-	switch targetRegistry {
-	case types.TargetRegistryAws:
-		return registry.NewECRClient(cfg.Target.AWS)
-	case types.TargetRegistryGcp:
-		return registry.NewGARClient(cfg.Target.GCP)
-	}
-
-	return nil, fmt.Errorf("no registry for target registry type: '%s'", targetRegistry)
 }

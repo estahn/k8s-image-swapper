@@ -2,7 +2,9 @@
 
 ### Is pulling from private registries supported?
 
-Yes, `imagePullSecrets` on `Pod` and `ServiceAccount` level are supported.
+Yes, `imagePullSecrets` on `Pod` and `ServiceAccount` level in the hooked pod definition are supported.
+
+It is also possible to provide a list of ECRs to which authentication is handled by `k8s-image-swapper` using the same credentials as for the target registry. Please see [Configuration > Source - AWS](configuration.md#Private-registries).
 
 ### Are config changes reloaded gracefully?
 

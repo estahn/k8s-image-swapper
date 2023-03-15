@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -13,6 +14,9 @@ type DummyImagePullSecretsProvider struct {
 // NewDummyImagePullSecretsProvider initialises a dummy image pull secrets provider
 func NewDummyImagePullSecretsProvider() ImagePullSecretsProvider {
 	return &DummyImagePullSecretsProvider{}
+}
+
+func (p *DummyImagePullSecretsProvider) SetAuthenticatedRegistries(registries []registry.Client) {
 }
 
 // GetImagePullSecrets returns an empty ImagePullSecretsResult

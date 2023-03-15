@@ -54,7 +54,7 @@ target:
           value: B
 `,
 			expCfg: Config{
-				Target: Target{
+				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
 						AccountID: "123456789",
@@ -72,6 +72,39 @@ target:
 								},
 							},
 						},
+					},
+				},
+			},
+		},
+		{
+			name: "should render multiple source registries",
+			cfg: `
+source:
+  registries:
+    - type: "aws"
+      aws:
+        accountId: "12345678912"
+        region: "us-west-1"
+    - type: "aws"
+      aws:
+        accountId: "12345678912"
+        region: "us-east-1"
+`,
+			expCfg: Config{
+				Source: Source{
+					Registries: []Registry{
+						{
+							Type: "aws",
+							AWS: AWS{
+								AccountID: "12345678912",
+								Region:    "us-west-1",
+							}},
+						{
+							Type: "aws",
+							AWS: AWS{
+								AccountID: "12345678912",
+								Region:    "us-east-1",
+							}},
 					},
 				},
 			},

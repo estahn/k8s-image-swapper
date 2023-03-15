@@ -2,9 +2,10 @@ package secrets
 
 import (
 	"context"
-	"io/ioutil"
+	"fmt"
 	"os"
 
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -15,7 +16,8 @@ import (
 // KubernetesImagePullSecretsProvider retrieves the secrets holding docker auth information from Kubernetes and merges
 // them if necessary. Supports Pod secrets as well as ServiceAccount secrets.
 type KubernetesImagePullSecretsProvider struct {
-	kubernetesClient kubernetes.Interface
+	kubernetesClient        kubernetes.Interface
+	authenticatedRegistries []registry.Client
 }
 
 // ImagePullSecretsResult contains the result of GetImagePullSecrets
@@ -32,7 +34,21 @@ func NewImagePullSecretsResult() *ImagePullSecretsResult {
 	}
 }
 
-// Add adds a secrets to internal list and rebuilds the aggregate
+// Initialiaze an ImagePullSecretsResult and registers image pull secrets from the given registries
+func NewImagePullSecretsResultWithDefaults(defaultImagePullSecrets []registry.Client) *ImagePullSecretsResult {
+	imagePullSecretsResult := NewImagePullSecretsResult()
+	for index, reg := range defaultImagePullSecrets {
+		dockerConfig, err := registry.GenerateDockerConfig(reg)
+		if err != nil {
+			log.Err(err)
+		} else {
+			imagePullSecretsResult.Add(fmt.Sprintf("source-ecr-%d", index), dockerConfig)
+		}
+	}
+	return imagePullSecretsResult
+}
+
+// Add a secrets to internal list and rebuilds the aggregate
 func (r *ImagePullSecretsResult) Add(name string, data []byte) {
 	r.Secrets[name] = data
 	r.Aggregate, _ = jsonpatch.MergePatch(r.Aggregate, data)
@@ -40,7 +56,7 @@ func (r *ImagePullSecretsResult) Add(name string, data []byte) {
 
 // AuthFile provides the aggregate as a file to be used by a docker client
 func (r *ImagePullSecretsResult) AuthFile() (*os.File, error) {
-	tmpfile, err := ioutil.TempFile("", "auth")
+	tmpfile, err := os.CreateTemp("", "auth")
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +73,13 @@ func (r *ImagePullSecretsResult) AuthFile() (*os.File, error) {
 
 func NewKubernetesImagePullSecretsProvider(clientset kubernetes.Interface) ImagePullSecretsProvider {
 	return &KubernetesImagePullSecretsProvider{
-		kubernetesClient: clientset,
+		kubernetesClient:        clientset,
+		authenticatedRegistries: []registry.Client{},
 	}
+}
+
+func (p *KubernetesImagePullSecretsProvider) SetAuthenticatedRegistries(registries []registry.Client) {
+	p.authenticatedRegistries = registries
 }
 
 // GetImagePullSecrets returns all secrets with their respective content
@@ -79,7 +100,7 @@ func (p *KubernetesImagePullSecretsProvider) GetImagePullSecrets(ctx context.Con
 		imagePullSecrets = append(imagePullSecrets, serviceAccount.ImagePullSecrets...)
 	}
 
-	result := NewImagePullSecretsResult()
+	result := NewImagePullSecretsResultWithDefaults(p.authenticatedRegistries)
 	for _, imagePullSecret := range imagePullSecrets {
 		// fetch a secret only once
 		if _, exists := secrets[imagePullSecret.Name]; exists {
