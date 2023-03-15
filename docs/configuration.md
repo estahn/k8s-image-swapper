@@ -154,22 +154,21 @@ has a live editor that can be used as a playground to experiment with more compl
 ## Target
 
 This section configures details about the image target.
-The option `target.registry` allows to specify which type of registry you set as your target (AWS, Azure...).
-At the moment, `aws` is the only supported value.
+The option `target` allows to specify which type of registry you set as your target (AWS, GCP...).
+At the moment, `aws` and `gcp` are the only supported values.
 
 ### AWS
 
-The option `target.registry.aws` holds details about the target registry storing the images.
+The option `target.aws` holds details about the target registry storing the images.
 The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
     ```yaml
     target:
-      registry:
-        type: aws
-        aws:
-          accountId: 123456789
-          region: ap-southeast-2
+      type: aws
+      aws:
+        accountId: 123456789
+        region: ap-southeast-2
     ```
 
 #### ECR Options
@@ -182,27 +181,25 @@ It's a slice of `Key` and `Value`.
 !!! example
     ```yaml
     target:
-      registry:
-        type: aws
-        aws:
-          ecrOptions:
-            tags:
-              - key: cluster
-                value: myCluster
+      type: aws
+      aws:
+        ecrOptions:
+          tags:
+            - key: cluster
+              value: myCluster
     ```
 
 ### GCP
 
-The option `target.registry.gcp` holds details about the target registry storing the images.
+The option `target.gcp` holds details about the target registry storing the images.
 The GCP location, projectId, and repositoryId are used to constrct the GCP Artifact Registry domain `[LOCATION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY_ID]`.
 
 !!! example
     ```yaml
     target:
-      registry:
-        type: gcp
-        gcp:
-          location: us-central1
-          projectId: gcp-project-123
-          repositoryId: main
+      type: gcp
+      gcp:
+        location: us-central1
+        projectId: gcp-project-123
+        repositoryId: main
     ```

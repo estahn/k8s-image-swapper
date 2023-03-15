@@ -75,9 +75,9 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		}
 
 		// Create a registry client for private target registry
-		targetRegistryClient, err := registry.NewClient(cfg.Target.Registry)
+		targetRegistryClient, err := registry.NewClient(cfg.Target)
 		if err != nil {
-			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Registry.Domain())
+			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Domain())
 			os.Exit(1)
 		}
 

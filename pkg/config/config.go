@@ -41,8 +41,8 @@ type Config struct {
 	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
 	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
 
-	Source Source `yaml:"source"`
-	Target Target `yaml:"target"`
+	Source Source   `yaml:"source"`
+	Target Registry `yaml:"target"`
 
 	TLSCertFile string
 	TLSKeyFile  string
@@ -54,10 +54,6 @@ type JMESPathFilter struct {
 type Source struct {
 	Registries []Registry       `yaml:"registries"`
 	Filters    []JMESPathFilter `yaml:"filters"`
-}
-
-type Target struct {
-	Registry Registry `yaml:"registry"`
 }
 
 type Registry struct {
