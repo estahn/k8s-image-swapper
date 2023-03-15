@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/alitto/pond"
@@ -196,8 +197,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				continue
 			}
 
-			// skip if the source and target registry domain are equal (e.g. same ECR registries)
-			if domain := reference.Domain(srcRef.DockerReference()); domain == p.registryClient.Endpoint() {
+			// skip if the source ref is within the target registry
+			if strings.HasPrefix(srcRef.DockerReference().String(), p.registryClient.Endpoint()) {
 				continue
 			}
 
