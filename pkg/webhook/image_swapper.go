@@ -234,6 +234,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				p.copier.SubmitAndWait(imageCopier.withDeadline().start)
 			case types.ImageCopyPolicyForce:
 				imageCopier.withDeadline().start()
+			case types.ImageCopyPolicyNone:
+				// do not copy image
 			default:
 				panic("unknown imageCopyPolicy")
 			}

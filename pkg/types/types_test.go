@@ -69,6 +69,11 @@ func TestParseImageCopyPolicy(t *testing.T) {
 			want: ImageCopyPolicyForce,
 		},
 		{
+			name: "none",
+			args: args{p: "none"},
+			want: ImageCopyPolicyNone,
+		},
+		{
 			name:    "random-non-existent",
 			args:    args{p: "random-non-existent"},
 			want:    ImageCopyPolicyDelayed,

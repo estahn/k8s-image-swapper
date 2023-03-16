@@ -38,7 +38,7 @@ type Config struct {
 
 	DryRun            bool          `yaml:"dryRun"`
 	ImageSwapPolicy   string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
+	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
 	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
 
 	Source Source   `yaml:"source"`
