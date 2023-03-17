@@ -161,6 +161,11 @@ func (e *GARClient) Endpoint() string {
 	return e.garDomain
 }
 
+// IsOrigin returns true if the references origin is from this registry
+func (e *GARClient) IsOrigin(imageRef ctypes.ImageReference) bool {
+	return strings.HasPrefix(imageRef.DockerReference().String(), e.Endpoint())
+}
+
 // requestAuthToken requests and returns an authentication token from GAR with its expiration date
 func (e *GARClient) requestAuthToken() ([]byte, time.Time, error) {
 	ctx := context.Background()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/alitto/pond"
@@ -197,8 +196,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				continue
 			}
 
-			// skip if the source ref is within the target registry
-			if strings.HasPrefix(srcRef.DockerReference().String(), p.registryClient.Endpoint()) {
+			// skip if the source originates from the target registry
+			if p.registryClient.IsOrigin(srcRef) {
 				log.Ctx(lctx).Debug().Str("registry", srcRef.DockerReference().String()).Msg("skip due to source and target being the same registry")
 				continue
 			}
