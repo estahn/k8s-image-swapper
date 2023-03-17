@@ -15,6 +15,7 @@ imageSwapPolicy: exists
 # - delayed: Submits the copy job to a process queue and moves on.
 # - immediate: Submits the copy job to a process queue and waits for it to finish (deadline 8s).
 # - force: Attempts to immediately copy the image (deadline 8s).
+# - none: Do not copy the image.
 imageCopyPolicy: delayed
 
 source:

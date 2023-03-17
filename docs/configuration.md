@@ -40,6 +40,7 @@ The option `imageCopyPolicy` (default: `delayed`) defines the image copy strateg
 * `delayed`: Submits the copy job to a process queue and moves on.
 * `immediate`: Submits the copy job to a process queue and waits for it to finish (deadline defined by `imageCopyDeadline`).
 * `force`: Attempts to immediately copy the image (deadline defined by `imageCopyDeadline`).
+* `none`: Do not copy the image.
 
 ## ImageCopyDeadline
 
