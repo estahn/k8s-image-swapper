@@ -58,7 +58,7 @@ func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
 	return client, nil
 }
 
-// repositories are not created for artifact registry
+// CreateRepository is empty since repositories are not created for artifact registry
 func (e *GARClient) CreateRepository(ctx context.Context, name string) error {
 	return nil
 }
@@ -159,6 +159,11 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 func (e *GARClient) Endpoint() string {
 	return e.garDomain
+}
+
+// IsOrigin returns true if the references origin is from this registry
+func (e *GARClient) IsOrigin(imageRef ctypes.ImageReference) bool {
+	return strings.HasPrefix(imageRef.DockerReference().String(), e.Endpoint())
 }
 
 // requestAuthToken requests and returns an authentication token from GAR with its expiration date

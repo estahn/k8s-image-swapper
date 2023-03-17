@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/containers/image/v5/docker/reference"
 	"net/http"
 	"os/exec"
 	"time"
@@ -262,6 +263,12 @@ func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 func (e *ECRClient) Endpoint() string {
 	return e.ecrDomain
+}
+
+// IsOrigin returns true if the references origin is from this registry
+func (e *ECRClient) IsOrigin(imageRef ctypes.ImageReference) bool {
+	domain := reference.Domain(imageRef.DockerReference())
+	return domain == e.Endpoint()
 }
 
 // requestAuthToken requests and returns an authentication token from ECR with its expiration date

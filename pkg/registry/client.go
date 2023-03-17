@@ -24,6 +24,9 @@ type Client interface {
 	// Endpoint returns the domain of the registry
 	Endpoint() string
 	Credentials() string
+
+	// IsOrigin returns true if the imageRef originates from this registry
+	IsOrigin(imageRef ctypes.ImageReference) bool
 }
 
 type DockerConfig struct {
@@ -34,7 +37,7 @@ type AuthConfig struct {
 	Auth string `json:"auth,omitempty"`
 }
 
-// returns a registry client ready for use without the need to specify an implementation
+// NewClient returns a registry client ready for use without the need to specify an implementation
 func NewClient(r config.Registry) (Client, error) {
 	if err := config.CheckRegistryConfiguration(r); err != nil {
 		return nil, err
