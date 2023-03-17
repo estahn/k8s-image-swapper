@@ -199,6 +199,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 
 			// skip if the source ref is within the target registry
 			if strings.HasPrefix(srcRef.DockerReference().String(), p.registryClient.Endpoint()) {
+				log.Ctx(lctx).Debug().Str("registry", srcRef.DockerReference().String()).Msg("skip due to source and target being the same registry")
 				continue
 			}
 

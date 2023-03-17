@@ -58,7 +58,7 @@ func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
 	return client, nil
 }
 
-// repositories are not created for artifact registry
+// CreateRepository is empty since repositories are not created for artifact registry
 func (e *GARClient) CreateRepository(ctx context.Context, name string) error {
 	return nil
 }
