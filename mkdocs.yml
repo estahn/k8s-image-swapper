@@ -116,6 +116,8 @@ nav:
 #    - Contributors: constributors.md
 
 extra:
+  version:
+    provider: mike
   analytics:
     provider: google
     property: G-BK225DNZVM
