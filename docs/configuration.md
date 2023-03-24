@@ -40,6 +40,7 @@ The option `imageCopyPolicy` (default: `delayed`) defines the image copy strateg
 * `delayed`: Submits the copy job to a process queue and moves on.
 * `immediate`: Submits the copy job to a process queue and waits for it to finish (deadline defined by `imageCopyDeadline`).
 * `force`: Attempts to immediately copy the image (deadline defined by `imageCopyDeadline`).
+* `none`: Do not copy the image.
 
 ## ImageCopyDeadline
 
@@ -52,6 +53,30 @@ This option only applies for `immediate` and `force` image copy strategies.
 
 This section configures details about the image source.
 
+### Registries
+
+The option `source.registries` describes a list of registries to pull images from, using a specific configuration.
+
+#### AWS
+
+By providing configuration on AWS registries you can ask `k8s-image-swapper` to handle the authentication using the same credentials as for the target AWS registry.
+This authentication method is the default way to get authorized by a private registry if the targeted Pod does not provide an `imagePullSecret`.
+
+Registries are described with an AWS account ID and region, mostly to construct the ECR domain `[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com`.
+
+!!! example
+    ```yaml
+    source:
+      registries:
+        - type: aws
+          aws:
+            accountId: 123456789
+            region: ap-southeast-2
+        - type: aws
+          aws:
+            accountId: 234567890
+            region: us-east-1
+    ```
 ### Filters
 
 Filters provide control over what pods will be processed.
@@ -130,15 +155,18 @@ has a live editor that can be used as a playground to experiment with more compl
 ## Target
 
 This section configures details about the image target.
+The option `target` allows to specify which type of registry you set as your target (AWS, GCP...).
+At the moment, `aws` and `gcp` are the only supported values.
 
 ### AWS
 
-The option `target.registry.aws` holds details about the target registry storing the images.
+The option `target.aws` holds details about the target registry storing the images.
 The AWS Account ID and Region is primarily used to construct the ECR domain `[ACCOUNTID].dkr.ecr.[REGION].amazonaws.com`.
 
 !!! example
     ```yaml
     target:
+      type: aws
       aws:
         accountId: 123456789
         region: ap-southeast-2
@@ -160,4 +188,19 @@ It's a slice of `Key` and `Value`.
           tags:
             - key: cluster
               value: myCluster
+    ```
+
+### GCP
+
+The option `target.gcp` holds details about the target registry storing the images.
+The GCP location, projectId, and repositoryId are used to constrct the GCP Artifact Registry domain `[LOCATION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY_ID]`.
+
+!!! example
+    ```yaml
+    target:
+      type: gcp
+      gcp:
+        location: us-central1
+        projectId: gcp-project-123
+        repositoryId: main
     ```

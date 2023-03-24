@@ -1,31 +1,31 @@
-name: Publish docs
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - mkdocs.yml
-
-jobs:
-  build:
-    name: Deploy docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v4.5.0
-        with:
-          python-version: '3.x'
-
-      - name: Install mkdocs
-        run: pip install --upgrade pip && pip install mkdocs mkdocs-minify-plugin mkdocs-markdownextradata-plugin mkdocs-macros-plugin pymdown-extensions mkdocs-material
-
-      - run: git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Publish docs
-        run: mkdocs gh-deploy
+#name: Publish docs
+#on:
+#  workflow_dispatch:
+#  push:
+#    branches:
+#      - main
+#    paths:
+#      - 'docs/**'
+#      - mkdocs.yml
+#
+#jobs:
+#  build:
+#    name: Deploy docs
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout main
+#        uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#
+#      - uses: actions/setup-python@v4.5.0
+#        with:
+#          python-version: '3.x'
+#
+#      - name: Install mkdocs
+#        run: pip install --upgrade pip && pip install mike mkdocs mkdocs-minify-plugin mkdocs-markdownextradata-plugin mkdocs-macros-plugin pymdown-extensions mkdocs-material
+#
+#      - run: git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
+#
+#      - name: Publish docs
+#        run: mkdocs gh-deploy

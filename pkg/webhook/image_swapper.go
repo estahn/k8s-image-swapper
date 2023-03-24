@@ -199,8 +199,9 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				continue
 			}
 
-			// skip if the source and target registry domain are equal (e.g. same ECR registries)
-			if domain := reference.Domain(srcRef.DockerReference()); domain == p.registryClient.Endpoint() {
+			// skip if the source originates from the target registry
+			if p.registryClient.IsOrigin(srcRef) {
+				log.Ctx(lctx).Debug().Str("registry", srcRef.DockerReference().String()).Msg("skip due to source and target being the same registry")
 				metrics.IncrementCacheFiltered(ar.Namespace, reference.Domain(srcRef.DockerReference()), reference.TrimNamed(srcRef.DockerReference()).String())
 				continue
 			}
@@ -211,10 +212,12 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				metrics.IncrementCacheFiltered(ar.Namespace, reference.Domain(srcRef.DockerReference()), reference.TrimNamed(srcRef.DockerReference()).String())
 				continue
 			}
-			targetImage := p.targetName(srcRef)
+
+			targetRef := p.targetRef(srcRef)
+			targetImage := targetRef.DockerReference().String()
 
 			imageCopierLogger := logger.With().
-				Str("source-image", srcRef.DockerReference().Name()).
+				Str("source-image", srcRef.DockerReference().String()).
 				Str("target-image", targetImage).
 				Logger()
 
@@ -223,11 +226,12 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			imageCopier := ImageCopier{
 				sourcePod:       pod,
 				sourceImageRef:  srcRef,
-				targetImage:     targetImage,
+				targetImageRef:  targetRef,
 				imagePullPolicy: container.ImagePullPolicy,
 				imageSwapper:    p,
 				context:         imageCopierContext,
 			}
+
 			// imageCopyPolicy
 			switch p.imageCopyPolicy {
 			case types.ImageCopyPolicyDelayed:
@@ -236,6 +240,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				p.copier.SubmitAndWait(imageCopier.withDeadline().start)
 			case types.ImageCopyPolicyForce:
 				imageCopier.withDeadline().start()
+			case types.ImageCopyPolicyNone:
+				// do not copy image
 			default:
 				panic("unknown imageCopyPolicy")
 			}
@@ -247,7 +253,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 				containers[i].Image = targetImage
 			case types.ImageSwapPolicyExists:
-				if p.registryClient.ImageExists(lctx, targetImage) {
+				if p.registryClient.ImageExists(lctx, targetRef) {
 					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 					containers[i].Image = targetImage
 					metrics.IncrementCacheHits(ar.Namespace, reference.Domain(srcRef.DockerReference()), repoName)
@@ -307,8 +313,15 @@ func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 }
 
 // targetName returns the reference in the target repository
-func (p *ImageSwapper) targetName(ref ctypes.ImageReference) string {
-	return fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), ref.DockerReference().String())
+func (p *ImageSwapper) targetRef(srcRef ctypes.ImageReference) ctypes.ImageReference {
+	targetImage := fmt.Sprintf("%s/%s", p.registryClient.Endpoint(), srcRef.DockerReference().String())
+
+	ref, err := alltransports.ParseImageName("docker://" + targetImage)
+	if err != nil {
+		log.Warn().Msgf("invalid target name %s: %v", targetImage, err)
+	}
+
+	return ref
 }
 
 // FilterContext is being used by JMESPath to search and match

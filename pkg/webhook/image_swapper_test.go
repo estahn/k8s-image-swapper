@@ -3,9 +3,7 @@ package webhook
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/alitto/pond"
@@ -25,8 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
-
-var execCommand = exec.Command
 
 //func TestImageSwapperMutator(t *testing.T) {
 //	tests := []struct {
@@ -210,14 +206,6 @@ func (m *mockECRClient) CreateRepositoryWithContext(ctx context.Context, createR
 	return &ecr.CreateRepositoryOutput{}, nil
 }
 
-func fakeExecCommand(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestHelperProcess", "--", command}
-	cs = append(cs, args...)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	return cmd
-}
-
 func TestHelperProcess(t *testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
@@ -226,7 +214,7 @@ func TestHelperProcess(t *testing.T) {
 }
 
 func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview, error) {
-	data, err := ioutil.ReadFile("../../test/requests/" + filename)
+	data, err := os.ReadFile("../../test/requests/" + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -240,73 +228,38 @@ func readAdmissionReviewFromFile(filename string) (*admissionv1.AdmissionReview,
 }
 
 func TestImageSwapper_Mutate(t *testing.T) {
-	execCommand = fakeExecCommand
-	defer func() { execCommand = exec.Command }()
+	expectedRepositories := []string{
+		"docker.io/library/init-container",
+		"docker.io/library/nginx",
+		"k8s.gcr.io/ingress-nginx/controller",
+		"us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller",
+	}
 
 	ecrClient := new(mockECRClient)
-	ecrClient.On(
-		"CreateRepositoryWithContext",
-		mock.AnythingOfType("*context.valueCtx"),
-		&ecr.CreateRepositoryInput{
-			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
-				ScanOnPush: aws.Bool(true),
-			},
-			ImageTagMutability: aws.String("MUTABLE"),
-			RepositoryName:     aws.String("docker.io/library/init-container"),
-			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{
-				{
-					Key:   aws.String("CreatedBy"),
-					Value: aws.String("k8s-image-swapper"),
+
+	for _, expectedRepository := range expectedRepositories {
+		ecrClient.On(
+			"CreateRepositoryWithContext",
+			mock.AnythingOfType("*context.valueCtx"),
+			&ecr.CreateRepositoryInput{
+				ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+					ScanOnPush: aws.Bool(true),
 				},
-				{
-					Key:   aws.String("AnotherTag"),
-					Value: aws.String("another-tag"),
+				ImageTagMutability: aws.String("MUTABLE"),
+				RepositoryName:     aws.String(expectedRepository),
+				RegistryId:         aws.String("123456789"),
+				Tags: []*ecr.Tag{
+					{
+						Key:   aws.String("CreatedBy"),
+						Value: aws.String("k8s-image-swapper"),
+					},
+					{
+						Key:   aws.String("AnotherTag"),
+						Value: aws.String("another-tag"),
+					},
 				},
-			},
-		}).Return(mock.Anything)
-	ecrClient.On(
-		"CreateRepositoryWithContext",
-		mock.AnythingOfType("*context.valueCtx"),
-		&ecr.CreateRepositoryInput{
-			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
-				ScanOnPush: aws.Bool(true),
-			},
-			ImageTagMutability: aws.String("MUTABLE"),
-			RepositoryName:     aws.String("docker.io/library/nginx"),
-			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{
-				{
-					Key:   aws.String("CreatedBy"),
-					Value: aws.String("k8s-image-swapper"),
-				},
-				{
-					Key:   aws.String("AnotherTag"),
-					Value: aws.String("another-tag"),
-				},
-			},
-		}).Return(mock.Anything)
-	ecrClient.On(
-		"CreateRepositoryWithContext",
-		mock.AnythingOfType("*context.valueCtx"),
-		&ecr.CreateRepositoryInput{
-			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
-				ScanOnPush: aws.Bool(true),
-			},
-			ImageTagMutability: aws.String("MUTABLE"),
-			RepositoryName:     aws.String("k8s.gcr.io/ingress-nginx/controller"),
-			RegistryId:         aws.String("123456789"),
-			Tags: []*ecr.Tag{
-				{
-					Key:   aws.String("CreatedBy"),
-					Value: aws.String("k8s-image-swapper"),
-				},
-				{
-					Key:   aws.String("AnotherTag"),
-					Value: aws.String("another-tag"),
-				},
-			},
-		}).Return(mock.Anything)
+			}).Return(mock.Anything)
+	}
 
 	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
 
@@ -325,10 +278,13 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 	resp, err := wh.Review(context.Background(), admissionReviewModel)
 
+	// TODO: think about moving "expected" into a file, e.g. admissionreview-simple-response-ecr.json
+	// container with name "skip-test-gar" should be skipped, hence there is no "replace" operation for it
 	expected := `[
 		{"op":"replace","path":"/spec/initContainers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest"},
 		{"op":"replace","path":"/spec/containers/0/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/nginx:latest"},
-		{"op":"replace","path":"/spec/containers/1/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
+		{"op":"replace","path":"/spec/containers/1/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"},
+		{"op":"replace","path":"/spec/containers/3/image","value":"123456789.dkr.ecr.ap-southeast-2.amazonaws.com/us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
 	]`
 
 	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
@@ -343,9 +299,6 @@ func TestImageSwapper_Mutate(t *testing.T) {
 
 // TestImageSwapper_MutateWithImagePullSecrets tests mutating with imagePullSecret support
 func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
-	execCommand = fakeExecCommand
-	defer func() { execCommand = exec.Command }()
-
 	ecrClient := new(mockECRClient)
 	ecrClient.On(
 		"CreateRepositoryWithContext",
@@ -432,4 +385,35 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	copier.StopAndWait()
 
 	ecrClient.AssertExpectations(t)
+}
+
+func TestImageSwapper_GAR_Mutate(t *testing.T) {
+	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	copier := pond.New(1, 1)
+	// TODO: test types.ImageSwapPolicyExists
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	// container with name "skip-test-gar" should be skipped, hence there is no "replace" operation for it
+	expected := `[
+		{"op":"replace","path":"/spec/initContainers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/init-container:latest"},
+		{"op":"replace","path":"/spec/containers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/nginx:latest"},
+		{"op":"replace","path":"/spec/containers/1/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"},
+		{"op":"replace","path":"/spec/containers/2/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
+	]`
+
+	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
 }

@@ -2,6 +2,28 @@ package types
 
 import "fmt"
 
+type Registry int
+
+const (
+	RegistryUnknown = iota
+	RegistryAWS
+	RegistryGCP
+)
+
+func (p Registry) String() string {
+	return [...]string{"unknown", "aws", "gcp"}[p]
+}
+
+func ParseRegistry(p string) (Registry, error) {
+	switch p {
+	case Registry(RegistryAWS).String():
+		return RegistryAWS, nil
+	case Registry(RegistryGCP).String():
+		return RegistryGCP, nil
+	}
+	return RegistryUnknown, fmt.Errorf("unknown target registry string: '%s', defaulting to unknown", p)
+}
+
 type ImageSwapPolicy int
 
 const (
@@ -29,10 +51,11 @@ const (
 	ImageCopyPolicyDelayed = iota
 	ImageCopyPolicyImmediate
 	ImageCopyPolicyForce
+	ImageCopyPolicyNone
 )
 
 func (p ImageCopyPolicy) String() string {
-	return [...]string{"delayed", "immediate", "force"}[p]
+	return [...]string{"delayed", "immediate", "force", "none"}[p]
 }
 
 func ParseImageCopyPolicy(p string) (ImageCopyPolicy, error) {
@@ -43,6 +66,8 @@ func ParseImageCopyPolicy(p string) (ImageCopyPolicy, error) {
 		return ImageCopyPolicyImmediate, nil
 	case ImageCopyPolicy(ImageCopyPolicyForce).String():
 		return ImageCopyPolicyForce, nil
+	case ImageCopyPolicy(ImageCopyPolicyNone).String():
+		return ImageCopyPolicyNone, nil
 	}
 	return ImageCopyPolicyDelayed, fmt.Errorf("unknown image copy policy string: '%s', defaulting to delayed", p)
 }

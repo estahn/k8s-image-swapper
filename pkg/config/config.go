@@ -24,6 +24,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/estahn/k8s-image-swapper/pkg/types"
 )
 
 const DefaultImageCopyDeadline = 8 * time.Second
@@ -36,26 +38,28 @@ type Config struct {
 
 	DryRun            bool          `yaml:"dryRun"`
 	ImageSwapPolicy   string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force"`
+	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
 	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
 
-	Source Source `yaml:"source"`
-	Target Target `yaml:"target"`
+	Source Source   `yaml:"source"`
+	Target Registry `yaml:"target"`
 
 	TLSCertFile string
 	TLSKeyFile  string
 }
 
-type Source struct {
-	Filters []JMESPathFilter `yaml:"filters"`
-}
-
 type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
 }
+type Source struct {
+	Registries []Registry       `yaml:"registries"`
+	Filters    []JMESPathFilter `yaml:"filters"`
+}
 
-type Target struct {
-	AWS AWS `yaml:"aws"`
+type Registry struct {
+	Type string `yaml:"type"`
+	AWS  AWS    `yaml:"aws"`
+	GCP  GCP    `yaml:"gcp"`
 }
 
 type AWS struct {
@@ -63,6 +67,12 @@ type AWS struct {
 	Region     string     `yaml:"region"`
 	Role       string     `yaml:"role"`
 	ECROptions ECROptions `yaml:"ecrOptions"`
+}
+
+type GCP struct {
+	Location     string `yaml:"location"`
+	ProjectID    string `yaml:"projectId"`
+	RepositoryID string `yaml:"repositoryId"`
 }
 
 type ECROptions struct {
@@ -90,4 +100,54 @@ type EncryptionConfiguration struct {
 
 func (a *AWS) EcrDomain() string {
 	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
+}
+
+func (g *GCP) GarDomain() string {
+	return fmt.Sprintf("%s-docker.pkg.dev/%s/%s", g.Location, g.ProjectID, g.RepositoryID)
+}
+
+func (r Registry) Domain() string {
+	registry, _ := types.ParseRegistry(r.Type)
+	switch registry {
+	case types.RegistryAWS:
+		return r.AWS.EcrDomain()
+	case types.RegistryGCP:
+		return r.GCP.GarDomain()
+	default:
+		return ""
+	}
+}
+
+// provides detailed information about wrongly provided configuration
+func CheckRegistryConfiguration(r Registry) error {
+	if r.Type == "" {
+		return fmt.Errorf("a registry requires a type")
+	}
+
+	errorWithType := func(info string) error {
+		return fmt.Errorf(`registry of type "%s" %s`, r.Type, info)
+	}
+
+	registry, _ := types.ParseRegistry(r.Type)
+	switch registry {
+	case types.RegistryAWS:
+		if r.AWS.Region == "" {
+			return errorWithType(`requires a field "region"`)
+		}
+		if r.AWS.AccountID == "" {
+			return errorWithType(`requires a field "accountdId"`)
+		}
+	case types.RegistryGCP:
+		if r.GCP.Location == "" {
+			return errorWithType(`requires a field "location"`)
+		}
+		if r.GCP.ProjectID == "" {
+			return errorWithType(`requires a field "projectId"`)
+		}
+		if r.GCP.RepositoryID == "" {
+			return errorWithType(`requires a field "repositoryId"`)
+		}
+	}
+
+	return nil
 }

@@ -20,7 +20,7 @@ import (
 type ImageCopier struct {
 	sourcePod      *corev1.Pod
 	sourceImageRef ctypes.ImageReference
-	targetImage    string
+	targetImageRef ctypes.ImageReference
 
 	imagePullPolicy corev1.PullPolicy
 	imageSwapper    *ImageSwapper
@@ -96,7 +96,7 @@ func (ic *ImageCopier) run(taskFunc func() error) error {
 func (ic *ImageCopier) taskCheckImage() error {
 	registryClient := ic.imageSwapper.registryClient
 
-	imageAlreadyExists := registryClient.ImageExists(ic.context, ic.targetImage) && ic.imagePullPolicy != corev1.PullAlways
+	imageAlreadyExists := registryClient.ImageExists(ic.context, ic.targetImageRef) && ic.imagePullPolicy != corev1.PullAlways
 
 	if err := ic.context.Err(); err != nil {
 		return err
@@ -121,9 +121,6 @@ func (ic *ImageCopier) taskCreateRepository() error {
 
 func (ic *ImageCopier) taskCopyImage() error {
 	ctx := ic.context
-	sourceImage := ic.sourceImageRef.DockerReference().String()
-	targetImage := ic.targetImage
-
 	// Retrieve secrets and auth credentials
 	imagePullSecrets, err := ic.imageSwapper.imagePullSecretProvider.GetImagePullSecrets(ctx, ic.sourcePod)
 	// not possible at the moment
@@ -145,13 +142,17 @@ func (ic *ImageCopier) taskCopyImage() error {
 		}
 	}()
 
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Copy image
 	// TODO: refactor to use structure instead of passing file name / string
 	//
 	//	or transform registryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
 	copyStart := time.Now()
-	copyErr := skopeoCopyImage(ctx, sourceImage, authFile.Name(), targetImage, ic.imageSwapper.registryClient.Credentials())
+	copyErr := ic.imageSwapper.registryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.registryClient.Credentials())
 	if copyErr != nil {
 		metrics.IncrementEcrError(ic.sourcePod.Namespace, ic.sourceImageRef.DockerReference().Name(), reference.TrimNamed(ic.sourceImageRef.DockerReference()).String(), "CopyImageFail")
 		log.Ctx(ctx).Err(err).Msg("copying image to target registry failed")
@@ -161,52 +162,4 @@ func (ic *ImageCopier) taskCopyImage() error {
 		log.Ctx(ctx).Debug().Float64("duration", duration).Msg("copied image")
 	}
 	return copyErr
-}
-
-func skopeoCopyImage(ctx context.Context, src string, srcCreds string, dest string, destCreds string) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
-	app := "skopeo"
-	args := []string{
-		"--override-os", "linux",
-		"copy",
-		"--all",
-		"--retry-times", "3",
-		"docker://" + src,
-		"docker://" + dest,
-	}
-
-	if len(srcCreds) > 0 {
-		args = append(args, "--src-authfile", srcCreds)
-	} else {
-		args = append(args, "--src-no-creds")
-	}
-
-	if len(destCreds) > 0 {
-		args = append(args, "--dest-creds", destCreds)
-	} else {
-		args = append(args, "--dest-no-creds")
-	}
-
-	log.Ctx(ctx).
-		Trace().
-		Str("app", app).
-		Strs("args", args).
-		Msg("execute command to copy image")
-
-	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
-
-	// check if the command timed out during execution for proper logging
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
-	// enrich error with output from the command which may contain the actual reason
-	if cmdErr != nil {
-		return fmt.Errorf("Command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
-	}
-
-	return nil
 }

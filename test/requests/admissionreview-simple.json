@@ -51,6 +51,36 @@
                 "readOnly": true
               }
             ]
+          },
+          {
+            "image": "123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller:v0.43.0@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713",
+            "imagePullPolicy": "Always",
+            "name": "skip-test-ecr",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "name": "default-token-fjtvr",
+                "readOnly": true
+              }
+            ]
+          },
+          {
+            "image": "us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713",
+            "imagePullPolicy": "Always",
+            "name": "skip-test-gar",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "name": "default-token-fjtvr",
+                "readOnly": true
+              }
+            ]
           }
         ],
         "dnsPolicy": "ClusterFirst",

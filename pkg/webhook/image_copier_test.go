@@ -78,11 +78,12 @@ func TestImageCopier_tasksTimeout(t *testing.T) {
 	imageSwapper, _ := mutator.(*ImageSwapper)
 
 	srcRef, _ := alltransports.ParseImageName("docker://library/init-container:latest")
+	targetRef, _ := alltransports.ParseImageName("docker://123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest")
 	imageCopier := &ImageCopier{
 		imageSwapper:    imageSwapper,
 		context:         context.Background(),
 		sourceImageRef:  srcRef,
-		targetImage:     "123456789.dkr.ecr.ap-southeast-2.amazonaws.com/docker.io/library/init-container:latest",
+		targetImageRef:  targetRef,
 		imagePullPolicy: corev1.PullAlways,
 		sourcePod: &corev1.Pod{
 			Spec: corev1.PodSpec{
