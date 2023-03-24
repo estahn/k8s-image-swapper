@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/dgraph-io/ristretto"
+	"github.com/estahn/k8s-image-swapper/pkg/backend"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/types"
 
@@ -17,8 +19,6 @@ type Client interface {
 	CreateRepository(ctx context.Context, name string) error
 	RepositoryExists() bool
 	CopyImage(ctx context.Context, src ctypes.ImageReference, srcCreds string, dest ctypes.ImageReference, destCreds string) error
-	PullImage() error
-	PutImage() error
 	ImageExists(ctx context.Context, ref ctypes.ImageReference) bool
 
 	// Endpoint returns the domain of the registry
@@ -38,7 +38,7 @@ type AuthConfig struct {
 }
 
 // NewClient returns a registry client ready for use without the need to specify an implementation
-func NewClient(r config.Registry) (Client, error) {
+func NewClient(r config.Registry, imageBackend backend.Backend) (Client, error) {
 	if err := config.CheckRegistryConfiguration(r); err != nil {
 		return nil, err
 	}
@@ -48,11 +48,22 @@ func NewClient(r config.Registry) (Client, error) {
 		return nil, err
 	}
 
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,     // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 64,      // number of keys per Get buffer.
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cachedBackend := backend.NewCached(cache, imageBackend)
+
 	switch registry {
 	case types.RegistryAWS:
-		return NewECRClient(r.AWS)
+		return NewECRClient(r.AWS, cachedBackend, cache)
 	case types.RegistryGCP:
-		return NewGARClient(r.GCP)
+		return NewGARClient(r.GCP, cachedBackend)
 	default:
 		return nil, fmt.Errorf(`registry of type "%s" is not supported`, r.Type)
 	}
