@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/containers/image/v5/docker/reference"
 	"net/http"
-	"os/exec"
 	"time"
+
+	"github.com/containers/image/v5/docker/reference"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	ctypes "github.com/containers/image/v5/types"
 	"github.com/dgraph-io/ristretto"
+	"github.com/estahn/k8s-image-swapper/pkg/backend"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
@@ -32,9 +33,10 @@ type ECRClient struct {
 	accessPolicy    string
 	lifecyclePolicy string
 	tags            []config.Tag
+	backend         backend.Backend
 }
 
-func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
+func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend, cache *ristretto.Cache) (*ECRClient, error) {
 	ecrDomain := clientConfig.EcrDomain()
 
 	var sess *session.Session
@@ -65,15 +67,6 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 	}))
 	ecrClient := ecr.New(sess, config)
 
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e7,     // number of keys to track frequency of (10M).
-		MaxCost:     1 << 30, // maximum cost of cache (1GB).
-		BufferItems: 64,      // number of keys per Get buffer.
-	})
-	if err != nil {
-		panic(err)
-	}
-
 	scheduler := gocron.NewScheduler(time.UTC)
 	scheduler.StartAsync()
 
@@ -86,6 +79,7 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
 		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
 		tags:            clientConfig.ECROptions.Tags,
+		backend:         imageBackend,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -180,85 +174,34 @@ func (e *ECRClient) RepositoryExists() bool {
 }
 
 func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
-	src := srcRef.DockerReference().String()
-	dest := destRef.DockerReference().String()
-	app := "skopeo"
-	args := []string{
-		"--override-os", "linux",
-		"copy",
-		"--multi-arch", "all",
-		"--retry-times", "3",
-		"docker://" + src,
-		"docker://" + dest,
+	srcCredentials := backend.Credentials{
+		AuthFile: srcCreds,
+	}
+	dstCredentials := backend.Credentials{
+		Creds: destCreds,
 	}
 
-	if len(srcCreds) > 0 {
-		args = append(args, "--src-authfile", srcCreds)
-	} else {
-		args = append(args, "--src-no-creds")
-	}
-
-	if len(destCreds) > 0 {
-		args = append(args, "--dest-creds", destCreds)
-	} else {
-		args = append(args, "--dest-no-creds")
-	}
-
-	log.Ctx(ctx).
-		Trace().
-		Str("app", app).
-		Strs("args", args).
-		Msg("execute command to copy image")
-
-	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
-
-	// check if the command timed out during execution for proper logging
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-
-	// enrich error with output from the command which may contain the actual reason
-	if cmdErr != nil {
-		return fmt.Errorf("Command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
-	}
-
-	return nil
-}
-
-func (e *ECRClient) PullImage() error {
-	panic("implement me")
-}
-
-func (e *ECRClient) PutImage() error {
-	panic("implement me")
+	return e.backend.Copy(ctx, srcRef, srcCredentials, destRef, dstCredentials)
 }
 
 func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
+	creds := backend.Credentials{
+		Creds: e.Credentials(),
+	}
+
 	ref := imageRef.DockerReference().String()
 	if _, found := e.cache.Get(ref); found {
 		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
 		return true
 	}
 
-	app := "skopeo"
-	args := []string{
-		"inspect",
-		"--retry-times", "3",
-		"docker://" + ref,
-		"--creds", e.Credentials(),
-	}
-
-	log.Ctx(ctx).Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	if err := exec.CommandContext(ctx, app, args...).Run(); err != nil {
-		log.Ctx(ctx).Trace().Str("ref", ref).Msg("not found in target repository")
+	exists, err := e.backend.Exists(ctx, imageRef, creds)
+	if err != nil {
+		log.Error().Err(err).Msg("unable to check existence of image")
 		return false
 	}
 
-	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
-
-	e.cache.Set(ref, "", 1)
-
-	return true
+	return exists
 }
 
 func (e *ECRClient) Endpoint() string {
@@ -315,6 +258,7 @@ func NewDummyECRClient(region string, targetAccount string, role string, options
 		lifecyclePolicy: options.LifecyclePolicy,
 		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
 		authToken:       authToken,
+		backend:         backend.NewSkopeo(),
 	}
 }
 
@@ -327,6 +271,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
 		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
+		backend:       backend.NewSkopeo(),
 	}
 
 	return client, nil
