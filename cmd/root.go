@@ -65,11 +65,9 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		log.Trace().Interface("config", cfg).Msg("config")
 
 		var imageBackend backend.Backend = backend.NewSkopeo()
-
 		if cfg.NativeBackend {
 			log.Warn().Msg("experimental native image backend enabled")
 			imageBackend = backend.NewNative()
-
 		}
 
 		// Create registry clients for source registries
