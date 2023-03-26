@@ -5,6 +5,9 @@ on:
   push:
     branches: [master]
 
+env:
+  GOFLAGS: -tags=containers_image_openpgp,exclude_graphdriver_btrfs,btrfs_noversion,exclude_graphdriver_devicemapper
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
@@ -27,5 +30,3 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
       - uses: pre-commit/action@v3.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
