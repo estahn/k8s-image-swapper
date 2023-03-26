@@ -4,14 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-<<<<<<< HEAD
-	"math/rand"
-=======
->>>>>>> 359ee16 (feat: Add native image handler backend)
 	"net/http"
 	"time"
 
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/dgraph-io/ristretto"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -20,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	ctypes "github.com/containers/image/v5/types"
-	"github.com/dgraph-io/ristretto"
 	"github.com/estahn/k8s-image-swapper/pkg/backend"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
@@ -28,7 +24,6 @@ import (
 )
 
 type ECRClient struct {
-<<<<<<< HEAD
 	client        ecriface.ECRAPI
 	ecrDomain     string
 	authToken     []byte
@@ -36,21 +31,10 @@ type ECRClient struct {
 	scheduler     *gocron.Scheduler
 	targetAccount string
 	options       config.ECROptions
-=======
-	client          ecriface.ECRAPI
-	ecrDomain       string
-	authToken       []byte
-	cache           *ristretto.Cache
-	scheduler       *gocron.Scheduler
-	targetAccount   string
-	accessPolicy    string
-	lifecyclePolicy string
-	tags            []config.Tag
-	backend         backend.Backend
->>>>>>> 359ee16 (feat: Add native image handler backend)
+	backend       backend.Backend
 }
 
-func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend, cache *ristretto.Cache) (*ECRClient, error) {
+func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend) (*ECRClient, error) {
 	ecrDomain := clientConfig.EcrDomain()
 
 	var sess *session.Session
@@ -85,24 +69,13 @@ func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend, cache *
 	scheduler.StartAsync()
 
 	client := &ECRClient{
-<<<<<<< HEAD
 		client:        ecrClient,
 		ecrDomain:     ecrDomain,
 		cache:         cache,
 		scheduler:     scheduler,
 		targetAccount: clientConfig.AccountID,
 		options:       clientConfig.ECROptions,
-=======
-		client:          ecrClient,
-		ecrDomain:       ecrDomain,
-		cache:           cache,
-		scheduler:       scheduler,
-		targetAccount:   clientConfig.AccountID,
-		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
-		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
-		tags:            clientConfig.ECROptions.Tags,
-		backend:         imageBackend,
->>>>>>> 359ee16 (feat: Add native image handler backend)
+		backend:       imageBackend,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -117,10 +90,6 @@ func (e *ECRClient) Credentials() string {
 }
 
 func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
-	if _, found := e.cache.Get(name); found {
-		return nil
-	}
-
 	log.Ctx(ctx).Debug().Str("repository", name).Msg("create repository")
 
 	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
@@ -176,8 +145,6 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		}
 	}
 
-	e.cache.SetWithTTL(name, "", 1, time.Duration(24*time.Hour))
-
 	return nil
 }
 
@@ -212,18 +179,11 @@ func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 		Creds: e.Credentials(),
 	}
 
-	ref := imageRef.DockerReference().String()
-	if _, found := e.cache.Get(ref); found {
-		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
-		return true
-	}
-
 	exists, err := e.backend.Exists(ctx, imageRef, creds)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to check existence of image")
 		return false
 	}
-
 
 	return exists
 }
@@ -281,7 +241,7 @@ func NewDummyECRClient(region string, targetAccount string, role string, options
 		options:       options,
 		ecrDomain:     fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
 		authToken:     authToken,
-		backend:         backend.NewSkopeo(),
+		backend:       backend.NewSkopeo(),
 	}
 }
 
@@ -289,7 +249,6 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 	client := &ECRClient{
 		client:        ecrClient,
 		ecrDomain:     ecrDomain,
-		cache:         nil,
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
@@ -298,7 +257,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 			ImageScanningConfiguration: config.ImageScanningConfiguration{ImageScanOnPush: true},
 			Tags:                       []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
 		},
-		backend:       backend.NewSkopeo(),
+		backend: backend.NewSkopeo(),
 	}
 
 	return client, nil
