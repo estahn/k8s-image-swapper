@@ -17,7 +17,6 @@ import (
 // Client provides methods required to be implemented by the various target registry clients, e.g. ECR, Docker, Quay.
 type Client interface {
 	CreateRepository(ctx context.Context, name string) error
-	RepositoryExists() bool
 	CopyImage(ctx context.Context, src ctypes.ImageReference, srcCreds string, dest ctypes.ImageReference, destCreds string) error
 	ImageExists(ctx context.Context, ref ctypes.ImageReference) bool
 
@@ -48,6 +47,7 @@ func NewClient(r config.Registry, imageBackend backend.Backend) (Client, error) 
 		return nil, err
 	}
 
+	// TODO: reduce cache size and/or make it configurable
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
 		MaxCost:     1 << 30, // maximum cost of cache (1GB).
@@ -57,16 +57,21 @@ func NewClient(r config.Registry, imageBackend backend.Backend) (Client, error) 
 		return nil, err
 	}
 
-	cachedBackend := backend.NewCached(cache, imageBackend)
-
+	var registryClient Client
 	switch registry {
 	case types.RegistryAWS:
-		return NewECRClient(r.AWS, cachedBackend, cache)
+		if registryClient, err = NewECRClient(r.AWS, imageBackend); err != nil {
+			return nil, err
+		}
 	case types.RegistryGCP:
-		return NewGARClient(r.GCP, cachedBackend)
+		if registryClient, err = NewGARClient(r.GCP, imageBackend); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf(`registry of type "%s" is not supported`, r.Type)
 	}
+
+	return NewCachedClient(cache, registryClient)
 }
 
 func GenerateDockerConfig(c Client) ([]byte, error) {

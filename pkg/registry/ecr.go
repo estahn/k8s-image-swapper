@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	ctypes "github.com/containers/image/v5/types"
-	"github.com/dgraph-io/ristretto"
 	"github.com/estahn/k8s-image-swapper/pkg/backend"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
@@ -27,7 +26,6 @@ type ECRClient struct {
 	client          ecriface.ECRAPI
 	ecrDomain       string
 	authToken       []byte
-	cache           *ristretto.Cache
 	scheduler       *gocron.Scheduler
 	targetAccount   string
 	accessPolicy    string
@@ -36,7 +34,7 @@ type ECRClient struct {
 	backend         backend.Backend
 }
 
-func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend, cache *ristretto.Cache) (*ECRClient, error) {
+func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend) (*ECRClient, error) {
 	ecrDomain := clientConfig.EcrDomain()
 
 	var sess *session.Session
@@ -73,7 +71,6 @@ func NewECRClient(clientConfig config.AWS, imageBackend backend.Backend, cache *
 	client := &ECRClient{
 		client:          ecrClient,
 		ecrDomain:       ecrDomain,
-		cache:           cache,
 		scheduler:       scheduler,
 		targetAccount:   clientConfig.AccountID,
 		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
@@ -94,10 +91,6 @@ func (e *ECRClient) Credentials() string {
 }
 
 func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
-	if _, found := e.cache.Get(name); found {
-		return nil
-	}
-
 	log.Ctx(ctx).Debug().Str("repository", name).Msg("create repository")
 
 	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
@@ -153,8 +146,6 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		}
 	}
 
-	e.cache.Set(name, "", 1)
-
 	return nil
 }
 
@@ -187,12 +178,6 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
 	creds := backend.Credentials{
 		Creds: e.Credentials(),
-	}
-
-	ref := imageRef.DockerReference().String()
-	if _, found := e.cache.Get(ref); found {
-		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
-		return true
 	}
 
 	exists, err := e.backend.Exists(ctx, imageRef, creds)
@@ -266,7 +251,6 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 	client := &ECRClient{
 		client:        ecrClient,
 		ecrDomain:     ecrDomain,
-		cache:         nil,
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),

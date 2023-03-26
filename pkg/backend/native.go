@@ -41,9 +41,6 @@ func (n *Native) newContext(creds Credentials) *ctypes.SystemContext {
 	return &ctypes.SystemContext{
 		AuthFilePath:     creds.AuthFile,
 		DockerAuthConfig: dockerAuth,
-
-		// It actually defaults to the current runtime, so we may not need to override it
-		// OSChoice: "linux",
 	}
 }
 

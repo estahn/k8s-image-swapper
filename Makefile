@@ -8,7 +8,6 @@ TEST_OPTIONS?=
 export GO111MODULE := on
 export GOPROXY = https://proxy.golang.org,direct
 export GOFLAGS		?=  -tags=containers_image_openpgp,exclude_graphdriver_btrfs,btrfs_noversion,exclude_graphdriver_devicemapper
-export CGO_ENABLED	?=0
 
 help: ## List targets & descriptions
 	@cat Makefile* | grep -E '^[a-zA-Z_-]+:.*?## .*$$' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

@@ -65,7 +65,6 @@ func (s *Skopeo) Copy(ctx context.Context, srcRef ctypes.ImageReference, srcCred
 	dest := destRef.DockerReference().String()
 	app := "skopeo"
 	args := []string{
-		"--override-os", "linux",
 		"copy",
 		"--multi-arch", "all",
 		"--retry-times", "3",
