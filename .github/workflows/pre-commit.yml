@@ -5,6 +5,9 @@ on:
   push:
     branches: [master]
 
+env:
+  GOFLAGS: -tags=containers_image_openpgp,exclude_graphdriver_btrfs,btrfs_noversion,exclude_graphdriver_devicemapper
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
