@@ -34,6 +34,8 @@ type Config struct {
 	LogLevel  string `yaml:"logLevel" validate:"oneof=trace debug info warn error fatal"`
 	LogFormat string `yaml:"logFormat" validate:"oneof=json console"`
 
+	NativeBackend bool `yaml:"nativeBackend"`
+
 	ListenAddress string
 
 	DryRun            bool          `yaml:"dryRun"`

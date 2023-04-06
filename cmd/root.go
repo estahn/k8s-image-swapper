@@ -30,6 +30,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/estahn/k8s-image-swapper/pkg/backend"
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/estahn/k8s-image-swapper/pkg/secrets"
@@ -63,10 +64,16 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		//metricsRec := metrics.NewPrometheus(promReg)
 		log.Trace().Interface("config", cfg).Msg("config")
 
+		var imageBackend backend.Backend = backend.NewSkopeo()
+		if cfg.NativeBackend {
+			log.Warn().Msg("experimental native image backend enabled")
+			imageBackend = backend.NewNative()
+		}
+
 		// Create registry clients for source registries
 		sourceRegistryClients := []registry.Client{}
 		for _, reg := range cfg.Source.Registries {
-			sourceRegistryClient, err := registry.NewClient(reg)
+			sourceRegistryClient, err := registry.NewClient(reg, imageBackend)
 			if err != nil {
 				log.Err(err).Msgf("error connecting to source registry at %s", reg.Domain())
 				os.Exit(1)
@@ -75,7 +82,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		}
 
 		// Create a registry client for private target registry
-		targetRegistryClient, err := registry.NewClient(cfg.Target)
+		targetRegistryClient, err := registry.NewClient(cfg.Target, imageBackend)
 		if err != nil {
 			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Domain())
 			os.Exit(1)
@@ -207,6 +214,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.k8s-image-swapper.yaml)")
 	rootCmd.PersistentFlags().StringVar(&cfg.LogLevel, "log-level", "info", "Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal]")
 	rootCmd.PersistentFlags().StringVar(&cfg.LogFormat, "log-format", "json", "Format of the log messages. Valid levels: [json, console]")
+	rootCmd.PersistentFlags().BoolVar(&cfg.NativeBackend, "native-backend", false, "Native backend is a experimental image handler to replace the skopeo based binary execution")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -215,6 +223,7 @@ func init() {
 	rootCmd.Flags().StringVar(&cfg.TLSCertFile, "tls-cert-file", "", "File containing the TLS certificate")
 	rootCmd.Flags().StringVar(&cfg.TLSKeyFile, "tls-key-file", "", "File containing the TLS private key")
 	rootCmd.Flags().BoolVar(&cfg.DryRun, "dry-run", true, "If true, print the action taken without taking it")
+
 }
 
 // initConfig reads in config file and ENV variables if set.
