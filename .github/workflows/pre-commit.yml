@@ -30,3 +30,5 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
       - uses: pre-commit/action@v3.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
