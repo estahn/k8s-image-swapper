@@ -17,6 +17,7 @@ use_directory_urls: false
 
 theme:
   name: material
+  custom_dir: docs/overrides
 
   palette:
 
@@ -53,6 +54,7 @@ theme:
     - tabs
     - content.action.edit
     - content.code.copy
+    - navigation.footer
 
 # Plugins
 plugins:
@@ -60,7 +62,7 @@ plugins:
   - minify:
       minify_html: true
   - markdownextradata: {}
-  # - macros
+  - social
 
 # Extensions
 markdown_extensions:
@@ -118,6 +120,18 @@ nav:
 extra:
   version:
     provider: mike
+    default: latest
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/estahn/k8s-image-swapper
+    - icon: fontawesome/brands/docker
+      link: https://github.com/estahn/k8s-image-swapper/pkgs/container/k8s-image-swapper
+    - icon: fontawesome/brands/slack
+      link: https://kubernetes.slack.com/archives/C04LETF7KEC
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/estahn
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/enricostahn
   analytics:
     provider: google
     property: G-BK225DNZVM
