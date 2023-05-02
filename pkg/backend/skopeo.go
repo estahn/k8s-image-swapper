@@ -32,7 +32,7 @@ func (s *Skopeo) credArgs(creds Credentials, prefix string) []string {
 	}
 
 	if len(args) == 0 {
-		args = append(args, fmt.Sprintf("--%sno-creds", prefix), creds.Creds)
+		args = append(args, fmt.Sprintf("--%sno-creds", prefix))
 	}
 
 	return args
