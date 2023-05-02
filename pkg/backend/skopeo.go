@@ -73,7 +73,7 @@ func (s *Skopeo) Copy(ctx context.Context, srcRef ctypes.ImageReference, srcCred
 	}
 
 	args = append(args, s.credArgs(srcCreds, "src-")...)
-	args = append(args, s.credArgs(destCreds, "dst-")...)
+	args = append(args, s.credArgs(destCreds, "dest-")...)
 
 	log.Ctx(ctx).
 		Trace().
