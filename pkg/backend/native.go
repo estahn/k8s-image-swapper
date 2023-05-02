@@ -27,8 +27,8 @@ func NewNative() *Native {
 }
 
 func (n *Native) newContext(creds Credentials) *ctypes.SystemContext {
-	// default is no creds
-	dockerAuth := &ctypes.DockerAuthConfig{}
+	// Needs to be nil to allow fallback to system given .docker/config.json
+	var dockerAuth *ctypes.DockerAuthConfig
 
 	if creds.Creds != "" {
 		username, password, _ := strings.Cut(creds.Creds, ":")
