@@ -15,7 +15,7 @@ require (
 	github.com/gruntwork-io/terratest v0.41.18
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/prometheus/client_golang v1.15.0
+	github.com/prometheus/client_golang v1.15.1
 	github.com/rs/zerolog v1.29.1
 	github.com/slok/kubewebhook/v2 v2.5.0
 	github.com/spf13/cobra v1.7.0
