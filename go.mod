@@ -21,7 +21,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
-	google.golang.org/api v0.120.0
+	google.golang.org/api v0.121.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
@@ -74,7 +74,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
-	github.com/google/s2a-go v0.1.2 // indirect
+	github.com/google/s2a-go v0.1.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
