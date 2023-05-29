@@ -21,7 +21,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.3
-	google.golang.org/api v0.123.0
+	google.golang.org/api v0.124.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
@@ -74,7 +74,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
-	github.com/google/s2a-go v0.1.3 // indirect
+	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
@@ -147,11 +147,11 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
