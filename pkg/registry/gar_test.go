@@ -1,8 +1,9 @@
 package registry
 
 import (
-	"github.com/containers/image/v5/transports/alltransports"
 	"testing"
+
+	"github.com/containers/image/v5/transports/alltransports"
 
 	"github.com/stretchr/testify/assert"
 )

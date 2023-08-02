@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/containers/image/v5/docker/reference"
 	"net/http"
 	"os/exec"
 	"time"
+
+	"github.com/containers/image/v5/docker/reference"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
