@@ -448,7 +448,7 @@ resource "aws_iam_role_policy" "k8s_image_swapper" {
                 "ecr:ListImages",
                 "ecr:PutImage",
                 "ecr:PutLifecyclePolicy",
-                "ecr:UploadLayerPart",
+                "ecr:UploadLayerPart"
             ],
             "Resource": [
               "arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/docker.io/*",
@@ -517,7 +517,7 @@ EOF
                         "ecr:ListImages",
                         "ecr:PutImage",
                         "ecr:PutLifecyclePolicy",
-                        "ecr:UploadLayerPart",
+                        "ecr:UploadLayerPart"
                     ],
                     "Resource": "arn:aws:ecr:*:123456789:repository/*"
                 }
