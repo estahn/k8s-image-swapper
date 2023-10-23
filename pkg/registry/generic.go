@@ -16,7 +16,6 @@ import (
 type GenericAPI interface{}
 
 type GenericClient struct {
-	client     GenericAPI
 	repository string
 	username   string
 	password   string
