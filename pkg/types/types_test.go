@@ -1,6 +1,10 @@
 package types
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestParseImageSwapPolicy(t *testing.T) {
 	type args struct {
@@ -92,4 +96,32 @@ func TestParseImageCopyPolicy(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseAwsRegistry(t *testing.T) {
+
+	registry, err := ParseRegistry("aws")
+	assert.Nil(t, err)
+	assert.Equal(t, "aws", registry.String())
+}
+
+func TestParseGcpRegistry(t *testing.T) {
+
+	registry, err := ParseRegistry("gcp")
+	assert.Nil(t, err)
+	assert.Equal(t, "gcp", registry.String())
+}
+func TestParseGenericRegistry(t *testing.T) {
+
+	registry, err := ParseRegistry("generic")
+	assert.Nil(t, err)
+	assert.Equal(t, "generic", registry.String())
+}
+
+func TestParseUnknownRegistry(t *testing.T) {
+
+	registry, err := ParseRegistry("not_known")
+	assert.NotNil(t, err)
+	assert.Equal(t, "unknown", registry.String())
+	assert.Equal(t, "unknown target registry string: 'not_known', defaulting to unknown", err.Error())
 }

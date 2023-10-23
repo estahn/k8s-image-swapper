@@ -17,6 +17,7 @@ func NewDummyImagePullSecretsProvider() ImagePullSecretsProvider {
 }
 
 func (p *DummyImagePullSecretsProvider) SetAuthenticatedRegistries(registries []registry.Client) {
+	//empty
 }
 
 // GetImagePullSecrets returns an empty ImagePullSecretsResult
