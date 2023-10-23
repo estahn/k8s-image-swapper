@@ -12,7 +12,6 @@ import (
 	ctypes "github.com/containers/image/v5/types"
 )
 
-const implementMe = "implement me"
 const dockerPrefix = "docker://"
 
 // Client provides methods required to be implemented by the various target registry clients, e.g. ECR, Docker, Quay.
