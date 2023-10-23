@@ -3,7 +3,10 @@ package webhook
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+
+	"github.com/estahn/k8s-image-swapper/pkg/registry"
 
 	"github.com/containers/image/v5/docker/reference"
 	ctypes "github.com/containers/image/v5/types"
@@ -87,7 +90,7 @@ func (ic *ImageCopier) run(taskFunc func() error) error {
 }
 
 func (ic *ImageCopier) taskCheckImage() error {
-	registryClient := ic.imageSwapper.registryClient
+	registryClient := ic.imageSwapper.destinationRegistryClient
 
 	imageAlreadyExists := registryClient.ImageExists(ic.context, ic.targetImageRef) && ic.imagePullPolicy != corev1.PullAlways
 
@@ -103,7 +106,7 @@ func (ic *ImageCopier) taskCheckImage() error {
 func (ic *ImageCopier) taskCreateRepository() error {
 	createRepoName := reference.TrimNamed(ic.sourceImageRef.DockerReference()).String()
 
-	return ic.imageSwapper.registryClient.CreateRepository(ic.context, createRepoName)
+	return ic.imageSwapper.destinationRegistryClient.CreateRepository(ic.context, createRepoName)
 }
 
 func (ic *ImageCopier) taskCopyImage() error {
@@ -133,7 +136,24 @@ func (ic *ImageCopier) taskCopyImage() error {
 	// Copy image
 	// TODO: refactor to use structure instead of passing file name / string
 	//
-	//	or transform registryClient creds into auth compatible form, e.g.
+	//	or transform destinationRegistryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-	return ic.imageSwapper.registryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.registryClient.Credentials())
+
+	//figure out corresponding source
+	sourceDomain := reference.Domain(ic.sourceImageRef.DockerReference())
+
+	var sourceRegistryClient registry.Client = nil
+	for _, sourceClient := range ic.imageSwapper.sourceRegistryClients {
+		if sourceClient.Endpoint() == sourceDomain {
+			sourceRegistryClient = sourceClient
+			break
+		}
+	}
+	if sourceRegistryClient == nil {
+		return fmt.Errorf("Failed to find source registry when looking for %s", sourceDomain)
+	} else {
+		//using authFile
+		return ic.imageSwapper.destinationRegistryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.destinationRegistryClient.Credentials())
+	}
+
 }

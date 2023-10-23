@@ -15,7 +15,9 @@ import (
 )
 
 func TestImageCopier_withDeadline(t *testing.T) {
+	var registryClients []registry.Client
 	mutator := NewImageSwapperWithOpts(
+		registryClients,
 		nil,
 		ImageCopyDeadline(8*time.Second),
 	)
@@ -67,11 +69,13 @@ func TestImageCopier_tasksTimeout(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	targetRegistryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	srcRegistryClients := []registry.Client{}
 
 	// image swapper with an instant timeout for testing purpose
 	mutator := NewImageSwapperWithOpts(
-		registryClient,
+		srcRegistryClients,
+		targetRegistryClient,
 		ImageCopyDeadline(0*time.Second),
 	)
 

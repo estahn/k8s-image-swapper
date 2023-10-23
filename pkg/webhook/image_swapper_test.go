@@ -261,7 +261,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 			}).Return(mock.Anything)
 	}
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	targetRegistryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	srcRegistryClients := []registry.Client{}
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -269,7 +270,8 @@ func TestImageSwapper_Mutate(t *testing.T) {
 	copier := pond.New(1, 1)
 	// TODO: test types.ImageSwapPolicyExists
 	wh, err := NewImageSwapperWebhookWithOpts(
-		registryClient,
+		srcRegistryClients,
+		targetRegistryClient,
 		Copier(copier),
 		ImageSwapPolicy(types.ImageSwapPolicyAlways),
 	)
@@ -322,7 +324,8 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 			},
 		}).Return(mock.Anything)
 
-	registryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	targetRegistryClient, _ := registry.NewMockECRClient(ecrClient, "ap-southeast-2", "123456789.dkr.ecr.ap-southeast-2.amazonaws.com", "123456789", "arn:aws:iam::123456789:role/fakerole")
+	srcRegistryClients := []registry.Client{}
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-imagepullsecrets.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -367,7 +370,8 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	copier := pond.New(1, 1)
 	// TODO: test types.ImageSwapPolicyExists
 	wh, err := NewImageSwapperWebhookWithOpts(
-		registryClient,
+		srcRegistryClients,
+		targetRegistryClient,
 		ImagePullSecretsProvider(provider),
 		Copier(copier),
 		ImageSwapPolicy(types.ImageSwapPolicyAlways),
@@ -388,7 +392,8 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 }
 
 func TestImageSwapper_GAR_Mutate(t *testing.T) {
-	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+	targetRegistryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+	srcRegistryClients := []registry.Client{}
 
 	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
 	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
@@ -396,7 +401,8 @@ func TestImageSwapper_GAR_Mutate(t *testing.T) {
 	copier := pond.New(1, 1)
 	// TODO: test types.ImageSwapPolicyExists
 	wh, err := NewImageSwapperWebhookWithOpts(
-		registryClient,
+		srcRegistryClients,
+		targetRegistryClient,
 		Copier(copier),
 		ImageSwapPolicy(types.ImageSwapPolicyAlways),
 	)
