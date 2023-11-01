@@ -23,7 +23,7 @@ repos:
 #  - id: doctoc
 #    args: ['--title', '## Table of Contents']
 - repo:  https://github.com/golangci/golangci-lint
-  rev: a3336890904cd3efa4f1c7e3f82ce207fe125a6f # v1.46.2
+  rev: v1.55.2
   hooks:
     - id: golangci-lint
       args: ['--timeout', '5m']
