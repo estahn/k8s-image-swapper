@@ -5,7 +5,7 @@
 
 # TODO: Using alpine for now due to easier installation of skopeo
 #       Will use distroless after incorporating skopeo into the webhook directly
-FROM alpine:3.18.4
+FROM alpine:3.18.5
 RUN ["apk", "add", "--no-cache", "--repository=http://dl-cdn.alpinelinux.org/alpine/edge/community", "skopeo>=1.2.0"]
 
 COPY k8s-image-swapper /
