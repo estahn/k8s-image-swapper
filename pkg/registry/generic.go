@@ -42,9 +42,12 @@ func NewGenericClient(clientConfig config.GENERIC) (*GenericClient, error) {
 		cache:      cache,
 	}
 
-	err = genericClient.login()
-	if err != nil {
-		return nil, err
+	// Only call login if username and password are provided
+	if genericClient.username != "" || genericClient.password != "" {
+		err = genericClient.login()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return genericClient, nil
@@ -157,7 +160,13 @@ func (g *GenericClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRe
 		"inspect",
 		"--retry-times", "3",
 		dockerPrefix + ref,
-		"--creds", g.Credentials(),
+	}
+
+	creds := g.Credentials()
+	if creds == "" {
+		args = append(args, "--no-creds")
+	} else {
+		args = append(args, "--creds", creds)
 	}
 
 	if g.ignoreCert {
@@ -171,7 +180,6 @@ func (g *GenericClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRe
 	}
 
 	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in repository")
-
 	g.cache.Set(ref, "", 1)
 
 	return true
@@ -187,21 +195,33 @@ func (g *GenericClient) IsOrigin(imageRef ctypes.ImageReference) bool {
 }
 
 func (g *GenericClient) Credentials() string {
+	if g.username == "" && g.password == "" {
+		return ""
+	}
 	return g.username + ":" + g.password
 }
 
 func (g *GenericClient) DockerConfig() ([]byte, error) {
+	var authConfig AuthConfig
+
+	// Use the Credentials method to determine if credentials are present
+	creds := g.Credentials()
+	if creds != "" {
+		authConfig = AuthConfig{
+			Auth: base64.StdEncoding.EncodeToString([]byte(creds)),
+		}
+	}
+
+	// either we generate an empty config (no auth passed) or we use the provided one (username and password given)
 	dockerConfig := DockerConfig{
 		AuthConfigs: map[string]AuthConfig{
-			g.repository: {
-				Auth: base64.StdEncoding.EncodeToString([]byte(g.password)),
-			},
+			g.repository: authConfig,
 		},
 	}
 
 	dockerConfigJson, err := json.Marshal(dockerConfig)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	return dockerConfigJson, nil
