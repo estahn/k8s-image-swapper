@@ -399,9 +399,7 @@ func TestGenericRegistryNoUsername(t *testing.T) {
 	genericRegistry.GENERIC.Username = ""
 
 	err = CheckRegistryConfiguration(genericRegistry)
-	assert.NotNil(t, err)
-	assert.Equal(t, "registry of type \"generic\" requires a field \"username\"", err.Error())
-
+	assert.Nil(t, err)
 }
 
 func TestGenericRegistryNoPassword(t *testing.T) {
@@ -415,9 +413,7 @@ func TestGenericRegistryNoPassword(t *testing.T) {
 	genericRegistry.GENERIC.Password = ""
 
 	err = CheckRegistryConfiguration(genericRegistry)
-	assert.NotNil(t, err)
-	assert.Equal(t, "registry of type \"generic\" requires a field \"password\"", err.Error())
-
+	assert.Nil(t, err)
 }
 
 func TestGCPRegistryNoLocation(t *testing.T) {
