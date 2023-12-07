@@ -3,7 +3,6 @@ package webhook
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
@@ -150,10 +149,17 @@ func (ic *ImageCopier) taskCopyImage() error {
 		}
 	}
 	if sourceRegistryClient == nil {
-		return fmt.Errorf("Failed to find source registry when looking for %s", sourceDomain)
+		// we are not going to copy using creds specified in the config.
+		log.Ctx(ctx).Trace().Msgf("could not find source registry in config when looking for %s, using default (pod) credentials", sourceDomain)
 	} else {
-		//using authFile
-		return ic.imageSwapper.destinationRegistryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.destinationRegistryClient.Credentials())
+		log.Ctx(ctx).Trace().Msgf("using source registry client from config for domain: %s", sourceDomain)
 	}
+
+	// Proceed with the copy, the credentials will either be the source from the config or the image's creds.
+	err = ic.imageSwapper.destinationRegistryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.destinationRegistryClient.Credentials())
+	if err != nil {
+		log.Ctx(ctx).Err(err).Msg("error during image copy")
+	}
+	return err
 
 }

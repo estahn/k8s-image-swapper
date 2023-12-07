@@ -175,11 +175,5 @@ func validateGenericRegistry(r Registry) error {
 	if r.GENERIC.Repository == "" {
 		return errorWithType(r, `requires a field "repository"`)
 	}
-	if r.GENERIC.Username == "" {
-		return errorWithType(r, `requires a field "username"`)
-	}
-	if r.GENERIC.Password == "" {
-		return errorWithType(r, `requires a field "password"`)
-	}
 	return nil
 }

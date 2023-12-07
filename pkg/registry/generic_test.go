@@ -219,7 +219,7 @@ func TestDockerConfigSuccess(t *testing.T) {
 
 	for key, authConfig := range dockerConfig.AuthConfigs {
 		assert.Equal(t, "localhost", key)
-		assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("password")), authConfig.Auth)
+		assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("user:password")), authConfig.Auth)
 	}
 }
 
