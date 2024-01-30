@@ -121,7 +121,7 @@ jobs:
       uses: goreleaser/goreleaser-action@v4.4.0
       with:
         version: latest
-        args: release --rm-dist --skip-validate --skip-publish
+        args: release --clean --skip-validate --skip=publish --skip=validate
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
