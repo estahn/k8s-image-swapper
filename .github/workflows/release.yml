@@ -15,7 +15,7 @@ jobs:
       tag_name: ${{ steps.release-drafter.outputs.tag_name }}
     steps:
       - id: release-drafter
-        uses: release-drafter/release-drafter@v5
+        uses: release-drafter/release-drafter@v6
         with:
           publish: true
         env:
