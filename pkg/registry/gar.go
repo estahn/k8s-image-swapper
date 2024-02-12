@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os/exec"
 	"strings"
 	"time"
@@ -152,7 +153,7 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
 
-	e.cache.Set(ref, "", 1)
+	e.cache.SetWithTTL(ref, "", 1, 24*time.Hour+time.Duration(rand.Intn(180))*time.Minute)
 
 	return true
 }
