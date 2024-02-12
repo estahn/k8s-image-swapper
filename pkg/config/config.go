@@ -57,9 +57,10 @@ type Source struct {
 }
 
 type Registry struct {
-	Type string `yaml:"type"`
-	AWS  AWS    `yaml:"aws"`
-	GCP  GCP    `yaml:"gcp"`
+	Type    string  `yaml:"type"`
+	GENERIC GENERIC `yaml:"generic"`
+	AWS     AWS     `yaml:"aws"`
+	GCP     GCP     `yaml:"gcp"`
 }
 
 type AWS struct {
@@ -73,6 +74,13 @@ type GCP struct {
 	Location     string `yaml:"location"`
 	ProjectID    string `yaml:"projectId"`
 	RepositoryID string `yaml:"repositoryId"`
+}
+
+type GENERIC struct {
+	Repository string `yaml:"repository"`
+	Username   string `yaml:"username"`
+	Password   string `yaml:"password"`
+	IgnoreCert bool   `yaml:"ignoreCert"`
 }
 
 type ECROptions struct {
@@ -124,30 +132,48 @@ func CheckRegistryConfiguration(r Registry) error {
 		return fmt.Errorf("a registry requires a type")
 	}
 
-	errorWithType := func(info string) error {
-		return fmt.Errorf(`registry of type "%s" %s`, r.Type, info)
-	}
-
 	registry, _ := types.ParseRegistry(r.Type)
 	switch registry {
 	case types.RegistryAWS:
-		if r.AWS.Region == "" {
-			return errorWithType(`requires a field "region"`)
-		}
-		if r.AWS.AccountID == "" {
-			return errorWithType(`requires a field "accountdId"`)
-		}
+		return validateAWSRegistry(r)
 	case types.RegistryGCP:
-		if r.GCP.Location == "" {
-			return errorWithType(`requires a field "location"`)
-		}
-		if r.GCP.ProjectID == "" {
-			return errorWithType(`requires a field "projectId"`)
-		}
-		if r.GCP.RepositoryID == "" {
-			return errorWithType(`requires a field "repositoryId"`)
-		}
+		return validateGCPRegistry(r)
+	case types.RegistryGeneric:
+		return validateGenericRegistry(r)
 	}
 
+	return nil
+}
+
+func errorWithType(r Registry, info string) error {
+	return fmt.Errorf(`registry of type "%s" %s`, r.Type, info)
+}
+func validateAWSRegistry(r Registry) error {
+	if r.AWS.Region == "" {
+		return errorWithType(r, "requires a field region")
+	}
+	if r.AWS.AccountID == "" {
+		return errorWithType(r, `requires a field "accountdId"`)
+	}
+	return nil
+}
+
+func validateGCPRegistry(r Registry) error {
+	if r.GCP.Location == "" {
+		return errorWithType(r, `requires a field "location"`)
+	}
+	if r.GCP.ProjectID == "" {
+		return errorWithType(r, `requires a field "projectId"`)
+	}
+	if r.GCP.RepositoryID == "" {
+		return errorWithType(r, `requires a field "repositoryId"`)
+	}
+	return nil
+}
+
+func validateGenericRegistry(r Registry) error {
+	if r.GENERIC.Repository == "" {
+		return errorWithType(r, `requires a field "repository"`)
+	}
 	return nil
 }

@@ -8,10 +8,11 @@ const (
 	RegistryUnknown = iota
 	RegistryAWS
 	RegistryGCP
+	RegistryGeneric
 )
 
 func (p Registry) String() string {
-	return [...]string{"unknown", "aws", "gcp"}[p]
+	return [...]string{"unknown", "aws", "gcp", "generic"}[p]
 }
 
 func ParseRegistry(p string) (Registry, error) {
@@ -20,6 +21,8 @@ func ParseRegistry(p string) (Registry, error) {
 		return RegistryAWS, nil
 	case Registry(RegistryGCP).String():
 		return RegistryGCP, nil
+	case Registry(RegistryGeneric).String():
+		return RegistryGeneric, nil
 	}
 	return RegistryUnknown, fmt.Errorf("unknown target registry string: '%s', defaulting to unknown", p)
 }

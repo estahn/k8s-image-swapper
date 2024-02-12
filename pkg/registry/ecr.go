@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/containers/image/v5/docker/reference"
 	"net/http"
-	"os/exec"
 	"time"
+
+	"github.com/containers/image/v5/docker/reference"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -35,6 +35,14 @@ type ECRClient struct {
 }
 
 func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
+
+	client := initClient(clientConfig)
+	if err := client.scheduleTokenRenewal(); err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+func initClient(clientConfig config.AWS) *ECRClient {
 	ecrDomain := clientConfig.EcrDomain()
 
 	var sess *session.Session
@@ -87,12 +95,7 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
 		tags:            clientConfig.ECROptions.Tags,
 	}
-
-	if err := client.scheduleTokenRenewal(); err != nil {
-		return nil, err
-	}
-
-	return client, nil
+	return client
 }
 
 func (e *ECRClient) Credentials() string {
@@ -175,11 +178,8 @@ func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	return ecrTags
 }
 
-func (e *ECRClient) RepositoryExists() bool {
-	panic("implement me")
-}
-
 func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
+
 	src := srcRef.DockerReference().String()
 	dest := destRef.DockerReference().String()
 	app := "skopeo"
@@ -188,8 +188,8 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		"copy",
 		"--multi-arch", "all",
 		"--retry-times", "3",
-		"docker://" + src,
-		"docker://" + dest,
+		dockerPrefix + src,
+		dockerPrefix + dest,
 	}
 
 	if len(srcCreds) > 0 {
@@ -210,7 +210,7 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		Strs("args", args).
 		Msg("execute command to copy image")
 
-	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
+	output, cmdErr := commandExecutor(ctx, app, args...).CombinedOutput()
 
 	// check if the command timed out during execution for proper logging
 	if err := ctx.Err(); err != nil {
@@ -225,14 +225,6 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 	return nil
 }
 
-func (e *ECRClient) PullImage() error {
-	panic("implement me")
-}
-
-func (e *ECRClient) PutImage() error {
-	panic("implement me")
-}
-
 func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
 	ref := imageRef.DockerReference().String()
 	if _, found := e.cache.Get(ref); found {
@@ -244,12 +236,12 @@ func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 	args := []string{
 		"inspect",
 		"--retry-times", "3",
-		"docker://" + ref,
+		dockerPrefix + ref,
 		"--creds", e.Credentials(),
 	}
 
 	log.Ctx(ctx).Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	if err := exec.CommandContext(ctx, app, args...).Run(); err != nil {
+	if err := commandExecutor(ctx, app, args...).Run(); err != nil {
 		log.Ctx(ctx).Trace().Str("ref", ref).Msg("not found in target repository")
 		return false
 	}
@@ -309,12 +301,20 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 
 // For testing purposes
 func NewDummyECRClient(region string, targetAccount string, role string, options config.ECROptions, authToken []byte) *ECRClient {
+
+	cache, _ := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 10,      // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 1,       // number of keys per Get buffer.
+	})
+
 	return &ECRClient{
 		targetAccount:   targetAccount,
 		accessPolicy:    options.AccessPolicy,
 		lifecyclePolicy: options.LifecyclePolicy,
 		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
 		authToken:       authToken,
+		cache:           cache,
 	}
 }
 
