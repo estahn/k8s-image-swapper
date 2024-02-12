@@ -5,7 +5,7 @@ go 1.20
 require (
 	cloud.google.com/go/artifactregistry v1.14.7
 	github.com/alitto/pond v1.8.3
-	github.com/aws/aws-sdk-go v1.44.271
+	github.com/aws/aws-sdk-go v1.50.15
 	github.com/containers/image/v5 v5.25.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/evanphx/json-patch v5.9.0+incompatible
