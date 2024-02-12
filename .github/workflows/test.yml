@@ -71,7 +71,7 @@ jobs:
     - name: Test
       run: go test -coverprofile cover.out ./...
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./cover.out # optional
