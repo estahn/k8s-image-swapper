@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.271
 	github.com/containers/image/v5 v5.25.0
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/evanphx/json-patch v5.6.0+incompatible
+	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-co-op/gocron v1.37.0
 	github.com/golang/glog v1.1.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
