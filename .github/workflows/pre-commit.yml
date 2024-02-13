@@ -13,19 +13,19 @@ jobs:
     if: github.ref != 'refs/heads/master'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4.7.0
+      - uses: actions/setup-python@v5.0.0
         with:
           python-version: '3.x'
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
           check-latest: true
           cache: true
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

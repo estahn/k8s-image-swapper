@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os/exec"
 	"time"
@@ -160,7 +161,7 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		}
 	}
 
-	e.cache.Set(name, "", 1)
+	e.cache.SetWithTTL(name, "", 1, time.Duration(24*time.Hour))
 
 	return nil
 }
@@ -257,7 +258,7 @@ func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
 
-	e.cache.Set(ref, "", 1)
+	e.cache.SetWithTTL(ref, "", 1, 24*time.Hour+time.Duration(rand.Intn(180))*time.Minute)
 
 	return true
 }
