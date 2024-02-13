@@ -1,0 +1,14 @@
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  awaiting_reply:
+    runs-on: ubuntu-latest
+    name: Toggle label upon reply
+    steps:
+      - name: Toggle label
+        uses: jd-0001/gh-action-toggle-awaiting-reply-label@1.0.1
+        with:
+          label: awaiting-reply
+          exclude-members: estahn
