@@ -8,7 +8,8 @@
 
 `k8s-image-swapper` is a mutating webhook for Kubernetes, downloading images into your own registry and pointing the images to that new location.
 It is an alternative to a [docker pull-through proxy](https://docs.docker.com/registry/recipes/mirror/).
-The feature set was primarily designed with Amazon ECR in mind but may work with other registries.
+
+**Amazon ECR** and **Google Container Registry** are currently supported.
 
 ## :zap: Benefits
 
