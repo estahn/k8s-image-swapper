@@ -1,10 +1,12 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
+
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // TestConfigParses validates if yaml annotation do not overlap
@@ -16,9 +18,21 @@ func TestConfigParses(t *testing.T) {
 		expErr bool
 	}{
 		{
-			name:   "should render empty config",
-			cfg:    "",
-			expCfg: Config{},
+			name: "should render empty config with defaults",
+			cfg:  "",
+			expCfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "should render multiple filters",
@@ -29,6 +43,17 @@ source:
     - jmespath: "obj.metadata.namespace != 'playground'"
 `,
 			expCfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+						},
+					},
+				},
 				Source: Source{
 					Filters: []JMESPathFilter{
 						{JMESPath: "obj.metadata.namespace == 'kube-system'"},
@@ -61,6 +86,10 @@ target:
 						Region:    "ap-southeast-2",
 						Role:      "arn:aws:iam::123456789012:role/roleName",
 						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
 							Tags: []Tag{
 								{
 									Key:   "CreatedBy",
@@ -91,6 +120,17 @@ source:
         region: "us-east-1"
 `,
 			expCfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+						},
+					},
+				},
 				Source: Source{
 					Registries: []Registry{
 						{
@@ -109,14 +149,63 @@ source:
 				},
 			},
 		},
+		{
+			name: "should use previous defaults",
+			cfg: `
+target:
+  type: aws
+  aws:
+    accountId: 123456789
+    region: ap-southeast-2
+    role: arn:aws:iam::123456789012:role/roleName
+    ecrOptions:
+      tags:
+        - key: CreatedBy
+          value: k8s-image-swapper
+        - key: A
+          value: B
+`,
+			expCfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						AccountID: "123456789",
+						Region:    "ap-southeast-2",
+						Role:      "arn:aws:iam::123456789012:role/roleName",
+						ECROptions: ECROptions{
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+							ImageTagMutability: "MUTABLE",
+							Tags: []Tag{
+								{
+									Key:   "CreatedBy",
+									Value: "k8s-image-swapper",
+								},
+								{
+									Key:   "A",
+									Value: "B",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			assert := assert.New(t)
 
+			v := viper.New()
+			v.SetConfigType("yaml")
+			SetViperDefaults(v)
+
+			v.ReadConfig(strings.NewReader(test.cfg))
+
 			gotCfg := Config{}
-			err := yaml.Unmarshal([]byte(test.cfg), &gotCfg)
+			err := v.Unmarshal(&gotCfg)
 
 			if test.expErr {
 				assert.Error(err)

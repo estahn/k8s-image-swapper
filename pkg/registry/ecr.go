@@ -25,27 +25,25 @@ import (
 )
 
 type ECRClient struct {
-	client          ecriface.ECRAPI
-	ecrDomain       string
-	authToken       []byte
-	cache           *ristretto.Cache
-	scheduler       *gocron.Scheduler
-	targetAccount   string
-	accessPolicy    string
-	lifecyclePolicy string
-	tags            []config.Tag
+	client        ecriface.ECRAPI
+	ecrDomain     string
+	authToken     []byte
+	cache         *ristretto.Cache
+	scheduler     *gocron.Scheduler
+	targetAccount string
+	options       config.ECROptions
 }
 
 func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 	ecrDomain := clientConfig.EcrDomain()
 
 	var sess *session.Session
-	var config *aws.Config
+	var cfg *aws.Config
 	if clientConfig.Role != "" {
 		log.Info().Str("assumedRole", clientConfig.Role).Msg("assuming specified role")
-		stsSession, _ := session.NewSession(config)
+		stsSession, _ := session.NewSession(cfg)
 		creds := stscreds.NewCredentials(stsSession, clientConfig.Role)
-		config = aws.NewConfig().
+		cfg = aws.NewConfig().
 			WithRegion(clientConfig.Region).
 			WithCredentialsChainVerboseErrors(true).
 			WithHTTPClient(&http.Client{
@@ -53,7 +51,7 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 			}).
 			WithCredentials(creds)
 	} else {
-		config = aws.NewConfig().
+		cfg = aws.NewConfig().
 			WithRegion(clientConfig.Region).
 			WithCredentialsChainVerboseErrors(true).
 			WithHTTPClient(&http.Client{
@@ -63,9 +61,9 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 
 	sess = session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
-		Config:            (*config),
+		Config:            *cfg,
 	}))
-	ecrClient := ecr.New(sess, config)
+	ecrClient := ecr.New(sess, cfg)
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
@@ -80,14 +78,12 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 	scheduler.StartAsync()
 
 	client := &ECRClient{
-		client:          ecrClient,
-		ecrDomain:       ecrDomain,
-		cache:           cache,
-		scheduler:       scheduler,
-		targetAccount:   clientConfig.AccountID,
-		accessPolicy:    clientConfig.ECROptions.AccessPolicy,
-		lifecyclePolicy: clientConfig.ECROptions.LifecyclePolicy,
-		tags:            clientConfig.ECROptions.Tags,
+		client:        ecrClient,
+		ecrDomain:     ecrDomain,
+		cache:         cache,
+		scheduler:     scheduler,
+		targetAccount: clientConfig.AccountID,
+		options:       clientConfig.ECROptions,
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -111,9 +107,9 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
 		RepositoryName: aws.String(name),
 		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
-			ScanOnPush: aws.Bool(true),
+			ScanOnPush: aws.Bool(e.options.ImageScanningConfiguration.ImageScanOnPush),
 		},
-		ImageTagMutability: aws.String(ecr.ImageTagMutabilityMutable),
+		ImageTagMutability: aws.String(e.options.ImageTagMutability),
 		RegistryId:         &e.targetAccount,
 		Tags:               e.buildEcrTags(),
 	})
@@ -133,10 +129,10 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		}
 	}
 
-	if len(e.accessPolicy) > 0 {
-		log.Ctx(ctx).Debug().Str("repo", name).Str("accessPolicy", e.accessPolicy).Msg("setting access policy on repo")
+	if len(e.options.AccessPolicy) > 0 {
+		log.Ctx(ctx).Debug().Str("repo", name).Str("accessPolicy", e.options.AccessPolicy).Msg("setting access policy on repo")
 		_, err := e.client.SetRepositoryPolicyWithContext(ctx, &ecr.SetRepositoryPolicyInput{
-			PolicyText:     &e.accessPolicy,
+			PolicyText:     &e.options.AccessPolicy,
 			RegistryId:     &e.targetAccount,
 			RepositoryName: aws.String(name),
 		})
@@ -147,10 +143,10 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 		}
 	}
 
-	if len(e.lifecyclePolicy) > 0 {
-		log.Ctx(ctx).Debug().Str("repo", name).Str("lifecyclePolicy", e.lifecyclePolicy).Msg("setting lifecycle policy on repo")
+	if len(e.options.LifecyclePolicy) > 0 {
+		log.Ctx(ctx).Debug().Str("repo", name).Str("lifecyclePolicy", e.options.LifecyclePolicy).Msg("setting lifecycle policy on repo")
 		_, err := e.client.PutLifecyclePolicyWithContext(ctx, &ecr.PutLifecyclePolicyInput{
-			LifecyclePolicyText: &e.lifecyclePolicy,
+			LifecyclePolicyText: &e.options.LifecyclePolicy,
 			RegistryId:          &e.targetAccount,
 			RepositoryName:      aws.String(name),
 		})
@@ -169,7 +165,7 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 func (e *ECRClient) buildEcrTags() []*ecr.Tag {
 	ecrTags := []*ecr.Tag{}
 
-	for _, t := range e.tags {
+	for _, t := range e.options.Tags {
 		tag := ecr.Tag{Key: aws.String(t.Key), Value: aws.String(t.Value)}
 		ecrTags = append(ecrTags, &tag)
 	}
@@ -312,11 +308,10 @@ func (e *ECRClient) scheduleTokenRenewal() error {
 // For testing purposes
 func NewDummyECRClient(region string, targetAccount string, role string, options config.ECROptions, authToken []byte) *ECRClient {
 	return &ECRClient{
-		targetAccount:   targetAccount,
-		accessPolicy:    options.AccessPolicy,
-		lifecyclePolicy: options.LifecyclePolicy,
-		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
-		authToken:       authToken,
+		targetAccount: targetAccount,
+		options:       options,
+		ecrDomain:     fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
+		authToken:     authToken,
 	}
 }
 
@@ -328,7 +323,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
-		tags:          []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
+		options:       config.ECROptions{Tags: []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}}},
 	}
 
 	return client, nil
