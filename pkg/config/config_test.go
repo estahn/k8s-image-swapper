@@ -202,7 +202,8 @@ target:
 			v.SetConfigType("yaml")
 			SetViperDefaults(v)
 
-			v.ReadConfig(strings.NewReader(test.cfg))
+			readConfigError := v.ReadConfig(strings.NewReader(test.cfg))
+			assert.NoError(readConfigError)
 
 			gotCfg := Config{}
 			err := v.Unmarshal(&gotCfg)
