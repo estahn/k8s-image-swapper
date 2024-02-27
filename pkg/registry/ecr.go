@@ -323,7 +323,11 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		scheduler:     nil,
 		targetAccount: targetAccount,
 		authToken:     []byte("mock-ecr-client-fake-auth-token"),
-		options:       config.ECROptions{Tags: []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}}},
+		options: config.ECROptions{
+			ImageTagMutability:         "MUTABLE",
+			ImageScanningConfiguration: config.ImageScanningConfiguration{ImageScanOnPush: true},
+			Tags:                       []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
+		},
 	}
 
 	return client, nil
