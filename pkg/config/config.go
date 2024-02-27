@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"github.com/estahn/k8s-image-swapper/pkg/types"
 )
 
@@ -51,6 +53,7 @@ type Config struct {
 type JMESPathFilter struct {
 	JMESPath string `yaml:"jmespath"`
 }
+
 type Source struct {
 	Registries []Registry       `yaml:"registries"`
 	Filters    []JMESPathFilter `yaml:"filters"`
@@ -79,7 +82,7 @@ type ECROptions struct {
 	AccessPolicy               string                     `yaml:"accessPolicy"`
 	LifecyclePolicy            string                     `yaml:"lifecyclePolicy"`
 	Tags                       []Tag                      `yaml:"tags"`
-	ImageTagMutability         string                     `yaml:"imageTagMutability"`
+	ImageTagMutability         string                     `yaml:"imageTagMutability"  validate:"oneof=MUTABLE IMMUTABLE"`
 	ImageScanningConfiguration ImageScanningConfiguration `yaml:"imageScanningConfiguration"`
 	EncryptionConfiguration    EncryptionConfiguration    `yaml:"encryptionConfiguration"`
 }
@@ -150,4 +153,11 @@ func CheckRegistryConfiguration(r Registry) error {
 	}
 
 	return nil
+}
+
+// SetViperDefaults configures default values for config items that are not set.
+func SetViperDefaults(v *viper.Viper) {
+	v.SetDefault("Target.Type", "aws")
+	v.SetDefault("Target.AWS.ECROptions.ImageScanningConfiguration.ImageScanOnPush", true)
+	v.SetDefault("Target.AWS.ECROptions.ImageTagMutability", "MUTABLE")
 }

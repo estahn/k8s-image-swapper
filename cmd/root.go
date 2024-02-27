@@ -220,7 +220,7 @@ func init() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	// Default to aws target registry type if none are defined
-	viper.SetDefault("target.type", "aws")
+	config.SetViperDefaults(viper.GetViper())
 
 	if cfgFile != "" {
 		// Use config file from the flag.

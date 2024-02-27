@@ -1,6 +1,8 @@
 module github.com/estahn/k8s-image-swapper
 
-go 1.20
+go 1.21
+
+toolchain go1.21.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.7
@@ -22,7 +24,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/api v0.167.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.29.2
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
