@@ -26,7 +26,7 @@ require (
 	google.golang.org/api v0.169.0
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.29.2
-	k8s.io/apimachinery v0.29.2
+	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.2
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
@@ -78,7 +78,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gonvenience/bunt v1.3.5 // indirect
 	github.com/gonvenience/neat v1.3.12 // indirect
 	github.com/gonvenience/term v1.0.2 // indirect
