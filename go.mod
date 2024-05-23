@@ -25,9 +25,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/api v0.175.0
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.29.3
+	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
-	k8s.io/client-go v0.29.3
+	k8s.io/client-go v0.30.1
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
@@ -94,6 +94,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gruntwork-io/go-commons v0.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
