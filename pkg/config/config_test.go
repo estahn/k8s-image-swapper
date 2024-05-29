@@ -175,13 +175,13 @@ source:
 					},
 				},
 				Source: Source{
-                    Registries: []Registry{
+					Registries: []Registry{
 						{
 							Type: "generic",
 							Generic: Generic{
 								Name: "dockerio",
 								GenericOptions: GenericOptions{
-									Domain: "docker.io",
+									Domain:   "docker.io",
 									Username: "testuser",
 									Password: "testpass",
 								},

@@ -9,7 +9,7 @@ import (
 )
 
 type GenericClient struct {
-	options       config.GenericOptions
+	options config.GenericOptions
 }
 
 func NewGenericClient(clientConfig config.Generic) (*GenericClient, error) {
@@ -50,7 +50,7 @@ func (g *GenericClient) Endpoint() string {
 }
 
 func (g *GenericClient) Credentials() string {
-  return fmt.Sprintf("%s:%s", g.options.Username, g.options.Password)
+	return fmt.Sprintf("%s:%s", g.options.Username, g.options.Password)
 }
 
 // IsOrigin returns true if the imageRef originates from this registry
@@ -61,6 +61,6 @@ func (g *GenericClient) IsOrigin(imageRef ctypes.ImageReference) bool {
 // For testing purposes
 func NewDummyGenericClient(domain string, options config.GenericOptions) *GenericClient {
 	return &GenericClient{
-		options:       options,
+		options: options,
 	}
 }

@@ -15,7 +15,7 @@ func TestGenericDockerConfig(t *testing.T) {
 	expected := []byte("{\"auths\":{\"docker.io\":{\"auth\":\"" + fakeBase64Token + "\"}}}")
 
 	fakeRegistry := NewDummyGenericClient("docker.io", config.GenericOptions{
-		Domain: "docker.io",
+		Domain:   "docker.io",
 		Username: "username",
 		Password: "password",
 	})
