@@ -26,7 +26,7 @@ require (
 	google.golang.org/api v0.183.0
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.30.1
-	k8s.io/apimachinery v0.30.1
+	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.1
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
