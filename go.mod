@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.3
 
 require (
-	cloud.google.com/go/artifactregistry v1.14.10
+	cloud.google.com/go/artifactregistry v1.14.11
 	github.com/alitto/pond v1.9.0
 	github.com/aws/aws-sdk-go v1.54.11
 	github.com/containers/image/v5 v5.31.1
