@@ -6,7 +6,7 @@ toolchain go1.22.3
 
 require (
 	cloud.google.com/go/artifactregistry v1.15.0
-	github.com/alitto/pond v1.9.1
+	github.com/alitto/pond v1.9.2
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/containers/image/v5 v5.32.2
 	github.com/dgraph-io/ristretto v0.1.1
