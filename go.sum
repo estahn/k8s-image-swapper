@@ -40,8 +40,8 @@ cloud.google.com/go/area120 v0.5.0/go.mod h1:DE/n4mp+iqVyvxHN41Vf1CR602GiHQjFPus
 cloud.google.com/go/area120 v0.6.0/go.mod h1:39yFJqWVgm0UZqWTOdqkLhjoC7uFfgXRC8g/ZegeAh0=
 cloud.google.com/go/artifactregistry v1.6.0/go.mod h1:IYt0oBPSAGYj/kprzsBjZ/4LnG/zOcHyFHjWPCi6SAQ=
 cloud.google.com/go/artifactregistry v1.7.0/go.mod h1:mqTOFOnGZx8EtSqK/ZWcsm/4U8B77rbcLP6ruDU2Ixk=
-cloud.google.com/go/artifactregistry v1.15.0 h1:fHsfq5+Vir1FjEMGn7lbiSygyG+TXdtb1uRXQ72SDg4=
-cloud.google.com/go/artifactregistry v1.15.0/go.mod h1:4xrfigx32/3N7Pp7YSPOZZGs4VPhyYeRyJ67ZfVdOX4=
+cloud.google.com/go/artifactregistry v1.15.1 h1:ANE2nBEqP2vGGA/5plRRUpatT3E/3ydSK8Z+lXiV69s=
+cloud.google.com/go/artifactregistry v1.15.1/go.mod h1:ExJb4VN+IMTQWO5iY+mjcY19Rz9jUxCVGZ1YuyAgPBw=
 cloud.google.com/go/asset v1.5.0/go.mod h1:5mfs8UvcM5wHhqtSv8J1CtxxaQq3AdBxxQi2jGW/K4o=
 cloud.google.com/go/asset v1.7.0/go.mod h1:YbENsRK4+xTiL+Ofoj5Ckf+O17kJtgp3Y3nn4uzZz5s=
 cloud.google.com/go/asset v1.8.0/go.mod h1:mUNGKhiqIdbr8X7KNayoYvyc4HbbFO9URsjbytpUaW0=
@@ -1254,8 +1254,8 @@ google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a/go.mod h1:1vXfmgAz
 google.golang.org/genproto v0.0.0-20221025140454-527a21cfbd71/go.mod h1:9qHF0xnpdSfF6knlcsnpzUu5y+rpwgbvsyGAZPBMg4s=
 google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 h1:BulPr26Jqjnd4eYDVe+YvyR7Yc2vJGkO5/0UxD0/jZU=
 google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1/go.mod h1:hL97c3SYopEHblzpxRL4lSs523++l8DYxGM1FQiYmb4=
-google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed h1:3RgNmBoI9MZhsj3QxC+AP/qQhNwpCLOvYDYYsFrhFt0=
-google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed/go.mod h1:OCdP9MfskevB/rbYvHTsXTtKC+3bHWajPdoKgjcYkfo=
+google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 h1:hjSy6tcFQZ171igDaN5QHOw2n6vx40juYbC/x67CEhc=
+google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1/go.mod h1:qpvKtACPCQhAdu3PyQgV4l3LMXZEtft7y8QcarRsp9I=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 h1:pPJltXNxVzT4pK9yD8vR9X75DaWYYmLGMsEvBfFQZzQ=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1/go.mod h1:UqMtugtsSgubUsoxbuAoiCXvqvErP7Gf0so0mK9tHxU=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
