@@ -25,9 +25,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	google.golang.org/api v0.197.0
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.31.0
+	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
-	k8s.io/client-go v0.31.0
+	k8s.io/client-go v0.31.1
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
