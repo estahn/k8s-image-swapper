@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.3
 
 require (
-	cloud.google.com/go/artifactregistry v1.15.0
+	cloud.google.com/go/artifactregistry v1.15.1
 	github.com/alitto/pond v1.9.2
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/containers/image/v5 v5.32.2
@@ -193,7 +193,7 @@ require (
 	gomodules.xyz/jsonpatch/v3 v3.0.1 // indirect
 	gomodules.xyz/orderedmap v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
