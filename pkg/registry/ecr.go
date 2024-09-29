@@ -307,8 +307,7 @@ func NewDummyECRClient(region string, targetAccount string, role string, options
 
 	return &ECRClient{
 		targetAccount:   targetAccount,
-		accessPolicy:    options.AccessPolicy,
-		lifecyclePolicy: options.LifecyclePolicy,
+		options:    options,
 		ecrDomain:       fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", targetAccount, region),
 		authToken:       authToken,
 		cache:           cache,

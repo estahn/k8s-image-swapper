@@ -160,13 +160,13 @@ func CheckRegistryConfiguration(r Registry) error {
 		}
 	case types.RegistryGeneric:
 		if r.GENERIC.Repository == "" {
-			return errorWithType(r, `requires a field "repository"`)
+			return errorWithType(`requires a field "repository"`)
 		}
 		if r.GENERIC.Username == "" {
-			return errorWithType(r, `requires a field "username"`)
+			return errorWithType(`requires a field "username"`)
 		}
 		if r.GENERIC.Password == "" {
-			return errorWithType(r, `requires a field "password"`)
+			return errorWithType(`requires a field "password"`)
 		}
 		return nil
 	}
