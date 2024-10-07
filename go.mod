@@ -9,10 +9,9 @@ require (
 	github.com/alitto/pond v1.9.2
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/containers/image/v5 v5.32.2
-	github.com/dgraph-io/ristretto v0.1.1
+	github.com/dgraph-io/ristretto v1.0.0
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-co-op/gocron v1.37.0
-	github.com/golang/glog v1.2.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gruntwork-io/terratest v0.47.2
 	github.com/jmespath/go-jmespath v0.4.0
@@ -65,7 +64,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
