@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -64,10 +63,6 @@ func (e *GARClient) CreateRepository(ctx context.Context, name string) error {
 	return nil
 }
 
-func (e *GARClient) RepositoryExists() bool {
-	panic("implement me")
-}
-
 func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
 	src := srcRef.DockerReference().String()
 	dest := destRef.DockerReference().String()
@@ -85,8 +80,8 @@ func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		"copy",
 		"--multi-arch", "all",
 		"--retry-times", "3",
-		"docker://" + src,
-		"docker://" + dest,
+		dockerPrefix + src,
+		dockerPrefix + dest,
 	}
 
 	if len(creds[1]) > 0 {
@@ -107,7 +102,7 @@ func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		Strs("args", args).
 		Msg("execute command to copy image")
 
-	output, cmdErr := exec.CommandContext(ctx, app, args...).CombinedOutput()
+	output, cmdErr := commandExecutor(ctx, app, args...).CombinedOutput()
 
 	// check if the command timed out during execution for proper logging
 	if err := ctx.Err(); err != nil {
@@ -122,14 +117,6 @@ func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 	return nil
 }
 
-func (e *GARClient) PullImage() error {
-	panic("implement me")
-}
-
-func (e *GARClient) PutImage() error {
-	panic("implement me")
-}
-
 func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
 	ref := imageRef.DockerReference().String()
 	if _, found := e.cache.Get(ref); found {
@@ -141,12 +128,12 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 	args := []string{
 		"inspect",
 		"--retry-times", "3",
-		"docker://" + ref,
+		dockerPrefix + ref,
 		"--creds", e.Credentials(),
 	}
 
 	log.Ctx(ctx).Trace().Str("app", app).Strs("args", args).Msg("executing command to inspect image")
-	if err := exec.CommandContext(ctx, app, args...).Run(); err != nil {
+	if err := commandExecutor(ctx, app, args...).Run(); err != nil {
 		log.Trace().Str("ref", ref).Msg("not found in target repository")
 		return false
 	}
@@ -231,6 +218,13 @@ func NewMockGARClient(garClient GARAPI, garDomain string) (*GARClient, error) {
 		scheduler: nil,
 		authToken: []byte("oauth2accesstoken:mock-gar-client-fake-auth-token"),
 	}
+
+	cache, _ := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 10,      // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 1,       // number of keys per Get buffer.
+	})
+	client.cache = cache
 
 	return client, nil
 }
