@@ -73,7 +73,7 @@ func Copier(pool *pond.WorkerPool) Option {
 // ImageSwapper is a mutator that will download images and change the image name.
 type ImageSwapper struct {
 	sourceRegistryClients     []registry.Client
-	destinationRegistryClient registry.Client
+	targetRegistryClient registry.Client
 	imagePullSecretProvider   secrets.ImagePullSecretsProvider
 
 	// filters defines a list of expressions to remove objects that should not be processed,
@@ -92,7 +92,7 @@ type ImageSwapper struct {
 func NewImageSwapper(sourceRegistryClients []registry.Client, registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
 	return &ImageSwapper{
 		sourceRegistryClients:     sourceRegistryClients,
-		destinationRegistryClient: registryClient,
+		targetRegistryClient: registryClient,
 		imagePullSecretProvider:   imagePullSecretProvider,
 		filters:                   filters,
 		copier:                    pond.New(100, 1000),
@@ -103,10 +103,10 @@ func NewImageSwapper(sourceRegistryClients []registry.Client, registryClient reg
 }
 
 // NewImageSwapperWithOpts returns a configured ImageSwapper instance
-func NewImageSwapperWithOpts(sourceRegistryClient []registry.Client, destinationRegistryClient registry.Client, opts ...Option) kwhmutating.Mutator {
+func NewImageSwapperWithOpts(sourceRegistryClient []registry.Client, targetRegistryClient registry.Client, opts ...Option) kwhmutating.Mutator {
 	swapper := &ImageSwapper{
 		sourceRegistryClients:     sourceRegistryClient,
-		destinationRegistryClient: destinationRegistryClient,
+		targetRegistryClient: targetRegistryClient,
 		imagePullSecretProvider:   secrets.NewDummyImagePullSecretsProvider(),
 		filters:                   []config.JMESPathFilter{},
 		imageSwapPolicy:           types.ImageSwapPolicyExists,
@@ -125,8 +125,8 @@ func NewImageSwapperWithOpts(sourceRegistryClient []registry.Client, destination
 	return swapper
 }
 
-func NewImageSwapperWebhookWithOpts(sourceRegistryClient []registry.Client, destinationRegistryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapperWithOpts(sourceRegistryClient, destinationRegistryClient, opts...)
+func NewImageSwapperWebhookWithOpts(sourceRegistryClient []registry.Client, targetRegistryClient registry.Client, opts ...Option) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapperWithOpts(sourceRegistryClient, targetRegistryClient, opts...)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",
@@ -197,7 +197,7 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			}
 
 			// skip if the source originates from the target registry
-			if p.destinationRegistryClient != nil && p.destinationRegistryClient.IsOrigin(srcRef) {
+			if p.targetRegistryClient != nil && p.targetRegistryClient.IsOrigin(srcRef) {
 				log.Ctx(lctx).Debug().Str("registry", srcRef.DockerReference().String()).Msg("skip due to source and target being the same registry")
 				continue
 			}
@@ -281,7 +281,7 @@ func (p *ImageSwapper) swapContainerImage(lctx context.Context, targetRef ctypes
 		log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 		containers[i].Image = targetImage
 	case types.ImageSwapPolicyExists:
-		if p.destinationRegistryClient.ImageExists(lctx, targetRef) {
+		if p.targetRegistryClient.ImageExists(lctx, targetRef) {
 			log.Ctx(lctx).Debug().Str("image", targetImage).Msg("set new container image")
 			containers[i].Image = targetImage
 		} else {
@@ -334,8 +334,8 @@ func filterMatch(ctx FilterContext, filters []config.JMESPathFilter) bool {
 
 // targetName returns the reference in the target repository
 func (p *ImageSwapper) targetRef(targetRef ctypes.ImageReference) ctypes.ImageReference {
-	//targetImage := fmt.Sprintf("%s/%s", p.destinationRegistryClient.Endpoint(), targetRef.DockerReference().String())
-	targetImage := fmt.Sprintf("%s/%s", p.destinationRegistryClient.Endpoint(), targetRef.DockerReference().String())
+	//targetImage := fmt.Sprintf("%s/%s", p.targetRegistryClient.Endpoint(), targetRef.DockerReference().String())
+	targetImage := fmt.Sprintf("%s/%s", p.targetRegistryClient.Endpoint(), targetRef.DockerReference().String())
 
 	ref, err := alltransports.ParseImageName("docker://" + targetImage)
 	if err != nil {

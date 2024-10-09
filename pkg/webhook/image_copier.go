@@ -89,7 +89,7 @@ func (ic *ImageCopier) run(taskFunc func() error) error {
 }
 
 func (ic *ImageCopier) taskCheckImage() error {
-	registryClient := ic.imageSwapper.destinationRegistryClient
+	registryClient := ic.imageSwapper.targetRegistryClient
 
 	imageAlreadyExists := registryClient.ImageExists(ic.context, ic.targetImageRef) && ic.imagePullPolicy != corev1.PullAlways
 
@@ -105,7 +105,7 @@ func (ic *ImageCopier) taskCheckImage() error {
 func (ic *ImageCopier) taskCreateRepository() error {
 	createRepoName := reference.TrimNamed(ic.sourceImageRef.DockerReference()).String()
 
-	return ic.imageSwapper.destinationRegistryClient.CreateRepository(ic.context, createRepoName)
+	return ic.imageSwapper.targetRegistryClient.CreateRepository(ic.context, createRepoName)
 }
 
 func (ic *ImageCopier) taskCopyImage() error {
@@ -135,7 +135,7 @@ func (ic *ImageCopier) taskCopyImage() error {
 	// Copy image
 	// TODO: refactor to use structure instead of passing file name / string
 	//
-	//	or transform destinationRegistryClient creds into auth compatible form, e.g.
+	//	or transform targetRegistryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
 
 	//figure out corresponding source
@@ -156,7 +156,7 @@ func (ic *ImageCopier) taskCopyImage() error {
 	}
 
 	// Proceed with the copy, the credentials will either be the source from the config or the image's creds.
-	err = ic.imageSwapper.destinationRegistryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.destinationRegistryClient.Credentials())
+	err = ic.imageSwapper.targetRegistryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.targetRegistryClient.Credentials())
 	if err != nil {
 		log.Ctx(ctx).Err(err).Msg("error during image copy")
 	}
