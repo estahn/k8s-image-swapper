@@ -61,7 +61,7 @@ type Source struct {
 
 type Registry struct {
 	Type    string  `yaml:"type"`
-	GENERIC GENERIC `yaml:"generic"`
+	Generic Generic `yaml:"generic"`
 	AWS     AWS     `yaml:"aws"`
 	GCP     GCP     `yaml:"gcp"`
 }
@@ -79,7 +79,7 @@ type GCP struct {
 	RepositoryID string `yaml:"repositoryId"`
 }
 
-type GENERIC struct {
+type Generic struct {
 	Repository string `yaml:"repository"`
 	Username   string `yaml:"username"`
 	Password   string `yaml:"password"`
@@ -159,13 +159,13 @@ func CheckRegistryConfiguration(r Registry) error {
 			return errorWithType(`requires a field "repositoryId"`)
 		}
 	case types.RegistryGeneric:
-		if r.GENERIC.Repository == "" {
+		if r.Generic.Repository == "" {
 			return errorWithType(`requires a field "repository"`)
 		}
-		if r.GENERIC.Username == "" {
+		if r.Generic.Username == "" {
 			return errorWithType(`requires a field "username"`)
 		}
-		if r.GENERIC.Password == "" {
+		if r.Generic.Password == "" {
 			return errorWithType(`requires a field "password"`)
 		}
 		return nil

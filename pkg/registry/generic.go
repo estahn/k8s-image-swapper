@@ -23,7 +23,7 @@ type GenericClient struct {
 	cache      *ristretto.Cache
 }
 
-func NewGenericClient(clientConfig config.GENERIC) (*GenericClient, error) {
+func NewGenericClient(clientConfig config.Generic) (*GenericClient, error) {
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).

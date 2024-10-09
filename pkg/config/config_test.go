@@ -148,7 +148,7 @@ source:
 							}},
 						{
 							Type: "generic",
-							GENERIC: GENERIC{
+							Generic: Generic{
 								Repository: "https://12345678912",
 								Username:   "demo",
 								Password:   "pass",

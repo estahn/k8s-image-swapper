@@ -77,9 +77,9 @@ Registries are described with an AWS account ID and region, mostly to construct 
             accountId: 234567890
             region: us-east-1
     ```
-#### GENERIC
+#### Generic
 
-By providing configuration on GENERIC registries you can ask `k8s-image-swapper` to handle the authentication using 
+By providing configuration on Generic registries you can ask `k8s-image-swapper` to handle the authentication using 
 username and password.
 
 Registries are described with a repository URL, username and password.
@@ -230,7 +230,7 @@ The GCP location, projectId, and repositoryId are used to constrct the GCP Artif
         repositoryId: main
     ```
 
-### GENERIC
+### Generic
 
 The option `target.generic` holds details about the target registry storing the images.
 

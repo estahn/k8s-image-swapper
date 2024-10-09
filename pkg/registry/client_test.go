@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var genConfig = config.GENERIC{
+var genConfig = config.Generic{
 	Repository: "localhost",
 	Username:   "user",
 	Password:   "password",
@@ -18,7 +18,7 @@ var genConfig = config.GENERIC{
 
 func TestNewClientSuccess(t *testing.T) {
 
-	genConfig = config.GENERIC{
+	genConfig = config.Generic{
 		Repository: "localhost",
 		Username:   "user",
 		Password:   "password",
@@ -26,7 +26,7 @@ func TestNewClientSuccess(t *testing.T) {
 	}
 	r := config.Registry{
 		Type:    "generic",
-		GENERIC: genConfig,
+		Generic: genConfig,
 	}
 
 	curCommandExecutor := commandExecutor
@@ -47,7 +47,7 @@ func TestNewClientSuccess(t *testing.T) {
 
 func TestNewClientFailureNoType(t *testing.T) {
 
-	genConfig = config.GENERIC{
+	genConfig = config.Generic{
 		Repository: "localhost",
 		Username:   "user",
 		Password:   "password",
@@ -55,7 +55,7 @@ func TestNewClientFailureNoType(t *testing.T) {
 	}
 	r := config.Registry{
 		Type:    "",
-		GENERIC: genConfig,
+		Generic: genConfig,
 	}
 
 	client, err := NewClient(r)
@@ -66,7 +66,7 @@ func TestNewClientFailureNoType(t *testing.T) {
 
 func TestNewClientFailureInvalidType(t *testing.T) {
 
-	genConfig = config.GENERIC{
+	genConfig = config.Generic{
 		Repository: "localhost",
 		Username:   "user",
 		Password:   "password",
@@ -74,7 +74,7 @@ func TestNewClientFailureInvalidType(t *testing.T) {
 	}
 	r := config.Registry{
 		Type:    "badType",
-		GENERIC: genConfig,
+		Generic: genConfig,
 	}
 
 	client, err := NewClient(r)

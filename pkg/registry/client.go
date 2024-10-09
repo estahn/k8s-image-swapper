@@ -53,7 +53,7 @@ func NewClient(r config.Registry) (Client, error) {
 	case types.RegistryGCP:
 		return NewGARClient(r.GCP)
 	case types.RegistryGeneric:
-		return NewGenericClient(r.GENERIC)
+		return NewGenericClient(r.Generic)
 	default:
 		return nil, fmt.Errorf(`registry of type "%s" is not supported`, r.Type)
 	}

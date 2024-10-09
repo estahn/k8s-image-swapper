@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var defaultGenericCfg = config.GENERIC{
+var defaultGenericCfg = config.Generic{
 	Repository: "localhost",
 	Username:   "user",
 	Password:   "password",
 	IgnoreCert: true,
 }
 
-func createGenericClient(config config.GENERIC, testName string) (*GenericClient, error) {
+func createGenericClient(config config.Generic, testName string) (*GenericClient, error) {
 
 	curCommandExecutor := commandExecutor
 	defer func() { commandExecutor = curCommandExecutor }()
