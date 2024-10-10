@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -88,16 +86,8 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 		log.Error().Err(err).Msg("unable to check existence of image")
 		return false
 	}
-<<<<<<< HEAD
 
-	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
-
-	e.cache.SetWithTTL(ref, "", 1, 24*time.Hour+time.Duration(rand.Intn(180))*time.Minute)
-
-	return true
-=======
 	return exists
->>>>>>> 359ee16 (feat: Add native image handler backend)
 }
 
 func (e *GARClient) Endpoint() string {
