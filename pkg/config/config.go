@@ -97,7 +97,7 @@ type ImageScanningConfiguration struct {
 }
 
 type EncryptionConfiguration struct {
-	EncryptionType string `yaml:"encryptionType"`
+	EncryptionType string `yaml:"encryptionType" validate:"oneof=KMS AWS256"`
 	KmsKey         string `yaml:"kmsKey"`
 }
 
@@ -140,6 +140,9 @@ func CheckRegistryConfiguration(r Registry) error {
 		if r.AWS.AccountID == "" {
 			return errorWithType(`requires a field "accountdId"`)
 		}
+		if r.AWS.ECROptions.EncryptionConfiguration.EncryptionType == "KMS" && r.AWS.ECROptions.EncryptionConfiguration.KmsKey == "" {
+			return errorWithType(`requires a field "kmsKey" if encryptionType is set to "KMS"`)
+		}
 	case types.RegistryGCP:
 		if r.GCP.Location == "" {
 			return errorWithType(`requires a field "location"`)
@@ -160,4 +163,5 @@ func SetViperDefaults(v *viper.Viper) {
 	v.SetDefault("Target.Type", "aws")
 	v.SetDefault("Target.AWS.ECROptions.ImageScanningConfiguration.ImageScanOnPush", true)
 	v.SetDefault("Target.AWS.ECROptions.ImageTagMutability", "MUTABLE")
+	v.SetDefault("Target.AWS.ECROptions.EncryptionConfiguration.EncryptionType", "AES256")
 }
