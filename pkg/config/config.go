@@ -97,7 +97,7 @@ type ImageScanningConfiguration struct {
 }
 
 type EncryptionConfiguration struct {
-	EncryptionType string `yaml:"encryptionType" validate:"oneof=KMS AWS256"`
+	EncryptionType string `yaml:"encryptionType" validate:"oneof=KMS AES256"`
 	KmsKey         string `yaml:"kmsKey"`
 }
 

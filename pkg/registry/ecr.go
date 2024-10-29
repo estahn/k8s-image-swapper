@@ -335,6 +335,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		options: config.ECROptions{
 			ImageTagMutability:         "MUTABLE",
 			ImageScanningConfiguration: config.ImageScanningConfiguration{ImageScanOnPush: true},
+			EncryptionConfiguration:    config.EncryptionConfiguration{EncryptionType: "AES256"},
 			Tags:                       []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
 		},
 	}

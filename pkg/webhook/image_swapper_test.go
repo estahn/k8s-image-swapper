@@ -245,6 +245,9 @@ func TestImageSwapper_Mutate(t *testing.T) {
 				ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 					ScanOnPush: aws.Bool(true),
 				},
+				EncryptionConfiguration: &ecr.EncryptionConfiguration{
+					EncryptionType: aws.String("AES256"),
+				},
 				ImageTagMutability: aws.String("MUTABLE"),
 				RepositoryName:     aws.String(expectedRepository),
 				RegistryId:         aws.String("123456789"),
@@ -306,6 +309,9 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 		&ecr.CreateRepositoryInput{
 			ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 				ScanOnPush: aws.Bool(true),
+			},
+			EncryptionConfiguration: &ecr.EncryptionConfiguration{
+				EncryptionType: aws.String("AES256"),
 			},
 			ImageTagMutability: aws.String("MUTABLE"),
 			RegistryId:         aws.String("123456789"),

@@ -29,6 +29,9 @@ func TestConfigParses(t *testing.T) {
 							ImageScanningConfiguration: ImageScanningConfiguration{
 								ImageScanOnPush: true,
 							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
+							},
 						},
 					},
 				},
@@ -50,6 +53,9 @@ source:
 							ImageTagMutability: "MUTABLE",
 							ImageScanningConfiguration: ImageScanningConfiguration{
 								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
 							},
 						},
 					},
@@ -90,6 +96,9 @@ target:
 							ImageScanningConfiguration: ImageScanningConfiguration{
 								ImageScanOnPush: true,
 							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
+							},
 							Tags: []Tag{
 								{
 									Key:   "CreatedBy",
@@ -127,6 +136,9 @@ source:
 							ImageTagMutability: "MUTABLE",
 							ImageScanningConfiguration: ImageScanningConfiguration{
 								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
 							},
 						},
 					},
@@ -175,6 +187,9 @@ target:
 						ECROptions: ECROptions{
 							ImageScanningConfiguration: ImageScanningConfiguration{
 								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
 							},
 							ImageTagMutability: "MUTABLE",
 							Tags: []Tag{
