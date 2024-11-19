@@ -104,8 +104,17 @@ func (e *ECRClient) CreateRepository(ctx context.Context, name string) error {
 
 	log.Ctx(ctx).Debug().Str("repository", name).Msg("create repository")
 
+	encryptionConfiguration := &ecr.EncryptionConfiguration{
+		EncryptionType: aws.String(e.options.EncryptionConfiguration.EncryptionType),
+	}
+
+	if e.options.EncryptionConfiguration.EncryptionType == "KMS" {
+		encryptionConfiguration.KmsKey = aws.String(e.options.EncryptionConfiguration.KmsKey)
+	}
+
 	_, err := e.client.CreateRepositoryWithContext(ctx, &ecr.CreateRepositoryInput{
-		RepositoryName: aws.String(name),
+		RepositoryName:          aws.String(name),
+		EncryptionConfiguration: encryptionConfiguration,
 		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
 			ScanOnPush: aws.Bool(e.options.ImageScanningConfiguration.ImageScanOnPush),
 		},
@@ -326,6 +335,7 @@ func NewMockECRClient(ecrClient ecriface.ECRAPI, region string, ecrDomain string
 		options: config.ECROptions{
 			ImageTagMutability:         "MUTABLE",
 			ImageScanningConfiguration: config.ImageScanningConfiguration{ImageScanOnPush: true},
+			EncryptionConfiguration:    config.EncryptionConfiguration{EncryptionType: "AES256"},
 			Tags:                       []config.Tag{{Key: "CreatedBy", Value: "k8s-image-swapper"}, {Key: "AnotherTag", Value: "another-tag"}},
 		},
 	}
