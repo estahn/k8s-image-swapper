@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.iml
 
 # Test binary, built with `go test -c`
 *.test
@@ -13,6 +14,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Mac
+.DS_Store
 
 .idea/
 coverage.txt

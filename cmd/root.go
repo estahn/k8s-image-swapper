@@ -66,20 +66,25 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		// Create registry clients for source registries
 		sourceRegistryClients := []registry.Client{}
 		for _, reg := range cfg.Source.Registries {
+			log.Trace().Msgf("Connecting to Source Registry")
 			sourceRegistryClient, err := registry.NewClient(reg)
 			if err != nil {
 				log.Err(err).Msgf("error connecting to source registry at %s", reg.Domain())
 				os.Exit(1)
 			}
+			log.Trace().Msgf("Added Source Registry: %s", sourceRegistryClient.Endpoint())
 			sourceRegistryClients = append(sourceRegistryClients, sourceRegistryClient)
 		}
 
 		// Create a registry client for private target registry
+
+		log.Trace().Msgf("Connecting to Target Registry")
 		targetRegistryClient, err := registry.NewClient(cfg.Target)
 		if err != nil {
 			log.Err(err).Msgf("error connecting to target registry at %s", cfg.Target.Domain())
 			os.Exit(1)
 		}
+		log.Trace().Msgf("Added Target Registry: %s", targetRegistryClient.Endpoint())
 
 		imageSwapPolicy, err := types.ParseImageSwapPolicy(cfg.ImageSwapPolicy)
 		if err != nil {
@@ -102,6 +107,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 		imagePullSecretProvider.SetAuthenticatedRegistries(sourceRegistryClients)
 
 		wh, err := webhook.NewImageSwapperWebhookWithOpts(
+			sourceRegistryClients,
 			targetRegistryClient,
 			webhook.Filters(cfg.Source.Filters),
 			webhook.ImagePullSecretsProvider(imagePullSecretProvider),
