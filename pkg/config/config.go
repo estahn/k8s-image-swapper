@@ -38,10 +38,12 @@ type Config struct {
 
 	ListenAddress string
 
-	DryRun            bool          `yaml:"dryRun"`
-	ImageSwapPolicy   string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
-	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
+	DryRun                bool          `yaml:"dryRun"`
+	ImageSwapPolicy       string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
+	ImageCopyPolicy       string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
+	ImageCopyDeadline     time.Duration `yaml:"imageCopyDeadline"`
+	CacheTtlMinutes       int           `yaml:"cacheTtlMinutes"`
+	CacheJitterMaxMinutes int           `yaml:"cacheJitterMaxMinutes"`
 
 	Source Source   `yaml:"source"`
 	Target Registry `yaml:"target"`
@@ -164,4 +166,6 @@ func SetViperDefaults(v *viper.Viper) {
 	v.SetDefault("Target.AWS.ECROptions.ImageScanningConfiguration.ImageScanOnPush", true)
 	v.SetDefault("Target.AWS.ECROptions.ImageTagMutability", "MUTABLE")
 	v.SetDefault("Target.AWS.ECROptions.EncryptionConfiguration.EncryptionType", "AES256")
+	v.SetDefault("CacheTtlMinutes", 1440)      // 24 hours
+	v.SetDefault("CacheJitterMaxMinutes", 180) // 3 hours
 }
