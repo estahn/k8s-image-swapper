@@ -77,6 +77,30 @@ Registries are described with an AWS account ID and region, mostly to construct 
             accountId: 234567890
             region: us-east-1
     ```
+#### Generic
+
+By providing configuration on Generic registries you can ask `k8s-image-swapper` to handle the authentication using 
+username and password.
+
+Registries are described with a repository URL, username and password.
+
+!!! example
+    ```yaml
+    source:
+      registries:
+        - type: "generic"
+          generic:
+            repository: "repo1.azurecr.io"
+            username: "username1"
+            password: "pass1"
+        - type: "generic"
+          generic:
+            repository: "repo2.azurecr.io"
+            username: "username2"
+            password: "pass2"
+    ```
+
+
 ### Filters
 
 Filters provide control over what pods will be processed.
@@ -172,6 +196,7 @@ The AWS Account ID and Region is primarily used to construct the ECR domain `[AC
         region: ap-southeast-2
     ```
 
+
 #### ECR Options
 
 ##### Tags
@@ -203,4 +228,18 @@ The GCP location, projectId, and repositoryId are used to constrct the GCP Artif
         location: us-central1
         projectId: gcp-project-123
         repositoryId: main
+    ```
+
+### Generic
+
+The option `target.generic` holds details about the target registry storing the images.
+
+!!! example
+    ```yaml
+    target:
+      type: generic
+      generic:
+        repository: "repo2.azurecr.io"
+        username: "username2"
+        password: "pass2"
     ```

@@ -33,9 +33,11 @@ source:
     #- jmespath: "ends_with(obj.metadata.namespace,'-dev')"
 
 #  registries:
-#    dockerio:
-#      username:
-#      password:
+#    - type: "generic"
+#      generic:
+#        repository: "repo1.azurecr.io"
+#        username: "user"
+#        password: "pass"
 
 target:
   type: aws
@@ -98,5 +100,11 @@ target:
             }
           ]
         }
-#    dockerio:
-#    quayio:
+
+#target:
+#  type: generic
+#  generic:
+#    repository: "repo1.azurecr.io"
+#    username: "user"
+#    password: "pass"
+#    ignoreCert: false
