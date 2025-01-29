@@ -23,6 +23,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -102,7 +103,11 @@ type EncryptionConfiguration struct {
 }
 
 func (a *AWS) EcrDomain() string {
-	return fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", a.AccountID, a.Region)
+	domain := "amazonaws.com"
+	if strings.HasPrefix(a.Region, "cn-") {
+		domain = "amazonaws.com.cn"
+	}
+	return fmt.Sprintf("%s.dkr.ecr.%s.%s", a.AccountID, a.Region, domain)
 }
 
 func (g *GCP) GarDomain() string {
