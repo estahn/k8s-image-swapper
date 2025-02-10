@@ -13,7 +13,7 @@ require (
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-co-op/gocron v1.37.0
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/gruntwork-io/terratest v0.48.1
+	github.com/gruntwork-io/terratest v0.48.2
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.20.5
