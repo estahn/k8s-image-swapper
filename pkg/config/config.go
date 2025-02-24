@@ -60,9 +60,21 @@ type Source struct {
 }
 
 type Registry struct {
-	Type string `yaml:"type"`
-	AWS  AWS    `yaml:"aws"`
-	GCP  GCP    `yaml:"gcp"`
+	Type    string  `yaml:"type"`
+	AWS     AWS     `yaml:"aws"`
+	GCP     GCP     `yaml:"gcp"`
+	Generic Generic `yaml:"generic"`
+}
+
+type Generic struct {
+	Name           string         `yaml:"name"`
+	GenericOptions GenericOptions `yaml:"genericOptions"`
+}
+
+type GenericOptions struct {
+	Domain   string `yaml:"domain"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 type AWS struct {
@@ -109,6 +121,10 @@ func (g *GCP) GarDomain() string {
 	return fmt.Sprintf("%s-docker.pkg.dev/%s/%s", g.Location, g.ProjectID, g.RepositoryID)
 }
 
+func (g *Generic) GenericDomain() string {
+	return g.GenericOptions.Domain
+}
+
 func (r Registry) Domain() string {
 	registry, _ := types.ParseRegistry(r.Type)
 	switch registry {
@@ -116,6 +132,8 @@ func (r Registry) Domain() string {
 		return r.AWS.EcrDomain()
 	case types.RegistryGCP:
 		return r.GCP.GarDomain()
+	case types.RegistryGeneric:
+		return r.Generic.GenericDomain()
 	default:
 		return ""
 	}
@@ -155,6 +173,17 @@ func CheckRegistryConfiguration(r Registry) error {
 		}
 	}
 
+	return nil
+}
+
+// provides detailed information about wrongly provided configuration (target specific)
+func CheckTargetRegistryConfiguration(r Registry) error {
+	registryType, err := types.ParseRegistry(r.Type)
+	if err != nil {
+		return fmt.Errorf("couldn't parse target registry type")
+	} else if registryType == types.RegistryGeneric {
+		return fmt.Errorf("generic registry not allowed as target: %s", r.Generic.Name)
+	}
 	return nil
 }
 
