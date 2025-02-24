@@ -38,10 +38,11 @@ type Config struct {
 
 	ListenAddress string
 
-	DryRun            bool          `yaml:"dryRun"`
-	ImageSwapPolicy   string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
-	ImageCopyPolicy   string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
-	ImageCopyDeadline time.Duration `yaml:"imageCopyDeadline"`
+	DryRun                  bool          `yaml:"dryRun"`
+	ImageSwapPolicy         string        `yaml:"imageSwapPolicy" validate:"oneof=always exists"`
+	ImageCopyPolicy         string        `yaml:"imageCopyPolicy" validate:"oneof=delayed immediate force none"`
+	ImageCopyDeadline       time.Duration `yaml:"imageCopyDeadline"`
+	ImageCopySkipRegistries []string      `yaml:"skipRegistries"`
 
 	Source Source   `yaml:"source"`
 	Target Registry `yaml:"target"`
