@@ -231,3 +231,44 @@ target:
 		})
 	}
 }
+
+func TestEcrDomain(t *testing.T) {
+	tests := []struct {
+		name   string
+		cfg    Config
+		domain string
+	}{
+		{
+			name: "commercial aws",
+			cfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						AccountID: "123456789",
+						Region:    "ap-southeast-2",
+					},
+				},
+			},
+			domain: "123456789.dkr.ecr.ap-southeast-2.amazonaws.com",
+		},
+		{
+			name: "aws in china",
+			cfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						AccountID: "123456789",
+						Region:    "cn-north-1",
+					},
+				},
+			},
+			domain: "123456789.dkr.ecr.cn-north-1.amazonaws.com.cn",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert := assert.New(t)
+			assert.Equal(test.cfg.Target.AWS.EcrDomain(), test.domain)
+		})
+	}
+}
