@@ -12,13 +12,12 @@ import (
 	ctypes "github.com/containers/image/v5/types"
 )
 
+const dockerPrefix = "docker://"
+
 // Client provides methods required to be implemented by the various target registry clients, e.g. ECR, Docker, Quay.
 type Client interface {
 	CreateRepository(ctx context.Context, name string) error
-	RepositoryExists() bool
 	CopyImage(ctx context.Context, src ctypes.ImageReference, srcCreds string, dest ctypes.ImageReference, destCreds string) error
-	PullImage() error
-	PutImage() error
 	ImageExists(ctx context.Context, ref ctypes.ImageReference) bool
 
 	// Endpoint returns the domain of the registry
@@ -53,6 +52,8 @@ func NewClient(r config.Registry) (Client, error) {
 		return NewECRClient(r.AWS)
 	case types.RegistryGCP:
 		return NewGARClient(r.GCP)
+	case types.RegistryGeneric:
+		return NewGenericClient(r.Generic)
 	default:
 		return nil, fmt.Errorf(`registry of type "%s" is not supported`, r.Type)
 	}

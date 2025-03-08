@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
+
 // TestConfigParses validates if yaml annotation do not overlap
 func TestConfigParses(t *testing.T) {
 	tests := []struct {
@@ -123,6 +125,11 @@ source:
       aws:
         accountId: "12345678912"
         region: "us-west-1"
+    - type: "generic"
+      generic:
+        repository: "https://12345678912"
+        username: "demo"
+        password: "pass"
     - type: "aws"
       aws:
         accountId: "12345678912"
@@ -150,6 +157,13 @@ source:
 							AWS: AWS{
 								AccountID: "12345678912",
 								Region:    "us-west-1",
+							}},
+						{
+							Type: "generic",
+							Generic: Generic{
+								Repository: "https://12345678912",
+								Username:   "demo",
+								Password:   "pass",
 							}},
 						{
 							Type: "aws",
