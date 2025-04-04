@@ -42,7 +42,7 @@ func NewImagePullSecretsResultWithDefaults(defaultImagePullSecrets []registry.Cl
 		if err != nil {
 			log.Err(err)
 		} else {
-			imagePullSecretsResult.Add(fmt.Sprintf("source-ecr-%d", index), dockerConfig)
+			imagePullSecretsResult.Add(fmt.Sprintf("source-registry-%d", index), dockerConfig)
 		}
 	}
 	return imagePullSecretsResult
