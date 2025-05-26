@@ -10,7 +10,7 @@ require (
 	github.com/dgraph-io/ristretto v0.2.0
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-co-op/gocron v1.37.0
-	github.com/gruntwork-io/terratest v0.48.2
+	github.com/gruntwork-io/terratest v0.49.0
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.21.1
@@ -103,7 +103,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-errors/errors v1.0.2-0.20180813162953-d98b870cc4e0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
