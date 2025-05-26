@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/containers/image/v5 v5.35.0
 	github.com/dgraph-io/ristretto v0.2.0
-	github.com/evanphx/json-patch v5.9.0+incompatible
+	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-co-op/gocron v1.37.0
 	github.com/gruntwork-io/terratest v0.48.2
 	github.com/jmespath/go-jmespath v0.4.0
