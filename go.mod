@@ -10,7 +10,7 @@ require (
 	github.com/dgraph-io/ristretto v0.2.0
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-co-op/gocron v1.37.0
-	github.com/gruntwork-io/terratest v0.49.0
+	github.com/gruntwork-io/terratest v0.50.0
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.22.0
