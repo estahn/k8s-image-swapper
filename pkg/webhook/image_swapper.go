@@ -253,6 +253,8 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 				} else {
 					log.Ctx(lctx).Debug().Str("image", targetImage).Msg("container image not found in target registry, not swapping")
 				}
+			case types.ImageSwapPolicyNever:
+				// do not swap image
 			default:
 				panic("unknown imageSwapPolicy")
 			}

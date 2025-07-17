@@ -29,6 +29,7 @@ type ImageSwapPolicy int
 const (
 	ImageSwapPolicyAlways = iota
 	ImageSwapPolicyExists
+	ImageSwapPolicyNever
 )
 
 func (p ImageSwapPolicy) String() string {
@@ -41,6 +42,8 @@ func ParseImageSwapPolicy(p string) (ImageSwapPolicy, error) {
 		return ImageSwapPolicyAlways, nil
 	case ImageSwapPolicy(ImageSwapPolicyExists).String():
 		return ImageSwapPolicyExists, nil
+	case ImageSwapPolicy(ImageSwapPolicyNever).String():
+		return ImageSwapPolicyNever, nil
 	}
 	return ImageSwapPolicyExists, fmt.Errorf("unknown image swap policy string: '%s', defaulting to exists", p)
 }
