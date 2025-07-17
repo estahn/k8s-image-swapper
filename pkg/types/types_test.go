@@ -23,6 +23,11 @@ func TestParseImageSwapPolicy(t *testing.T) {
 			want: ImageSwapPolicyExists,
 		},
 		{
+			name: "never",
+			args: args{p: "exists"},
+			want: ImageSwapPolicyNever,
+		},
+		{
 			name:    "random-non-existent",
 			args:    args{p: "random-non-existent"},
 			want:    ImageSwapPolicyExists,
