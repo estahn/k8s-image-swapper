@@ -24,7 +24,7 @@ func TestParseImageSwapPolicy(t *testing.T) {
 		},
 		{
 			name: "never",
-			args: args{p: "exists"},
+			args: args{p: "never"},
 			want: ImageSwapPolicyNever,
 		},
 		{
