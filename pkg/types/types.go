@@ -33,7 +33,7 @@ const (
 )
 
 func (p ImageSwapPolicy) String() string {
-	return [...]string{"always", "exists"}[p]
+	return [...]string{"always", "exists", "never"}[p]
 }
 
 func ParseImageSwapPolicy(p string) (ImageSwapPolicy, error) {
