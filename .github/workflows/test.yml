@@ -35,7 +35,7 @@ jobs:
         cache: true
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6.2.0
+      uses: golangci/golangci-lint-action@v6.5.1
       with:
         version: latest
         args: --timeout=5m
@@ -57,7 +57,7 @@ jobs:
         check-latest: true
         cache: true
 
-    - uses: actions/cache@v4.2.0
+    - uses: actions/cache@v4.2.3
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -106,7 +106,7 @@ jobs:
         check-latest: true
         cache: true
 
-    - uses: actions/cache@v4.2.0
+    - uses: actions/cache@v4.2.3
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -118,7 +118,7 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v6.1.0
+      uses: goreleaser/goreleaser-action@v6.3.0
       with:
         version: latest
         args: release --clean --skip=validate,publish
