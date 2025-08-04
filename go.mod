@@ -13,7 +13,7 @@ require (
 	github.com/gruntwork-io/terratest v0.50.0
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_golang v1.23.0
 	github.com/rs/zerolog v1.34.0
 	github.com/slok/kubewebhook/v2 v2.5.0
 	github.com/spf13/cobra v1.9.1
@@ -179,8 +179,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pquerna/otp v1.4.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
