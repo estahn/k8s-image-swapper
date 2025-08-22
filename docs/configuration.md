@@ -32,6 +32,7 @@ The option `imageSwapPolicy` (default: `exists`) defines the mutation strategy u
 * `exists`: Only swaps the image if it exits in the target registry.
             This can result in pods pulling images from the source registry, e.g. the first pod pulls
             from source registry, subsequent pods pull from target registry.
+* `never` : Do not swap the image.
 
 ## ImageCopyPolicy
 
