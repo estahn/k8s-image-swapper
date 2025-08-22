@@ -16,6 +16,7 @@ type ImageCopier struct {
 	sourcePod      *corev1.Pod
 	sourceImageRef ctypes.ImageReference
 	targetImageRef ctypes.ImageReference
+	additionalTag  string
 
 	imagePullPolicy corev1.PullPolicy
 	imageSwapper    *ImageSwapper
@@ -135,5 +136,5 @@ func (ic *ImageCopier) taskCopyImage() error {
 	//
 	//	or transform registryClient creds into auth compatible form, e.g.
 	//	{"auths":{"aws_account_id.dkr.ecr.region.amazonaws.com":{"username":"AWS","password":"..."	}}}
-	return ic.imageSwapper.registryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.registryClient.Credentials())
+	return ic.imageSwapper.registryClient.CopyImage(ctx, ic.sourceImageRef, authFile.Name(), ic.targetImageRef, ic.imageSwapper.registryClient.Credentials(), ic.additionalTag)
 }
