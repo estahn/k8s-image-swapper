@@ -162,6 +162,48 @@ source:
 			},
 		},
 		{
+			name: "should render generic source registry",
+			cfg: `
+source:
+  registries:
+    - type: "generic"
+      generic:
+        name: "dockerio"
+        genericOptions:
+          domain: "docker.io"
+          username: "testuser"
+          password: "testpass"
+`,
+			expCfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+						},
+					},
+				},
+				Source: Source{
+					Registries: []Registry{
+						{
+							Type: "generic",
+							Generic: Generic{
+								Name: "dockerio",
+								GenericOptions: GenericOptions{
+									Domain:   "docker.io",
+									Username: "testuser",
+									Password: "testpass",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "should use previous defaults",
 			cfg: `
 target:
