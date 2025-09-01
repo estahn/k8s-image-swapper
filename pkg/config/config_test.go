@@ -264,6 +264,20 @@ func TestEcrDomain(t *testing.T) {
 			},
 			domain: "123456789.dkr.ecr.cn-north-1.amazonaws.com.cn",
 		},
+		{
+			name: "aws with prefix",
+			cfg: Config{
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						AccountID: "123456789",
+						Region:    "ap-southeast-2",
+						Prefix:    "/prefix",
+					},
+				},
+			},
+			domain: "123456789.dkr.ecr.ap-southeast-2.amazonaws.com/prefix",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
