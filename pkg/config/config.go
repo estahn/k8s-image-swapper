@@ -70,6 +70,7 @@ type AWS struct {
 	AccountID  string     `yaml:"accountId"`
 	Region     string     `yaml:"region"`
 	Role       string     `yaml:"role"`
+	Prefix     string     `yaml:"prefix"`
 	ECROptions ECROptions `yaml:"ecrOptions"`
 }
 
@@ -107,7 +108,7 @@ func (a *AWS) EcrDomain() string {
 	if strings.HasPrefix(a.Region, "cn-") {
 		domain = "amazonaws.com.cn"
 	}
-	return fmt.Sprintf("%s.dkr.ecr.%s.%s", a.AccountID, a.Region, domain)
+	return fmt.Sprintf("%s.dkr.ecr.%s.%s%s", a.AccountID, a.Region, domain, a.Prefix)
 }
 
 func (g *GCP) GarDomain() string {
