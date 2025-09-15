@@ -20,16 +20,19 @@ import (
 	"google.golang.org/api/transport"
 
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 type GARAPI interface{}
 
 type GARClient struct {
-	client    GARAPI
-	garDomain string
-	cache     *ristretto.Cache
-	scheduler *gocron.Scheduler
-	authToken []byte
+	client                GARAPI
+	garDomain             string
+	cache                 *ristretto.Cache
+	scheduler             *gocron.Scheduler
+	authToken             []byte
+	cacheTtlMinutes       int
+	cacheJitterMaxMinutes int
 }
 
 func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
@@ -46,10 +49,12 @@ func NewGARClient(clientConfig config.GCP) (*GARClient, error) {
 	scheduler.StartAsync()
 
 	client := &GARClient{
-		client:    nil,
-		garDomain: clientConfig.GarDomain(),
-		cache:     cache,
-		scheduler: scheduler,
+		client:          nil,
+		garDomain:       clientConfig.GarDomain(),
+		cache:           cache,
+		scheduler:             scheduler,
+		cacheTtlMinutes:       viper.GetInt("CacheTtlMinutes"),
+		cacheJitterMaxMinutes: viper.GetInt("CacheJitterMaxMinutes"),
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -132,9 +137,11 @@ func (e *GARClient) PutImage() error {
 
 func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
 	ref := imageRef.DockerReference().String()
-	if _, found := e.cache.Get(ref); found {
-		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
-		return true
+	if e.cacheTtlMinutes > 0 {
+		if _, found := e.cache.Get(ref); found {
+			log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
+			return true
+		}
 	}
 
 	app := "skopeo"
@@ -153,7 +160,12 @@ func (e *GARClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
 
-	e.cache.SetWithTTL(ref, "", 1, 24*time.Hour+time.Duration(rand.Intn(180))*time.Minute)
+	if e.cacheTtlMinutes > 0 {
+		// Add random jitter to prevent cache stampede
+		jitter := time.Duration(rand.Intn(e.cacheJitterMaxMinutes)) * time.Minute
+		cacheTtl := time.Duration(e.cacheTtlMinutes) * time.Minute
+		e.cache.SetWithTTL(ref, "", 1, cacheTtl+jitter)
+	}
 
 	return true
 }
