@@ -126,7 +126,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Scan image
-      uses: anchore/scan-action@v6
+      uses: anchore/scan-action@v7
       id: scan
       with:
         image: "ghcr.io/estahn/k8s-image-swapper:latest"
