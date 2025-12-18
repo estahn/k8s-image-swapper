@@ -267,7 +267,7 @@ func initLogger() {
 	lvl, err := zerolog.ParseLevel(cfg.LogLevel)
 	if err != nil {
 		lvl = zerolog.InfoLevel
-		log.Err(err).Msgf("Could not set log level to '%v'.", cfg.LogLevel)
+		log.Err(err).Msgf("could not set log level to '%v'.", cfg.LogLevel)
 	}
 
 	zerolog.SetGlobalLevel(lvl)
