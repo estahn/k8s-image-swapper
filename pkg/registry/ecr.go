@@ -22,16 +22,19 @@ import (
 	"github.com/estahn/k8s-image-swapper/pkg/config"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 type ECRClient struct {
-	client        ecriface.ECRAPI
-	ecrDomain     string
-	authToken     []byte
-	cache         *ristretto.Cache
-	scheduler     *gocron.Scheduler
-	targetAccount string
-	options       config.ECROptions
+	client                ecriface.ECRAPI
+	ecrDomain             string
+	authToken             []byte
+	cache                 *ristretto.Cache
+	scheduler             *gocron.Scheduler
+	targetAccount         string
+	options               config.ECROptions
+	cacheTtlMinutes       int
+	cacheJitterMaxMinutes int
 }
 
 func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
@@ -78,12 +81,14 @@ func NewECRClient(clientConfig config.AWS) (*ECRClient, error) {
 	scheduler.StartAsync()
 
 	client := &ECRClient{
-		client:        ecrClient,
-		ecrDomain:     ecrDomain,
-		cache:         cache,
-		scheduler:     scheduler,
-		targetAccount: clientConfig.AccountID,
-		options:       clientConfig.ECROptions,
+		client:                ecrClient,
+		ecrDomain:             ecrDomain,
+		cache:                 cache,
+		scheduler:             scheduler,
+		targetAccount:         clientConfig.AccountID,
+		options:               clientConfig.ECROptions,
+		cacheTtlMinutes:       viper.GetInt("CacheTtlMinutes"),
+		cacheJitterMaxMinutes: viper.GetInt("CacheJitterMaxMinutes"),
 	}
 
 	if err := client.scheduleTokenRenewal(); err != nil {
@@ -242,9 +247,11 @@ func (e *ECRClient) PutImage() error {
 
 func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageReference) bool {
 	ref := imageRef.DockerReference().String()
-	if _, found := e.cache.Get(ref); found {
-		log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
-		return true
+	if e.cacheTtlMinutes > 0 {
+		if _, found := e.cache.Get(ref); found {
+			log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in cache")
+			return true
+		}
 	}
 
 	app := "skopeo"
@@ -263,7 +270,12 @@ func (e *ECRClient) ImageExists(ctx context.Context, imageRef ctypes.ImageRefere
 
 	log.Ctx(ctx).Trace().Str("ref", ref).Msg("found in target repository")
 
-	e.cache.SetWithTTL(ref, "", 1, 24*time.Hour+time.Duration(rand.Intn(180))*time.Minute)
+	if e.cacheTtlMinutes > 0 {
+		// Add random jitter to prevent cache stampede
+		jitter := time.Duration(rand.Intn(e.cacheJitterMaxMinutes)) * time.Minute
+		cacheTtl := time.Duration(e.cacheTtlMinutes) * time.Minute
+		e.cache.SetWithTTL(ref, "", 1, cacheTtl+jitter)
+	}
 
 	return true
 }
