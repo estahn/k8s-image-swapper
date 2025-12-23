@@ -170,6 +170,7 @@ The AWS Account ID and Region is primarily used to construct the ECR domain `[AC
       aws:
         accountId: 123456789
         region: ap-southeast-2
+        prefix: /cache
     ```
 
 #### ECR Options
