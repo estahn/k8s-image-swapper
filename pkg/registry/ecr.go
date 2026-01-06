@@ -231,7 +231,7 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 
 	// enrich error with output from the command which may contain the actual reason
 	if cmdErr != nil {
-		return fmt.Errorf("Command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
+		return fmt.Errorf("command error, stderr: %s, stdout: %s", cmdErr.Error(), string(output))
 	}
 
 	return nil

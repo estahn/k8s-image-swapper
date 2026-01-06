@@ -25,17 +25,17 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
         check-latest: true
         cache: true
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6.5.1
+      uses: golangci/golangci-lint-action@v9.2.0
       with:
         version: latest
         args: --timeout=5m
@@ -48,16 +48,16 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
         check-latest: true
         cache: true
 
-    - uses: actions/cache@v4.2.4
+    - uses: actions/cache@v5.0.1
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -87,7 +87,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libdevmapper-dev libbtrfs-dev
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -100,13 +100,13 @@ jobs:
       run: git fetch --prune --unshallow
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: 'go.mod'
         check-latest: true
         cache: true
 
-    - uses: actions/cache@v4.2.4
+    - uses: actions/cache@v5.0.1
       with:
         path: |
           ~/go/pkg/mod              # Module download cache
@@ -118,7 +118,7 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v6.3.0
+      uses: goreleaser/goreleaser-action@v6.4.0
       with:
         version: latest
         args: release --clean --skip=validate,publish
@@ -126,7 +126,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Scan image
-      uses: anchore/scan-action@v6
+      uses: anchore/scan-action@v7
       id: scan
       with:
         image: "ghcr.io/estahn/k8s-image-swapper:latest"
@@ -134,6 +134,6 @@ jobs:
         acs-report-enable: true
 
     - name: Upload Anchore scan SARIF report
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: ${{ steps.scan.outputs.sarif }}
