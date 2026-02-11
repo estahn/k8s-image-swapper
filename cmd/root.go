@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -34,6 +35,7 @@ import (
 	"github.com/estahn/k8s-image-swapper/pkg/registry"
 	"github.com/estahn/k8s-image-swapper/pkg/secrets"
 	"github.com/estahn/k8s-image-swapper/pkg/types"
+	"github.com/estahn/k8s-image-swapper/pkg/utils"
 	"github.com/estahn/k8s-image-swapper/pkg/webhook"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -151,7 +153,15 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			log.Info().Msgf("Listening on %v", cfg.ListenAddress)
 			//err = http.ListenAndServeTLS(":8080", cfg.certFile, cfg.keyFile, whHandler)
 			if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
-				if err := srv.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
+				kpr, err := utils.NewKeypairReloader(cfg.TLSCertFile, cfg.TLSKeyFile)
+				if err != nil {
+					log.Err(err).Msg("Failed to load key pair")
+					os.Exit(1)
+				}
+
+				// this will check if there are new certs before every tls handshake
+				srv.TLSConfig = &tls.Config{GetCertificate: kpr.GetCertificateFunc()}
+				if err := srv.ListenAndServeTLS("", ""); err != nil {
 					log.Err(err).Msg("error serving webhook")
 					os.Exit(1)
 				}
