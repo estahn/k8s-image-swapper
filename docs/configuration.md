@@ -44,10 +44,41 @@ The option `imageCopyPolicy` (default: `delayed`) defines the image copy strateg
 
 ## ImageCopyDeadline
 
+## Cache Configuration
+
+When caching is enabled, k8s-image-swapper caches the existence of images to reduce strain on the target registry.
+This means that if an image is deleted from the target registry, k8s-image-swapper will continue to think it exists until the cache expires.
+There are two settings that control this behavior:
+
+### Cache TTL
+
+The option `cacheTtlMinutes` (default: `1440` - 24 hours) defines how long image existence information is cached. Set to `0` to disable caching entirely.
+
+### Cache Jitter
+
+The option `cacheJitterMaxMinutes` (default: `180` - 3 hours) defines the maximum random time added to the TTL to prevent a cache stampede. When many cache entries expire at the same time, it can cause a sudden spike in registry requests. Adding random jitter helps spread these requests out.
+
+!!! example
+    ```yaml
+    # Cache for 4 hours (240 minutes) with up to 30 minutes of random jitter
+    cacheTtlMinutes: 240
+    cacheJitterMaxMinutes: 30
+
+    # Disable caching completely
+    cacheTtlMinutes: 0
+    cacheJitterMaxMinutes: 0
+    
+    # Default behavior if not specified:
+    # cacheTtlMinutes: 1440      # 24 hours
+    # cacheJitterMaxMinutes: 180 # 3 hours
+    ```
+
+!!! note
+    The actual cache duration for each entry will be: `cacheTtlMinutes + random(0 to cacheJitterMaxMinutes)` minutes
+
 The option `imageCopyDeadline` (default: `8s`) defines the duration after which the image copy if aborted.
 
 This option only applies for `immediate` and `force` image copy strategies.
-
 
 ## Source
 
