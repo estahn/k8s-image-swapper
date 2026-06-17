@@ -186,7 +186,7 @@ func (e *ECRClient) RepositoryExists() bool {
 	panic("implement me")
 }
 
-func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
+func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string, additionalTag string) error {
 	src := srcRef.DockerReference().String()
 	dest := destRef.DockerReference().String()
 	app := "skopeo"
@@ -197,6 +197,10 @@ func (e *ECRClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
+	}
+
+	if len(additionalTag) > 0 {
+		args = append(args, "--additional-tag", additionalTag)
 	}
 
 	if len(srcCreds) > 0 {
