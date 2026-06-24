@@ -22,7 +22,8 @@ func TestConfigParses(t *testing.T) {
 			cfg:  "",
 			expCfg: Config{
 				Target: Registry{
-					Type: "aws",
+					Type:             "aws",
+					CreateRepository: true,
 					AWS: AWS{
 						ECROptions: ECROptions{
 							ImageTagMutability: "MUTABLE",
@@ -47,7 +48,8 @@ source:
 `,
 			expCfg: Config{
 				Target: Registry{
-					Type: "aws",
+					Type:             "aws",
+					CreateRepository: true,
 					AWS: AWS{
 						ECROptions: ECROptions{
 							ImageTagMutability: "MUTABLE",
@@ -86,7 +88,8 @@ target:
 `,
 			expCfg: Config{
 				Target: Registry{
-					Type: "aws",
+					Type:             "aws",
+					CreateRepository: true,
 					AWS: AWS{
 						AccountID: "123456789",
 						Region:    "ap-southeast-2",
@@ -130,7 +133,8 @@ source:
 `,
 			expCfg: Config{
 				Target: Registry{
-					Type: "aws",
+					Type:             "aws",
+					CreateRepository: true,
 					AWS: AWS{
 						ECROptions: ECROptions{
 							ImageTagMutability: "MUTABLE",
@@ -179,7 +183,8 @@ target:
 `,
 			expCfg: Config{
 				Target: Registry{
-					Type: "aws",
+					Type:             "aws",
+					CreateRepository: true,
 					AWS: AWS{
 						AccountID: "123456789",
 						Region:    "ap-southeast-2",
@@ -201,6 +206,30 @@ target:
 									Key:   "A",
 									Value: "B",
 								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should disable repository creation",
+			cfg: `
+target:
+  createRepository: false
+`,
+			expCfg: Config{
+				Target: Registry{
+					Type:             "aws",
+					CreateRepository: false,
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
 							},
 						},
 					},

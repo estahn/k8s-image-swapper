@@ -61,9 +61,10 @@ type Source struct {
 }
 
 type Registry struct {
-	Type string `yaml:"type"`
-	AWS  AWS    `yaml:"aws"`
-	GCP  GCP    `yaml:"gcp"`
+	Type             string `yaml:"type"`
+	CreateRepository bool   `yaml:"createRepository"`
+	AWS              AWS    `yaml:"aws"`
+	GCP              GCP    `yaml:"gcp"`
 }
 
 type AWS struct {
@@ -167,6 +168,7 @@ func CheckRegistryConfiguration(r Registry) error {
 // SetViperDefaults configures default values for config items that are not set.
 func SetViperDefaults(v *viper.Viper) {
 	v.SetDefault("Target.Type", "aws")
+	v.SetDefault("Target.CreateRepository", true)
 	v.SetDefault("Target.AWS.ECROptions.ImageScanningConfiguration.ImageScanOnPush", true)
 	v.SetDefault("Target.AWS.ECROptions.ImageTagMutability", "MUTABLE")
 	v.SetDefault("Target.AWS.ECROptions.EncryptionConfiguration.EncryptionType", "AES256")
