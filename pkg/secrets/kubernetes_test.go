@@ -115,14 +115,49 @@ func TestImagePullSecretsResult_WithDefault(t *testing.T) {
 
 	expected := &ImagePullSecretsResult{
 		Secrets: map[string][]byte{
-			"source-ecr-0": []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
-			"source-ecr-1": []byte("{\"auths\":{\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+			"source-registry-0": []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+			"source-registry-1": []byte("{\"auths\":{\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
 		},
 		Aggregate: []byte("{\"auths\":{\"" + fakeEcrDomains[0] + "\":{\"auth\":\"" + fakeBase64Token + "\"},\"" + fakeEcrDomains[1] + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
 	}
 
 	fakeRegistry1 := registry.NewDummyECRClient(fakeRegions[0], fakeAccountIds[0], "", config.ECROptions{}, fakeToken)
 	fakeRegistry2 := registry.NewDummyECRClient(fakeRegions[1], fakeAccountIds[1], "", config.ECROptions{}, fakeToken)
+	fakeRegistries := []registry.Client{fakeRegistry1, fakeRegistry2}
+
+	r := NewImagePullSecretsResultWithDefaults(fakeRegistries)
+
+	assert.Equal(t, r, expected)
+}
+
+// TestImagePullSecretsResult_WithDefault tests if authenticated private registries work
+func TestImagePullSecretsResult_WithDefault_MixedRegistries(t *testing.T) {
+	// Fake ECR Source Registry
+	fakeToken := []byte("token")
+	fakeBase64Token := base64.StdEncoding.EncodeToString(fakeToken)
+	fakeAccountId := "12345678912"
+	fakeRegion := "us-east-1"
+	fakeEcrDomain := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", fakeAccountId, fakeRegion)
+
+	// Fake Generic Source Registry
+	fakeGenericToken := []byte("username:password")
+	fakeGenericBase64Token := base64.StdEncoding.EncodeToString(fakeGenericToken)
+	fakeGenericDomain := "https://index.docker.io/v1/"
+
+	expected := &ImagePullSecretsResult{
+		Secrets: map[string][]byte{
+			"source-registry-0": []byte("{\"auths\":{\"" + fakeEcrDomain + "\":{\"auth\":\"" + fakeBase64Token + "\"}}}"),
+			"source-registry-1": []byte("{\"auths\":{\"" + fakeGenericDomain + "\":{\"auth\":\"" + fakeGenericBase64Token + "\"}}}"),
+		},
+		Aggregate: []byte("{\"auths\":{\"" + fakeEcrDomain + "\":{\"auth\":\"" + fakeBase64Token + "\"},\"" + fakeGenericDomain + "\":{\"auth\":\"" + fakeGenericBase64Token + "\"}}}"),
+	}
+
+	fakeRegistry1 := registry.NewDummyECRClient(fakeRegion, fakeAccountId, "", config.ECROptions{}, fakeToken)
+	fakeRegistry2 := registry.NewDummyGenericClient("docker.io", config.GenericOptions{
+		Domain:   "https://index.docker.io/v1/",
+		Username: "username",
+		Password: "password",
+	})
 	fakeRegistries := []registry.Client{fakeRegistry1, fakeRegistry2}
 
 	r := NewImagePullSecretsResultWithDefaults(fakeRegistries)
