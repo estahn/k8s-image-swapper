@@ -68,7 +68,7 @@ func (e *GARClient) RepositoryExists() bool {
 	panic("implement me")
 }
 
-func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string) error {
+func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference, srcCreds string, destRef ctypes.ImageReference, destCreds string, additionalTag string) error {
 	src := srcRef.DockerReference().String()
 	dest := destRef.DockerReference().String()
 
@@ -87,6 +87,10 @@ func (e *GARClient) CopyImage(ctx context.Context, srcRef ctypes.ImageReference,
 		"--retry-times", "3",
 		"docker://" + src,
 		"docker://" + dest,
+	}
+
+	if len(additionalTag) > 0 {
+		args = append(args, "--additional-tag", additionalTag)
 	}
 
 	if len(creds[1]) > 0 {
