@@ -21,6 +21,8 @@ func TestConfigParses(t *testing.T) {
 			name: "should render empty config with defaults",
 			cfg:  "",
 			expCfg: Config{
+				CacheTtlMinutes:       1440,
+				CacheJitterMaxMinutes: 180,
 				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
@@ -46,6 +48,8 @@ source:
     - jmespath: "obj.metadata.namespace != 'playground'"
 `,
 			expCfg: Config{
+				CacheTtlMinutes:       1440,
+				CacheJitterMaxMinutes: 180,
 				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
@@ -85,6 +89,8 @@ target:
           value: B
 `,
 			expCfg: Config{
+				CacheTtlMinutes:       1440,
+				CacheJitterMaxMinutes: 180,
 				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
@@ -129,6 +135,8 @@ source:
         region: "us-east-1"
 `,
 			expCfg: Config{
+				CacheTtlMinutes:       1440,
+				CacheJitterMaxMinutes: 180,
 				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
@@ -178,6 +186,8 @@ target:
           value: B
 `,
 			expCfg: Config{
+				CacheTtlMinutes:       1440,
+				CacheJitterMaxMinutes: 180,
 				Target: Registry{
 					Type: "aws",
 					AWS: AWS{
@@ -201,6 +211,56 @@ target:
 									Key:   "A",
 									Value: "B",
 								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should render custom cache settings",
+			cfg: `
+cacheTtlMinutes: 60
+cacheJitterMaxMinutes: 20
+`,
+			expCfg: Config{
+				CacheTtlMinutes:       60,
+				CacheJitterMaxMinutes: 20,
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "should allow disabling cache",
+			cfg: `
+cacheTtlMinutes: 0        # Disable cache
+cacheJitterMaxMinutes: 0  # No jitter needed when cache is disabled
+`,
+			expCfg: Config{
+				CacheTtlMinutes:       0,
+				CacheJitterMaxMinutes: 0,
+				Target: Registry{
+					Type: "aws",
+					AWS: AWS{
+						ECROptions: ECROptions{
+							ImageTagMutability: "MUTABLE",
+							ImageScanningConfiguration: ImageScanningConfiguration{
+								ImageScanOnPush: true,
+							},
+							EncryptionConfiguration: EncryptionConfiguration{
+								EncryptionType: "AES256",
 							},
 						},
 					},
