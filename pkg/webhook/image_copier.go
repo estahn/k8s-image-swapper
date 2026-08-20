@@ -101,6 +101,10 @@ func (ic *ImageCopier) taskCheckImage() error {
 }
 
 func (ic *ImageCopier) taskCreateRepository() error {
+	if !ic.imageSwapper.createRepository {
+		return nil
+	}
+
 	createRepoName := reference.TrimNamed(ic.sourceImageRef.DockerReference()).String()
 
 	return ic.imageSwapper.registryClient.CreateRepository(ic.context, createRepoName)

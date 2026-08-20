@@ -61,6 +61,13 @@ func ImageCopyDeadline(deadline time.Duration) Option {
 	}
 }
 
+// CreateRepository allows to pass the createRepository option
+func CreateRepository(createRepository bool) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.createRepository = createRepository
+	}
+}
+
 // Copier allows to pass the copier option
 func Copier(pool *pond.WorkerPool) Option {
 	return func(swapper *ImageSwapper) {
@@ -81,12 +88,13 @@ type ImageSwapper struct {
 	copier            *pond.WorkerPool
 	imageCopyDeadline time.Duration
 
-	imageSwapPolicy types.ImageSwapPolicy
-	imageCopyPolicy types.ImageCopyPolicy
+	imageSwapPolicy  types.ImageSwapPolicy
+	imageCopyPolicy  types.ImageCopyPolicy
+	createRepository bool
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration, createRepository bool) kwhmutating.Mutator {
 	return &ImageSwapper{
 		registryClient:          registryClient,
 		imagePullSecretProvider: imagePullSecretProvider,
@@ -95,6 +103,7 @@ func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider sec
 		imageSwapPolicy:         imageSwapPolicy,
 		imageCopyPolicy:         imageCopyPolicy,
 		imageCopyDeadline:       imageCopyDeadline,
+		createRepository:        createRepository,
 	}
 }
 
@@ -106,6 +115,7 @@ func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwh
 		filters:                 []config.JMESPathFilter{},
 		imageSwapPolicy:         types.ImageSwapPolicyExists,
 		imageCopyPolicy:         types.ImageCopyPolicyDelayed,
+		createRepository:        true,
 	}
 
 	for _, opt := range opts {
@@ -132,8 +142,8 @@ func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Opti
 	return kwhmutating.NewWebhook(mcfg)
 }
 
-func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy, imageCopyDeadline)
+func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration, createRepository bool) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy, imageCopyDeadline, createRepository)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",

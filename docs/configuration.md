@@ -158,6 +158,9 @@ This section configures details about the image target.
 The option `target` allows to specify which type of registry you set as your target (AWS, GCP...).
 At the moment, `aws` and `gcp` are the only supported values.
 
+Setting `createRepository` to `false` will prevent `k8s-image-swapper` from creating repositories in the target registry.
+This way AWS creation templates can be used or premissions restricted to already existing repositories.
+
 ### AWS
 
 The option `target.aws` holds details about the target registry storing the images.
