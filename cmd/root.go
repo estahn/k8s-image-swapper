@@ -251,6 +251,11 @@ func initConfig() {
 		log.Err(err).Msg("failed to unmarshal the config file")
 	}
 
+	if err := config.CheckTargetRegistryConfiguration(cfg.Target); err != nil {
+		log.Err(err).Msg("invalid target configuration")
+		os.Exit(1)
+	}
+
 	//validate := validator.New()
 	//if err := validate.Struct(cfg); err != nil {
 	//	validationErrors := err.(validator.ValidationErrors)
