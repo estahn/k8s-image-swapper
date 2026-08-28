@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/alitto/pond"
@@ -61,6 +62,13 @@ func ImageCopyDeadline(deadline time.Duration) Option {
 	}
 }
 
+// ImageCopySkipRegistries allows to pass the skipRegistries option
+func ImageCopySkipRegistries(registries []string) Option {
+	return func(swapper *ImageSwapper) {
+		swapper.imageCopySkipRegistries = registries
+	}
+}
+
 // Copier allows to pass the copier option
 func Copier(pool *pond.WorkerPool) Option {
 	return func(swapper *ImageSwapper) {
@@ -83,10 +91,12 @@ type ImageSwapper struct {
 
 	imageSwapPolicy types.ImageSwapPolicy
 	imageCopyPolicy types.ImageCopyPolicy
+
+	imageCopySkipRegistries []string
 }
 
 // NewImageSwapper returns a new ImageSwapper initialized.
-func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) kwhmutating.Mutator {
+func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration, skipRegistries []string) kwhmutating.Mutator {
 	return &ImageSwapper{
 		registryClient:          registryClient,
 		imagePullSecretProvider: imagePullSecretProvider,
@@ -95,6 +105,7 @@ func NewImageSwapper(registryClient registry.Client, imagePullSecretProvider sec
 		imageSwapPolicy:         imageSwapPolicy,
 		imageCopyPolicy:         imageCopyPolicy,
 		imageCopyDeadline:       imageCopyDeadline,
+		imageCopySkipRegistries: skipRegistries,
 	}
 }
 
@@ -106,6 +117,7 @@ func NewImageSwapperWithOpts(registryClient registry.Client, opts ...Option) kwh
 		filters:                 []config.JMESPathFilter{},
 		imageSwapPolicy:         types.ImageSwapPolicyExists,
 		imageCopyPolicy:         types.ImageCopyPolicyDelayed,
+		imageCopySkipRegistries: []string{},
 	}
 
 	for _, opt := range opts {
@@ -132,8 +144,8 @@ func NewImageSwapperWebhookWithOpts(registryClient registry.Client, opts ...Opti
 	return kwhmutating.NewWebhook(mcfg)
 }
 
-func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration) (webhook.Webhook, error) {
-	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy, imageCopyDeadline)
+func NewImageSwapperWebhook(registryClient registry.Client, imagePullSecretProvider secrets.ImagePullSecretsProvider, filters []config.JMESPathFilter, imageSwapPolicy types.ImageSwapPolicy, imageCopyPolicy types.ImageCopyPolicy, imageCopyDeadline time.Duration, skipRegistries []string) (webhook.Webhook, error) {
+	imageSwapper := NewImageSwapper(registryClient, imagePullSecretProvider, filters, imageSwapPolicy, imageCopyPolicy, imageCopyDeadline, skipRegistries)
 	mt := kwhmutating.MutatorFunc(imageSwapper.Mutate)
 	mcfg := kwhmutating.WebhookConfig{
 		ID:      "k8s-image-swapper",
@@ -211,34 +223,47 @@ func (p *ImageSwapper) Mutate(ctx context.Context, ar *kwhmodel.AdmissionReview,
 			targetRef := p.targetRef(srcRef)
 			targetImage := targetRef.DockerReference().String()
 
-			imageCopierLogger := logger.With().
-				Str("source-image", srcRef.DockerReference().String()).
-				Str("target-image", targetImage).
-				Logger()
-
-			imageCopierContext := imageCopierLogger.WithContext(lctx)
-			// create an object responsible for the image copy
-			imageCopier := ImageCopier{
-				sourcePod:       pod,
-				sourceImageRef:  srcRef,
-				targetImageRef:  targetRef,
-				imagePullPolicy: container.ImagePullPolicy,
-				imageSwapper:    p,
-				context:         imageCopierContext,
+			// check if the registry domain is in the skip list and skip the image if it is - used when the private registry already has configured pull through cache for the source registry
+			domain := reference.Domain(srcRef.DockerReference())
+			makeCopy := true
+			for _, skipRegistry := range p.imageCopySkipRegistries {
+				if strings.EqualFold(domain, skipRegistry) {
+					log.Ctx(lctx).Debug().Str("registry", domain).Msg("skip due to source registry being in the skip list")
+					makeCopy = false
+					break
+				}
 			}
 
-			// imageCopyPolicy
-			switch p.imageCopyPolicy {
-			case types.ImageCopyPolicyDelayed:
-				p.copier.Submit(imageCopier.start)
-			case types.ImageCopyPolicyImmediate:
-				p.copier.SubmitAndWait(imageCopier.withDeadline().start)
-			case types.ImageCopyPolicyForce:
-				imageCopier.withDeadline().start()
-			case types.ImageCopyPolicyNone:
-				// do not copy image
-			default:
-				panic("unknown imageCopyPolicy")
+			if makeCopy {
+				imageCopierLogger := logger.With().
+					Str("source-image", srcRef.DockerReference().String()).
+					Str("target-image", targetImage).
+					Logger()
+
+				imageCopierContext := imageCopierLogger.WithContext(lctx)
+				// create an object responsible for the image copy
+				imageCopier := ImageCopier{
+					sourcePod:       pod,
+					sourceImageRef:  srcRef,
+					targetImageRef:  targetRef,
+					imagePullPolicy: container.ImagePullPolicy,
+					imageSwapper:    p,
+					context:         imageCopierContext,
+				}
+
+				// imageCopyPolicy
+				switch p.imageCopyPolicy {
+				case types.ImageCopyPolicyDelayed:
+					p.copier.Submit(imageCopier.start)
+				case types.ImageCopyPolicyImmediate:
+					p.copier.SubmitAndWait(imageCopier.withDeadline().start)
+				case types.ImageCopyPolicyForce:
+					imageCopier.withDeadline().start()
+				case types.ImageCopyPolicyNone:
+					// do not copy image
+				default:
+					panic("unknown imageCopyPolicy")
+				}
 			}
 
 			// imageSwapPolicy

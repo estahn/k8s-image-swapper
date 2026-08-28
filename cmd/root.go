@@ -108,6 +108,7 @@ A mutating webhook for Kubernetes, pointing the images to a new location.`,
 			webhook.ImageSwapPolicy(imageSwapPolicy),
 			webhook.ImageCopyPolicy(imageCopyPolicy),
 			webhook.ImageCopyDeadline(imageCopyDeadline),
+			webhook.ImageCopySkipRegistries(cfg.ImageCopySkipRegistries),
 		)
 		if err != nil {
 			log.Err(err).Msg("error creating webhook")

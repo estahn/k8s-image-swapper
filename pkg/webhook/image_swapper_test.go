@@ -298,6 +298,7 @@ func TestImageSwapper_Mutate(t *testing.T) {
 	copier.StopAndWait()
 
 	ecrClient.AssertExpectations(t)
+	assert.Equal(t, uint64(4), copier.SubmittedTasks())
 }
 
 // TestImageSwapper_MutateWithImagePullSecrets tests mutating with imagePullSecret support
@@ -391,6 +392,7 @@ func TestImageSwapper_MutateWithImagePullSecrets(t *testing.T) {
 	copier.StopAndWait()
 
 	ecrClient.AssertExpectations(t)
+	assert.Equal(t, uint64(1), copier.SubmittedTasks())
 }
 
 func TestImageSwapper_GAR_Mutate(t *testing.T) {
@@ -422,4 +424,73 @@ func TestImageSwapper_GAR_Mutate(t *testing.T) {
 	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
 	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
 	assert.NoError(t, err, "Webhook executed without errors")
+	assert.Equal(t, uint64(4), copier.SubmittedTasks())
+}
+
+func TestImageSwapper_skipRegistryGcrIo_Mutate(t *testing.T) {
+	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	copier := pond.New(1, 1)
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+		ImageCopySkipRegistries([]string{"k8s.gcr.io"}),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	// container with name "skip-test-gar" should be skipped, hence there is no "replace" operation for it
+	expected := `[
+		{"op":"replace","path":"/spec/initContainers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/init-container:latest"},
+		{"op":"replace","path":"/spec/containers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/nginx:latest"},
+		{"op":"replace","path":"/spec/containers/1/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"},
+		{"op":"replace","path":"/spec/containers/2/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
+	]`
+
+	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
+
+	// check the amount of submitted tasks for the copier
+	assert.Equal(t, uint64(3), copier.SubmittedTasks())
+}
+
+func TestImageSwapper_skipRegistryDockerIo_Mutate(t *testing.T) {
+	registryClient, _ := registry.NewMockGARClient(nil, "us-central1-docker.pkg.dev/gcp-project-123/main")
+
+	admissionReview, _ := readAdmissionReviewFromFile("admissionreview-simple.json")
+	admissionReviewModel := model.NewAdmissionReviewV1(admissionReview)
+
+	copier := pond.New(1, 1)
+	wh, err := NewImageSwapperWebhookWithOpts(
+		registryClient,
+		Copier(copier),
+		ImageSwapPolicy(types.ImageSwapPolicyAlways),
+		ImageCopySkipRegistries([]string{"docker.io"}),
+	)
+
+	assert.NoError(t, err, "NewImageSwapperWebhookWithOpts executed without errors")
+
+	resp, err := wh.Review(context.TODO(), admissionReviewModel)
+
+	// container with name "skip-test-gar" should be skipped, hence there is no "replace" operation for it
+	expected := `[
+		{"op":"replace","path":"/spec/initContainers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/init-container:latest"},
+		{"op":"replace","path":"/spec/containers/0/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/docker.io/library/nginx:latest"},
+		{"op":"replace","path":"/spec/containers/1/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"},
+		{"op":"replace","path":"/spec/containers/2/image","value":"us-central1-docker.pkg.dev/gcp-project-123/main/123456789.dkr.ecr.ap-southeast-2.amazonaws.com/k8s.gcr.io/ingress-nginx/controller@sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713"}
+	]`
+
+	assert.JSONEq(t, expected, string(resp.(*model.MutatingAdmissionResponse).JSONPatchPatch))
+	assert.Nil(t, resp.(*model.MutatingAdmissionResponse).Warnings)
+	assert.NoError(t, err, "Webhook executed without errors")
+
+	// check the amount of submitted tasks for the copier
+	assert.Equal(t, uint64(2), copier.SubmittedTasks())
 }
