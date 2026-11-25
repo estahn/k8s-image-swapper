@@ -1,6 +1,6 @@
 module github.com/estahn/k8s-image-swapper
 
-go 1.25.0
+go 1.26.10
 
 require (
 	cloud.google.com/go/artifactregistry v1.17.1
